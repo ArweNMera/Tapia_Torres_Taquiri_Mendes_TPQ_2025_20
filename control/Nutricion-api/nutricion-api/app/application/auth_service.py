@@ -2,10 +2,11 @@ from sqlalchemy.orm import Session
 from app.schemas.auth import UserLogin, UserResponse, Token, TokenData
 from app.infrastructure.repositories.usuarios_repo import UsuariosRepository
 from passlib.context import CryptContext
-from fastapi import HTTPException
+from fastapi import HTTPException, Depends, Header
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
 from app.core.config import settings
+from app.infrastructure.db.session import get_db
 
 pwd_context = CryptContext(schemes=["pbkdf2_sha256"], default="pbkdf2_sha256", pbkdf2_sha256__default_rounds=100, pbkdf2_sha256__default_salt_size=8, deprecated="auto")
 
@@ -44,6 +45,33 @@ def verify_token(token: str):
         return username
     except JWTError:
         raise HTTPException(status_code=401, detail="Token inválido")
+
+def get_current_user(
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+) -> UserResponse:
+    """
+    Obtener el usuario actual a partir del token de autorización
+    """
+    if not authorization or not authorization.lower().startswith("bearer "):
+        raise HTTPException(
+            status_code=401, 
+            detail="Token de autorización requerido"
+        )
+    
+    token = authorization.split(" ", 1)[1].strip()
+    username = verify_token(token)
+    
+    repo = UsuariosRepository(db)
+    user = repo.get_user_by_username(username)
+    
+    if not user:
+        raise HTTPException(status_code=401, detail="Usuario no encontrado")
+    
+    if not user.usr_activo:
+        raise HTTPException(status_code=401, detail="Usuario inactivo")
+    
+    return user
 
 def logout_user(_token: str):
     return
