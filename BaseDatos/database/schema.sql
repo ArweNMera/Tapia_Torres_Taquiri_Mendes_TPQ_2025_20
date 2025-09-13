@@ -42,7 +42,7 @@ CREATE INDEX idx_usuarios_activo ON usuarios(usr_activo);
 CREATE TABLE usuarios_perfil (
   usrper_id              BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
   usr_id                 BIGINT UNSIGNED NOT NULL UNIQUE,
-  usrper_avatar_url      VARCHAR(255) NULL,
+  usrper_avatar_url      MEDIUMTEXT NULL,
   usrper_telefono        VARCHAR(20)  NOT NULL,
   usrper_direccion       VARCHAR(180) NULL,
   usrper_genero          ENUM('M','F','X') NULL,
@@ -121,20 +121,33 @@ CREATE TABLE tutores (
 -- ============================================================================
 CREATE TABLE ninos (
   nin_id         BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+  usrper_id      BIGINT UNSIGNED NOT NULL,
   usr_id_tutor   BIGINT UNSIGNED NOT NULL,
   ent_id         INT UNSIGNED NULL,
-  nin_nombres    VARCHAR(150) NOT NULL,
-  nin_fecha_nac  DATE NOT NULL,
-  nin_sexo       ENUM('M','F') NOT NULL,
-  nin_alergias   TEXT NULL,
   creado_en      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   actualizado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   CONSTRAINT fk_ninos_tutor FOREIGN KEY (usr_id_tutor) REFERENCES usuarios(usr_id) ON DELETE RESTRICT,
-  CONSTRAINT fk_ninos_entidad FOREIGN KEY (ent_id) REFERENCES entidades(ent_id) ON DELETE SET NULL
+  CONSTRAINT fk_ninos_entidad FOREIGN KEY (ent_id) REFERENCES entidades(ent_id) ON DELETE SET NULL,
+  CONSTRAINT fk_ninos_usrper FOREIGN KEY (usrper_id) REFERENCES usuarios_perfil(usrper_id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 CREATE INDEX idx_ninos_tutor ON ninos(usr_id_tutor);
 CREATE INDEX idx_ninos_entidad ON ninos(ent_id);
+
+ALTER TABLE ninos
+  ADD COLUMN nin_nombres    VARCHAR(150) NOT NULL AFTER ent_id,
+  ADD COLUMN nin_fecha_nac  DATE         NOT NULL AFTER nin_nombres,
+  ADD COLUMN nin_sexo       ENUM('M','F') NOT NULL AFTER nin_fecha_nac;
+
+ALTER TABLE ninos
+  MODIFY COLUMN usr_id_tutor BIGINT UNSIGNED NULL;
+
+ALTER TABLE ninos
+  ADD COLUMN usr_id_propietario BIGINT UNSIGNED NULL AFTER usr_id_tutor,
+  ADD CONSTRAINT fk_ninos_propietario
+    FOREIGN KEY (usr_id_propietario) REFERENCES usuarios(usr_id) ON DELETE SET NULL;
+
+CREATE INDEX idx_ninos_propietario ON ninos(usr_id_propietario);
 
 CREATE TABLE antropometrias (
   ant_id         BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
@@ -326,3 +339,189 @@ CREATE TABLE eventos_auditoria (
   eau_fecha_hora DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_eau_usuario FOREIGN KEY (usr_id) REFERENCES usuarios(usr_id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
+
+ALTER TABLE usuarios MODIFY usr_contrasena VARCHAR(255) NOT NULL;
+
+CREATE TABLE tipos_alergias (
+  ta_id       SMALLINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+  ta_codigo   VARCHAR(20) NOT NULL UNIQUE,
+  ta_nombre   VARCHAR(100) NOT NULL,
+  ta_categoria ENUM('ALIMENTARIA','MEDICAMENTO','AMBIENTAL') NOT NULL,
+  ta_activo   BOOLEAN NOT NULL DEFAULT TRUE,
+  creado_en   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+-- Seeds de entidad_tipos (idempotentes)
+INSERT INTO entidad_tipos (entti_codigo, entti_nombre) VALUES
+('HOSPITAL', 'Hospital'),
+('CLINICA', 'Clínica'),
+('POSTA', 'Posta de Salud'),
+('ONG', 'Organización No Gubernamental'),
+('ESCUELA', 'Escuela'),
+('CENTRO_COMUNITARIO', 'Centro Comunitario'),
+('PRIVADO', 'Consulta Privada'),
+('VIRTUAL', 'Plataforma Virtual')
+ON DUPLICATE KEY UPDATE entti_nombre = VALUES(entti_nombre);
+
+-- Seeds de tipos_alergias (idempotentes)
+INSERT INTO tipos_alergias (ta_codigo, ta_nombre, ta_categoria, ta_activo) VALUES
+-- Alergias alimentarias
+('ALM_LECHE', 'Leche y productos lácteos', 'ALIMENTARIA', 1),
+('ALM_HUEVO', 'Huevo', 'ALIMENTARIA', 1),
+('ALM_GLUTEN', 'Gluten / Trigo', 'ALIMENTARIA', 1),
+('ALM_FRUTOS_SECOS', 'Frutos secos', 'ALIMENTARIA', 1),
+('ALM_MANI', 'Maní / Cacahuetes', 'ALIMENTARIA', 1),
+('ALM_SOJA', 'Soja', 'ALIMENTARIA', 1),
+('ALM_PESCADO', 'Pescado', 'ALIMENTARIA', 1),
+('ALM_MARISCOS', 'Mariscos', 'ALIMENTARIA', 1),
+('ALM_AJONJOLI', 'Ajonjolí / Sésamo', 'ALIMENTARIA', 1),
+('ALM_CITRICOS', 'Cítricos', 'ALIMENTARIA', 1),
+('ALM_CHOCOLATE', 'Chocolate', 'ALIMENTARIA', 1),
+('ALM_FRESA', 'Fresas', 'ALIMENTARIA', 1),
+-- Alergias a medicamentos
+('MED_PENICILINA', 'Penicilina', 'MEDICAMENTO', 1),
+('MED_ASPIRINA', 'Aspirina / AAS', 'MEDICAMENTO', 1),
+('MED_IBUPROFENO', 'Ibuprofeno', 'MEDICAMENTO', 1),
+('MED_SULFA', 'Sulfamidas', 'MEDICAMENTO', 1),
+('MED_ANESTESIA', 'Anestésicos locales', 'MEDICAMENTO', 1),
+('MED_YODO', 'Yodo / Contrastes', 'MEDICAMENTO', 1),
+-- Alergias ambientales
+('AMB_POLEN', 'Polen de plantas', 'AMBIENTAL', 1),
+('AMB_POLVO', 'Ácaros del polvo', 'AMBIENTAL', 1),
+('AMB_PELO_ANIMAL', 'Pelo de animales', 'AMBIENTAL', 1),
+('AMB_LATEX', 'Látex', 'AMBIENTAL', 1),
+('AMB_HONGOS', 'Hongos / Moho', 'AMBIENTAL', 1),
+('AMB_PICADURAS', 'Picaduras de insectos', 'AMBIENTAL', 1)
+ON DUPLICATE KEY UPDATE ta_nombre = VALUES(ta_nombre), ta_categoria = VALUES(ta_categoria), ta_activo = VALUES(ta_activo);
+
+-- Relación niño-alergias
+CREATE TABLE ninos_alergias (
+  na_id       BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+  nin_id      BIGINT UNSIGNED NOT NULL,
+  ta_id       SMALLINT UNSIGNED NOT NULL,
+  na_severidad ENUM('LEVE','MODERADA','SEVERA') NOT NULL DEFAULT 'LEVE',
+  na_activo   BOOLEAN NOT NULL DEFAULT TRUE,
+  creado_en   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_nino_alergia (nin_id, ta_id),
+  CONSTRAINT fk_na_nino FOREIGN KEY (nin_id) REFERENCES ninos(nin_id) ON DELETE CASCADE,
+  CONSTRAINT fk_na_tipo FOREIGN KEY (ta_id) REFERENCES tipos_alergias(ta_id) ON DELETE RESTRICT
+) ENGINE=InnoDB;
+
+CREATE TABLE evaluaciones_nutricionales (
+  en_id               BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+  nin_id              BIGINT UNSIGNED NOT NULL,
+  ant_id              BIGINT UNSIGNED NOT NULL,
+  en_edad_meses       SMALLINT UNSIGNED NOT NULL,
+  en_imc              DECIMAL(5,2) NULL, -- IMC calculado
+  en_z_score_imc      DECIMAL(5,2) NULL,
+  en_percentil_imc    DECIMAL(5,2) NULL, -- Percentil calculado
+  en_clasificacion    ENUM('DESNUTRICION_SEVERA','DESNUTRICION','RIESGO','NORMAL','SOBREPESO','OBESIDAD') NOT NULL,
+  en_nivel_riesgo     ENUM('BAJO','MODERADO','ALTO','CRITICO') NOT NULL,
+  en_observaciones    TEXT NULL,
+  creado_en           DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_evaluacion_antropometria (ant_id),
+  CONSTRAINT fk_en_nino FOREIGN KEY (nin_id) REFERENCES ninos(nin_id) ON DELETE CASCADE,
+  CONSTRAINT fk_en_antropometria FOREIGN KEY (ant_id) REFERENCES antropometrias(ant_id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE recomendaciones_tipos (
+  rt_id       SMALLINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+  rt_codigo   VARCHAR(30) NOT NULL UNIQUE,
+  rt_titulo   VARCHAR(150) NOT NULL,
+  rt_descripcion TEXT NOT NULL,
+  rt_clasificacion ENUM('DESNUTRICION_SEVERA','DESNUTRICION','RIESGO','NORMAL','SOBREPESO','OBESIDAD') NOT NULL,
+  rt_prioridad TINYINT UNSIGNED NOT NULL DEFAULT 1, -- 1=alta, 2=media, 3=baja
+  rt_activo   BOOLEAN NOT NULL DEFAULT TRUE,
+  creado_en   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+CREATE TABLE evaluaciones_recomendaciones (
+  er_id       BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+  en_id       BIGINT UNSIGNED NOT NULL,
+  rt_id       SMALLINT UNSIGNED NOT NULL,
+  er_aplicada BOOLEAN NOT NULL DEFAULT FALSE,
+  er_fecha_aplicacion DATETIME NULL,
+  creado_en   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_er_evaluacion FOREIGN KEY (en_id) REFERENCES evaluaciones_nutricionales(en_id) ON DELETE CASCADE,
+  CONSTRAINT fk_er_recomendacion FOREIGN KEY (rt_id) REFERENCES recomendaciones_tipos(rt_id) ON DELETE RESTRICT
+) ENGINE=InnoDB;
+
+
+-- LMS base
+CREATE TABLE IF NOT EXISTS oms_bmi_lms (
+  version      ENUM('OMS_2006','OMS_2007') NOT NULL,
+  sexo         ENUM('M','F') NOT NULL,
+  edad_meses   SMALLINT UNSIGNED NOT NULL,
+  L            DECIMAL(8,4) NOT NULL,
+  M            DECIMAL(8,4) NOT NULL,
+  S            DECIMAL(8,4) NOT NULL,
+  creado_en    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (version, sexo, edad_meses),
+  CHECK (edad_meses BETWEEN 0 AND 228)
+) ENGINE=InnoDB;
+
+-- Z-scores
+CREATE TABLE IF NOT EXISTS oms_bmi_zscores (
+  lms_version    ENUM('OMS_2006','OMS_2007') NOT NULL,
+  lms_sexo       ENUM('M','F') NOT NULL,
+  lms_edad_meses SMALLINT UNSIGNED NOT NULL,
+  sd_m3  DECIMAL(6,2), sd_m2 DECIMAL(6,2), sd_m1 DECIMAL(6,2),
+  median DECIMAL(6,2), sd_p1 DECIMAL(6,2), sd_p2 DECIMAL(6,2), sd_p3 DECIMAL(6,2),
+  PRIMARY KEY (lms_version, lms_sexo, lms_edad_meses),
+  CONSTRAINT fk_z_lms FOREIGN KEY (lms_version, lms_sexo, lms_edad_meses)
+    REFERENCES oms_bmi_lms(version, sexo, edad_meses) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- Percentiles (0–5 y 5–19)
+CREATE TABLE IF NOT EXISTS oms_bmi_percentiles (
+  lms_version    ENUM('OMS_2006','OMS_2007') NOT NULL,
+  lms_sexo       ENUM('M','F') NOT NULL,
+  lms_edad_meses SMALLINT UNSIGNED NOT NULL,
+  -- 0–5
+  P01 DECIMAL(6,2), P1 DECIMAL(6,2), P3 DECIMAL(6,2), P5 DECIMAL(6,2),
+  P10 DECIMAL(6,2), P15 DECIMAL(6,2), P25 DECIMAL(6,2), P50 DECIMAL(6,2),
+  P75 DECIMAL(6,2), P85 DECIMAL(6,2), P90 DECIMAL(6,2), P95 DECIMAL(6,2),
+  P97 DECIMAL(6,2), P99 DECIMAL(6,2), P999 DECIMAL(6,2),
+  -- 5–19
+  pct_1 DECIMAL(6,2), pct_3 DECIMAL(6,2), pct_5 DECIMAL(6,2), pct_15 DECIMAL(6,2),
+  pct_25 DECIMAL(6,2), pct_50 DECIMAL(6,2), pct_75 DECIMAL(6,2), pct_85 DECIMAL(6,2),
+  pct_95 DECIMAL(6,2), pct_97 DECIMAL(6,2), pct_99 DECIMAL(6,2),
+  PRIMARY KEY (lms_version, lms_sexo, lms_edad_meses),
+  CONSTRAINT fk_p_lms FOREIGN KEY (lms_version, lms_sexo, lms_edad_meses)
+    REFERENCES oms_bmi_lms(version, sexo, edad_meses) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+
+-- A) Hacer opcional el tutor (para autogestionados)
+ALTER TABLE ninos
+  MODIFY COLUMN usr_id_tutor BIGINT UNSIGNED NULL;
+
+-- ============================================================================
+-- MODIFICACIONES PARA AUTOGESTIÓN DE PERFILES
+-- ============================================================================
+
+-- A) Hacer opcional el tutor (para autogestionados)
+ALTER TABLE ninos
+  MODIFY COLUMN usr_id_tutor BIGINT UNSIGNED NULL;
+
+-- B) Agregar propietario (el usuario que se autogestiona)
+ALTER TABLE ninos
+  ADD COLUMN usr_id_propietario BIGINT UNSIGNED NULL AFTER usr_id_tutor,
+  ADD CONSTRAINT fk_ninos_propietario
+    FOREIGN KEY (usr_id_propietario) REFERENCES usuarios(usr_id) ON DELETE SET NULL;
+
+CREATE INDEX idx_ninos_propietario ON ninos(usr_id_propietario);
+
+-- C) Agregar campos propios del perfil del niño (necesarios para OMS)
+ALTER TABLE ninos
+  ADD COLUMN nin_nombres    VARCHAR(150) NOT NULL AFTER ent_id,
+  ADD COLUMN nin_fecha_nac  DATE         NOT NULL AFTER nin_nombres,
+  ADD COLUMN nin_sexo       ENUM('M','F') NOT NULL AFTER nin_fecha_nac;
+
+-- D) Agregar campos faltantes a evaluaciones_nutricionales
+ALTER TABLE evaluaciones_nutricionales
+  ADD COLUMN en_imc DECIMAL(5,2) NULL COMMENT 'IMC calculado' AFTER en_edad_meses,
+  ADD COLUMN en_percentil_imc DECIMAL(5,2) NULL COMMENT 'Percentil calculado' AFTER en_z_score_imc;
+
+
+
