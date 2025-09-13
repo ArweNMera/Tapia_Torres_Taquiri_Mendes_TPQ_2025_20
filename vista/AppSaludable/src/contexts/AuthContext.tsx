@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { AuthUser, UserLogin, UserRegister } from '../types/api';
+import { AuthUser, UserLogin, UserRegister, UserResponse } from '../types/api';
 import { apiService } from '../services/api';
 
 interface AuthContextType {
@@ -29,32 +29,49 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Verificar si hay un token guardado al cargar la aplicación
+  // Verificar token y obtener el perfil real del usuario al cargar
   useEffect(() => {
-    const token = apiService.getToken();
-    if (token) {
-      // TODO: Aquí podrías hacer una llamada al backend para verificar el token
-      // y obtener los datos del usuario. Por ahora, asumimos que el token es válido.
-      try {
-        // Decodificar el token JWT para obtener información básica del usuario
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        // Este es un placeholder - en una aplicación real deberías hacer una llamada
-        // al backend para obtener los datos completos del usuario
-        setUser({
-          usr_id: 0,
-          usr_usuario: payload.sub || '',
-          usr_correo: '',
-          usr_nombre: '',
-          usr_apellido: '',
-          rol_id: 0,
-          token: token
-        });
-      } catch (error) {
-        console.error('Error decoding token:', error);
-        apiService.removeToken();
+    const bootstrap = async () => {
+      const token = apiService.getToken();
+      if (!token) {
+        setIsLoading(false);
+        return;
       }
-    }
-    setIsLoading(false);
+      try {
+        const me = await apiService.getProfile();
+        if (me.success && me.data) {
+          const u = me.data as unknown as UserResponse;
+          setUser({
+            usr_id: u.usr_id,
+            usr_usuario: u.usr_usuario,
+            usr_correo: u.usr_correo,
+            usr_nombre: u.usr_nombre,
+            usr_apellido: u.usr_apellido,
+            rol_id: u.rol_id,
+            avatar_url: u.avatar_url,
+            token,
+          });
+        } else {
+          // Fallback: decodificar JWT para al menos tener usuario
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          setUser({
+            usr_id: 0,
+            usr_usuario: payload.sub || '',
+            usr_correo: '',
+            usr_nombre: '',
+            usr_apellido: '',
+            rol_id: 0,
+            token,
+          });
+        }
+      } catch (error) {
+        console.error('Error cargando perfil:', error);
+        apiService.removeToken();
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    bootstrap();
   }, []);
 
   const login = async (userData: UserLogin): Promise<{ success: boolean; error?: string }> => {
@@ -66,20 +83,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const token = response.data.access_token;
         apiService.setToken(token);
         
-        // Decodificar el token para obtener información del usuario
-        try {
-          const payload = JSON.parse(atob(token.split('.')[1]));
+        // Obtener el perfil real inmediatamente después del login
+        const me = await apiService.getProfile();
+        if (me.success && me.data) {
+          const u = me.data as unknown as UserResponse;
           setUser({
-            usr_id: 0, // Se debería obtener del backend
-            usr_usuario: payload.sub || userData.usuario,
-            usr_correo: '',
-            usr_nombre: '',
-            usr_apellido: '',
-            rol_id: 0,
-            token: token
+            usr_id: u.usr_id,
+            usr_usuario: u.usr_usuario || userData.usuario,
+            usr_correo: u.usr_correo,
+            usr_nombre: u.usr_nombre,
+            usr_apellido: u.usr_apellido,
+            rol_id: u.rol_id,
+            avatar_url: u.avatar_url,
+            token,
           });
-        } catch (error) {
-          console.error('Error decoding token:', error);
         }
         
         return { success: true };

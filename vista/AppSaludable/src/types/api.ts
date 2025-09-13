@@ -13,6 +13,18 @@ export interface UserRegister {
   rol_nombre: string;
 }
 
+export interface UserProfile {
+  dni?: string;
+  nombres?: string;
+  apellidos?: string;
+  avatar_url?: string;
+  telefono?: string;
+  direccion?: string;
+  genero?: 'M' | 'F' | 'X';
+  fecha_nac?: string; // ISO date string
+  idioma?: string;
+}
+
 export interface UserRegisterResponse {
   usr_id: number;
   msg: string;
@@ -32,6 +44,137 @@ export interface UserResponse {
   rol_id: number;
   usr_activo: boolean;
   password_hash?: string;
+  // Campos adicionales del perfil
+  dni?: string;
+  avatar_url?: string;
+  telefono?: string;
+  direccion?: string;
+  genero?: 'M' | 'F' | 'X';
+  fecha_nac?: string;
+  idioma?: string;
+  creado_en?: string;
+}
+
+// Tipos para niños
+export interface NinoCreate {
+  nin_nombres: string;
+  nin_fecha_nac: string; // ISO date string
+  nin_sexo: 'M' | 'F';
+  ent_id?: number;
+}
+
+export interface NinoUpdate {
+  nin_nombres?: string;
+  ent_id?: number;
+}
+
+export interface NinoResponse {
+  nin_id: number;
+  nin_nombres: string;
+  nin_fecha_nac: string;
+  nin_sexo: string;
+  ent_id?: number;
+  edad_meses: number;
+  creado_en: string;
+  actualizado_en: string;
+}
+
+// Tipos para antropometría
+export interface AnthropometryCreate {
+  ant_peso_kg: number;
+  ant_talla_cm: number;
+  ant_fecha?: string; // ISO date string
+}
+
+export interface AnthropometryResponse {
+  ant_id: number;
+  nin_id: number;
+  ant_fecha: string;
+  ant_edad_meses?: number;
+  ant_peso_kg: number;
+  ant_talla_cm: number;
+  ant_z_imc?: number;
+  ant_z_peso_edad?: number;
+  ant_z_talla_edad?: number;
+  imc?: number;
+  creado_en: string;
+}
+
+// Tipos para evaluación nutricional
+export interface NutritionalStatusResponse {
+  imc: number;
+  z_score_imc?: number;
+  classification: string;
+  percentile?: number;
+  recommendations: string[];
+  risk_level: string;
+}
+
+// Tipos para alergias
+export interface AlergiaCreate {
+  ta_codigo: string;
+  severidad?: 'LEVE' | 'MODERADA' | 'SEVERA';
+}
+
+export interface AlergiaResponse {
+  na_id: number;
+  nin_id: number;
+  ta_codigo: string;
+  ta_nombre: string;
+  ta_categoria: string;
+  na_severidad: string;
+  creado_en: string;
+}
+
+export interface TipoAlergiaCreate {
+  ta_codigo: string;
+  ta_nombre: string;
+  ta_categoria: 'ALIMENTARIA' | 'MEDICAMENTO' | 'AMBIENTAL';
+}
+
+export interface TipoAlergiaResponse {
+  ta_id: number;
+  ta_codigo: string;
+  ta_nombre: string;
+  ta_categoria: string;
+  ta_activo: boolean;
+  creado_en: string;
+}
+
+// Tipos combinados
+export interface NinoWithAnthropometry {
+  nino: NinoResponse;
+  antropometrias: AnthropometryResponse[];
+  alergias: AlergiaResponse[];
+  ultimo_estado_nutricional?: NutritionalStatusResponse;
+}
+
+export interface CreateChildProfileRequest {
+  nino: NinoCreate;
+  antropometria: AnthropometryCreate;
+}
+
+export interface CreateChildProfileResponse {
+  nino: NinoResponse;
+  antropometria: AnthropometryResponse;
+  estado_nutricional: NutritionalStatusResponse;
+  message: string;
+}
+
+// Tipos para respuestas de API
+export interface ApiResponse<T = any> {
+  data?: T;
+  message?: string;
+  error?: string;
+  detail?: string;
+}
+
+export interface PaginatedResponse<T> {
+  items: T[];
+  total: number;
+  page: number;
+  per_page: number;
+  pages: number;
 }
 
 // Tipos para roles
@@ -61,5 +204,6 @@ export interface AuthUser {
   usr_nombre: string;
   usr_apellido: string;
   rol_id: number;
+  avatar_url?: string;
   token: string;
 }

@@ -1,4 +1,28 @@
-import { UserLogin, UserRegister, Token, ApiResponse, RolInsert, RolResponse } from '../types/api';
+/// <reference types="vite/client" />
+
+import { 
+  UserLogin, 
+  UserRegister, 
+  UserProfile,
+  UserRegisterResponse,
+  Token, 
+  UserResponse,
+  NinoCreate,
+  NinoUpdate,
+  NinoResponse,
+  AnthropometryCreate,
+  AnthropometryResponse,
+  NutritionalStatusResponse,
+  AlergiaCreate,
+  AlergiaResponse,
+  TipoAlergiaCreate,
+  TipoAlergiaResponse,
+  NinoWithAnthropometry,
+  CreateChildProfileRequest,
+  CreateChildProfileResponse,
+  ApiResponse,
+  PaginatedResponse
+} from '../types/api';
 
 class ApiService {
   private baseURL: string;
@@ -81,32 +105,308 @@ class ApiService {
     );
   }
 
-  // Roles
-  async createRole(roleData: RolInsert): Promise<ApiResponse<RolResponse>> {
-    return this.makeRequest<RolResponse>(
-      this.getApiUrl('/usuarios/roles'),
-      {
-        method: 'POST',
-        body: JSON.stringify(roleData),
-      }
-    );
-  }
-
   // Métodos utilitarios para el token
   setToken(token: string): void {
-    localStorage.setItem(import.meta.env.VITE_TOKEN_KEY || 'auth_token', token);
+    localStorage.setItem('auth_token', token);
   }
 
   getToken(): string | null {
-    return localStorage.getItem(import.meta.env.VITE_TOKEN_KEY || 'auth_token');
+    return localStorage.getItem('auth_token');
   }
 
   removeToken(): void {
-    localStorage.removeItem(import.meta.env.VITE_TOKEN_KEY || 'auth_token');
+    localStorage.removeItem('auth_token');
   }
 
   isAuthenticated(): boolean {
     return !!this.getToken();
+  }
+
+  // ===== MÉTODOS PARA NIÑOS =====
+
+  // Crear un nuevo niño
+  async createNino(ninoData: NinoCreate): Promise<ApiResponse<NinoResponse>> {
+    return this.makeRequest<NinoResponse>(
+      this.getApiUrl('/ninos'),
+      {
+        method: 'POST',
+        body: JSON.stringify(ninoData),
+      }
+    );
+  }
+
+  // Obtener todos los niños del usuario actual
+  async getNinos(): Promise<ApiResponse<NinoResponse[]>> {
+    return this.makeRequest<NinoResponse[]>(
+      this.getApiUrl('/ninos')
+    );
+  }
+
+  // Obtener un niño por ID
+  async getNino(ninoId: number): Promise<ApiResponse<NinoResponse>> {
+    return this.makeRequest<NinoResponse>(
+      this.getApiUrl(`/ninos/${ninoId}`)
+    );
+  }
+
+  // Actualizar un niño
+  async updateNino(ninoId: number, ninoData: NinoUpdate): Promise<ApiResponse<NinoResponse>> {
+    return this.makeRequest<NinoResponse>(
+      this.getApiUrl(`/ninos/${ninoId}`),
+      {
+        method: 'PUT',
+        body: JSON.stringify(ninoData),
+      }
+    );
+  }
+
+  // Eliminar un niño
+  async deleteNino(ninoId: number): Promise<ApiResponse<{ message: string }>> {
+    return this.makeRequest<{ message: string }>(
+      this.getApiUrl(`/ninos/${ninoId}`),
+      {
+        method: 'DELETE',
+      }
+    );
+  }
+
+  // ===== MÉTODOS PARA ANTROPOMETRÍA =====
+
+  // Agregar nueva medición antropométrica
+  async addAnthropometry(ninoId: number, data: AnthropometryCreate): Promise<ApiResponse<AnthropometryResponse>> {
+    return this.makeRequest<AnthropometryResponse>(
+      this.getApiUrl(`/ninos/${ninoId}/anthropometry`),
+      {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }
+    );
+  }
+
+  // Obtener historial antropométrico de un niño
+  async getAnthropometryHistory(ninoId: number): Promise<ApiResponse<AnthropometryResponse[]>> {
+    return this.makeRequest<AnthropometryResponse[]>(
+      this.getApiUrl(`/ninos/${ninoId}/anthropometry`)
+    );
+  }
+
+  // ===== MÉTODOS PARA EVALUACIÓN NUTRICIONAL =====
+
+  // Evaluar estado nutricional
+  async evaluateNutritionalStatus(ninoId: number): Promise<ApiResponse<NutritionalStatusResponse>> {
+    return this.makeRequest<NutritionalStatusResponse>(
+      this.getApiUrl(`/ninos/${ninoId}/nutritional-status`)
+    );
+  }
+
+  // ===== MÉTODOS PARA ALERGIAS =====
+
+  // Agregar alergia a un niño
+  async addAllergy(ninoId: number, allergiaData: AlergiaCreate): Promise<ApiResponse<AlergiaResponse>> {
+    return this.makeRequest<AlergiaResponse>(
+      this.getApiUrl(`/ninos/${ninoId}/alergias`),
+      {
+        method: 'POST',
+        body: JSON.stringify(allergiaData),
+      }
+    );
+  }
+
+  // Obtener alergias de un niño
+  async getAllergies(ninoId: number): Promise<ApiResponse<AlergiaResponse[]>> {
+    return this.makeRequest<AlergiaResponse[]>(
+      this.getApiUrl(`/ninos/${ninoId}/alergias`)
+    );
+  }
+
+  // Eliminar alergia de un niño
+  async removeAllergy(ninoId: number, allergiaId: number): Promise<ApiResponse<{ message: string }>> {
+    return this.makeRequest<{ message: string }>(
+      this.getApiUrl(`/ninos/${ninoId}/alergias/${allergiaId}`),
+      {
+        method: 'DELETE',
+      }
+    );
+  }
+
+  // ===== MÉTODOS PARA TIPOS DE ALERGIAS =====
+
+  // Obtener todos los tipos de alergias disponibles
+  async getAllergyTypes(q?: string, limit: number = 50): Promise<ApiResponse<TipoAlergiaResponse[]>> {
+    const params = new URLSearchParams();
+    if (q) params.set('q', q);
+    if (limit) params.set('limit', String(limit));
+    const url = this.getApiUrl(`/alergias/tipos${params.toString() ? `?${params.toString()}` : ''}`);
+    return this.makeRequest<TipoAlergiaResponse[]>(url);
+  }
+
+  // Crear nuevo tipo de alergia (solo admin)
+  async createAllergyType(tipoData: TipoAlergiaCreate): Promise<ApiResponse<TipoAlergiaResponse>> {
+    return this.makeRequest<TipoAlergiaResponse>(
+      this.getApiUrl('/alergias/tipos'),
+      {
+        method: 'POST',
+        body: JSON.stringify(tipoData),
+      }
+    );
+  }
+
+  // ===== ENTIDADES =====
+  async searchEntities(q?: string, limit: number = 20): Promise<ApiResponse<any[]>> {
+    const params = new URLSearchParams();
+    if (q) params.set('q', q);
+    if (limit) params.set('limit', String(limit));
+    const url = this.getApiUrl(`/entidades${params.toString() ? `?${params.toString()}` : ''}`);
+    return this.makeRequest<any[]>(url);
+  }
+
+  async getEntityTypes(): Promise<ApiResponse<any[]>> {
+    return this.makeRequest<any[]>(
+      this.getApiUrl('/entidades/tipos')
+    );
+  }
+
+  // ===== MÉTODOS PARA PERFIL DE USUARIO =====
+
+  // Actualizar perfil de usuario
+  async updateProfile(profileData: UserProfile): Promise<ApiResponse<UserResponse>> {
+    return this.makeRequest<UserResponse>(
+      this.getApiUrl('/usuarios/profile'),
+      {
+        method: 'PUT',
+        body: JSON.stringify(profileData),
+      }
+    );
+  }
+
+  // Obtener perfil de usuario actual
+  async getProfile(): Promise<ApiResponse<UserResponse>> {
+    return this.makeRequest<UserResponse>(
+      this.getApiUrl('/usuarios/me')
+    );
+  }
+
+  // ===== MÉTODOS COMBINADOS =====
+
+  // Crear perfil completo de niño (niño + antropometría + evaluación)
+  async createChildProfile(data: CreateChildProfileRequest): Promise<ApiResponse<CreateChildProfileResponse>> {
+    try {
+      // 1. Crear el niño
+      const ninoResponse = await this.createNino(data.nino);
+      if (!ninoResponse.data) {
+        throw new Error('Error creando el niño');
+      }
+
+      const ninoId = ninoResponse.data.nin_id;
+
+      // 2. Agregar antropometría
+      const antropometriaResponse = await this.addAnthropometry(ninoId, data.antropometria);
+      if (!antropometriaResponse.data) {
+        throw new Error('Error agregando antropometría');
+      }
+
+      // 3. Evaluar estado nutricional
+      const evaluacionResponse = await this.evaluateNutritionalStatus(ninoId);
+      if (!evaluacionResponse.data) {
+        throw new Error('Error evaluando estado nutricional');
+      }
+
+      return {
+        success: true,
+        data: {
+          nino: ninoResponse.data,
+          antropometria: antropometriaResponse.data,
+          estado_nutricional: evaluacionResponse.data,
+          message: 'Perfil del niño creado exitosamente'
+        }
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Error creando perfil del niño'
+      };
+    }
+  }
+
+  // Obtener información completa de un niño
+  async getChildWithData(ninoId: number): Promise<ApiResponse<NinoWithAnthropometry>> {
+    try {
+      const [ninoResponse, antropometriasResponse, alergiasResponse] = await Promise.all([
+        this.getNino(ninoId),
+        this.getAnthropometryHistory(ninoId),
+        this.getAllergies(ninoId)
+      ]);
+
+      if (!ninoResponse.data) {
+        throw new Error('Error obteniendo información del niño');
+      }
+
+      // Intentar obtener la última evaluación nutricional
+      let ultimoEstadoNutricional: NutritionalStatusResponse | undefined;
+      try {
+        const evaluacionResponse = await this.evaluateNutritionalStatus(ninoId);
+        ultimoEstadoNutricional = evaluacionResponse.data;
+      } catch (error) {
+        // Si no hay datos suficientes para evaluar, continuamos sin la evaluación
+        console.warn('No se pudo obtener evaluación nutricional:', error);
+      }
+
+      return {
+        success: true,
+        data: {
+          nino: ninoResponse.data,
+          antropometrias: antropometriasResponse.data || [],
+          alergias: alergiasResponse.data || [],
+          ultimo_estado_nutricional: ultimoEstadoNutricional
+        }
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Error obteniendo datos del niño'
+      };
+    }
+  }
+
+  // ===== ANTROPOMETRÍA PERSONAL (SELF) =====
+  async getSelfChild(): Promise<ApiResponse<NinoResponse>> {
+    return this.makeRequest<NinoResponse>(
+      this.getApiUrl('/children/self')
+    );
+  }
+
+  async addSelfAnthropometry(data: AnthropometryCreate): Promise<ApiResponse<AnthropometryResponse>> {
+    const selfChild = await this.getSelfChild();
+    if (!selfChild.data) {
+      return { success: false, error: 'No se pudo obtener/crear el perfil personal' };
+    }
+    const ninId = selfChild.data.nin_id;
+    return this.makeRequest<AnthropometryResponse>(
+      this.getApiUrl(`/children/${ninId}/anthropometry`),
+      { method: 'POST', body: JSON.stringify(data) }
+    );
+  }
+
+  async getSelfAnthropometryHistory(): Promise<ApiResponse<AnthropometryResponse[]>> {
+    const selfChild = await this.getSelfChild();
+    if (!selfChild.data) {
+      return { success: false, error: 'No se pudo obtener el perfil personal' };
+    }
+    const ninId = selfChild.data.nin_id;
+    return this.makeRequest<AnthropometryResponse[]>(
+      this.getApiUrl(`/children/${ninId}/anthropometry`)
+    );
+  }
+
+  async getSelfNutritionalStatus(): Promise<ApiResponse<NutritionalStatusResponse>> {
+    const selfChild = await this.getSelfChild();
+    if (!selfChild.data) {
+      return { success: false, error: 'No se pudo obtener el perfil personal' };
+    }
+    const ninId = selfChild.data.nin_id;
+    return this.makeRequest<NutritionalStatusResponse>(
+      this.getApiUrl(`/children/${ninId}/nutritional-status`)
+    );
   }
 }
 

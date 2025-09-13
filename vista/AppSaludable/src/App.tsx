@@ -12,11 +12,14 @@ import { ProgressScreen } from './components/screens/ProgressScreen';
 import { CommunityScreen } from './components/screens/CommunityScreen';
 import { GamificationScreen } from './components/screens/GamificationScreen';
 import { ProfileScreen } from './components/screens/ProfileScreen';
+import ProfileManagementScreen from './components/screens/ProfileManagementScreen';
 import { SettingsScreen } from './components/screens/SettingsScreen';
+import SelfAnthropometry from './components/SelfAnthropometry';
+import ProfileHubScreen from './components/screens/ProfileHubScreen';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 type AppState = 'onboarding' | 'login' | 'register' | 'main';
-type ActiveTab = 'home' | 'meal-plan' | 'scan' | 'risk-prediction' | 'progress' | 'community' | 'gamification' | 'profile' | 'settings';
+type ActiveTab = 'home' | 'meal-plan' | 'scan' | 'risk-prediction' | 'progress' | 'community' | 'gamification' | 'profile' | 'clinical';
 
 function AppContent() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -139,11 +142,11 @@ function AppContent() {
         {activeTab === 'gamification' && (
           <GamificationScreen />
         )}
-        {activeTab === 'profile' && (
-          <ProfileScreen />
+        {activeTab === 'clinical' && (
+          <SelfAnthropometry />
         )}
-        {activeTab === 'settings' && (
-          <SettingsScreen />
+        {activeTab === 'profile' && (
+          <ProfileHubScreen />
         )}
       </Layout>
       
