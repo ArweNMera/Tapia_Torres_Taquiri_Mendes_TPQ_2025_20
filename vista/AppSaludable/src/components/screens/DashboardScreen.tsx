@@ -1,3 +1,4 @@
+import React from 'react';
 import { Bell, Search, Calendar, TrendingUp, Apple, Droplets, Zap, Clock } from 'lucide-react';
 import { NutritionCard } from '../NutritionCard';
 import { RecipeCard } from '../RecipeCard';
@@ -5,12 +6,15 @@ import { Card } from '../ui/card';
 import { Button } from '../ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Progress } from '../ui/progress';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface DashboardScreenProps {
   onRecipeClick?: (recipeId: string) => void;
 }
 
 export function DashboardScreen({ onRecipeClick }: DashboardScreenProps) {
+  const { user } = useAuth();
+  
   const todayMeals = [
     {
       id: '1',
@@ -45,11 +49,13 @@ export function DashboardScreen({ onRecipeClick }: DashboardScreenProps) {
             <div className="flex items-center space-x-3">
               <Avatar className="w-12 h-12">
                 <AvatarImage src="https://images.unsplash.com/photo-1494790108755-2616b612b577?w=150" />
-                <AvatarFallback>MF</AvatarFallback>
+                <AvatarFallback>
+                  {user?.usr_nombre?.charAt(0) || ''}{user?.usr_apellido?.charAt(0) || ''}
+                </AvatarFallback>
               </Avatar>
               <div>
-                <h1 className="text-xl font-semibold text-gray-800">¡Hola, María!</h1>
-                <p className="text-sm text-gray-600">¿Cómo está Sofía hoy?</p>
+                <h1 className="text-xl font-semibold text-gray-800">¡Hola, {user?.usr_nombre}!</h1>
+                <p className="text-sm text-gray-600">Bienvenido de vuelta</p>
               </div>
             </div>
             <div className="flex items-center space-x-2">
@@ -65,7 +71,7 @@ export function DashboardScreen({ onRecipeClick }: DashboardScreenProps) {
 
           {/* Desktop Welcome */}
           <div className="hidden lg:block">
-            <h1 className="text-2xl font-semibold text-gray-800 mb-2">¡Buen día, María!</h1>
+            <h1 className="text-2xl font-semibold text-gray-800 mb-2">¡Buen día, {user?.usr_nombre}!</h1>
             <p className="text-gray-600">Aquí tienes el resumen nutricional de Sofía para hoy</p>
           </div>
 
@@ -146,8 +152,13 @@ export function DashboardScreen({ onRecipeClick }: DashboardScreenProps) {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
               {todayMeals.map((meal) => (
                 <RecipeCard
-                  key={meal.id}
-                  {...meal}
+                  title={meal.title}
+                  image={meal.image}
+                  cookTime={meal.cookTime}
+                  servings={meal.servings}
+                  rating={meal.rating}
+                  difficulty={meal.difficulty as 'Fácil'}
+                  calories={meal.calories}
                   onClick={() => onRecipeClick?.(meal.id)}
                 />
               ))}
