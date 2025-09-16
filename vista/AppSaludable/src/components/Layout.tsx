@@ -57,6 +57,19 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
     { id: 'profile', icon: User, label: 'Perfil', category: 'personal' },
   ];
 
+  // Orden específico para el sidebar de escritorio: colocar "Datos Clínicos" debajo de Inicio
+  const desktopSidebarOrder = [
+    'home',
+    'clinical',
+    'meal-plan',
+    'scan',
+    'risk-prediction',
+    'progress',
+    'community',
+    'gamification',
+    'profile',
+  ];
+
   // Tabs principales para navegación inferior móvil
   const mainMobileTabs = tabs.filter(tab => 
     ['home', 'meal-plan', 'progress', 'profile'].includes(tab.id)
@@ -391,7 +404,9 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
           {/* Navigation */}
           <nav className="flex-1 p-4">
             <div className="space-y-2">
-              {tabs.map((tab) => {
+              {desktopSidebarOrder.map((id) => {
+                const tab = tabs.find((t) => t.id === id);
+                if (!tab) return null;
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
                 return (
@@ -399,8 +414,8 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
                     key={tab.id}
                     onClick={() => onTabChange(tab.id)}
                     className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors ${
-                      isActive 
-                        ? 'bg-green-100 text-green-700 border border-green-200' 
+                      isActive
+                        ? 'bg-green-100 text-green-700 border border-green-200'
                         : 'text-gray-600 hover:bg-gray-100 hover:text-gray-800'
                     }`}
                   >
