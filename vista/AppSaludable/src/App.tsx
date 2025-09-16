@@ -18,50 +18,54 @@ import SelfAnthropometry from './components/SelfAnthropometry';
 import ProfileHubScreen from './components/screens/ProfileHubScreen';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
-type AppState = 'onboarding' | 'login' | 'register' | 'main';
+type AppState = 'login' | 'register' | 'onboarding' | 'main';
 type ActiveTab = 'home' | 'meal-plan' | 'scan' | 'risk-prediction' | 'progress' | 'community' | 'gamification' | 'profile' | 'clinical';
 
 function AppContent() {
-  const { isAuthenticated, isLoading } = useAuth();
-  const [appState, setAppState] = useState<AppState>('onboarding');
+  const { isAuthenticated, isLoading, user } = useAuth();
+  const [appState, setAppState] = useState<AppState>('login');
   const [activeTab, setActiveTab] = useState<ActiveTab>('home');
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
 
-  // Verificar si el usuario ya vio el onboarding
   useEffect(() => {
-    const seenOnboarding = localStorage.getItem('hasSeenOnboarding');
-    setHasSeenOnboarding(!!seenOnboarding);
-  }, []);
+    if (isAuthenticated && user) {
+      const seenOnboarding = localStorage.getItem(`hasSeenOnboarding_${user.usr_id}`);
+      setHasSeenOnboarding(!!seenOnboarding);
+    }
+  }, [isAuthenticated, user]);
 
-  // Manejar el estado de la aplicación basado en la autenticación
   useEffect(() => {
     if (isLoading) return;
 
     if (isAuthenticated) {
-      setAppState('main');
-    } else if (hasSeenOnboarding) {
-      setAppState('login');
+      if (hasSeenOnboarding) {
+        setAppState('main');
+      } else {
+        setAppState('onboarding');
+      }
     } else {
-      setAppState('onboarding');
+      if (appState !== 'register') {
+        setAppState('login');
+      }
     }
   }, [isAuthenticated, hasSeenOnboarding, isLoading]);
 
   const handleOnboardingComplete = () => {
-    localStorage.setItem('hasSeenOnboarding', 'true');
-    setHasSeenOnboarding(true);
-    setAppState('login');
+    if (user) {
+      localStorage.setItem(`hasSeenOnboarding_${user.usr_id}`, 'true');
+      setHasSeenOnboarding(true);
+      setAppState('main');
+    }
   };
 
-  const handleLogin = () => {
-    setAppState('main');
+  const handleLoginSuccess = () => {
   };
 
   const handleShowRegister = () => {
     setAppState('register');
   };
 
-  const handleRegister = () => {
-    setAppState('main');
+  const handleRegisterSuccess = () => {
   };
 
   const handleBackToLogin = () => {
@@ -74,10 +78,8 @@ function AppContent() {
 
   const handleRecipeClick = (recipeId: string) => {
     console.log('Recipe clicked:', recipeId);
-    // Here you would navigate to recipe details
   };
 
-  // Mostrar loading mientras se verifica la autenticación
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-secondary/10 via-accent/5 to-primary/10 flex items-center justify-center">
@@ -92,32 +94,28 @@ function AppContent() {
     );
   }
 
-  // Onboarding Screen
-  if (appState === 'onboarding') {
-    return <OnboardingScreen onComplete={handleOnboardingComplete} />;
-  }
-
-  // Login Screen
-  if (appState === 'login') {
+  if (!isAuthenticated) {
+    if (appState === 'register') {
+      return (
+        <RegisterScreen 
+          onRegister={handleRegisterSuccess}
+          onBackToLogin={handleBackToLogin}
+        />
+      );
+    }
+    
     return (
       <LoginScreen 
-        onLogin={handleLogin}
+        onLogin={handleLoginSuccess}
         onSignUp={handleShowRegister}
       />
     );
   }
 
-  // Register Screen
-  if (appState === 'register') {
-    return (
-      <RegisterScreen 
-        onRegister={handleRegister}
-        onBackToLogin={handleBackToLogin}
-      />
-    );
+  if (appState === 'onboarding') {
+    return <OnboardingScreen onComplete={handleOnboardingComplete} />;
   }
 
-  // Main App with Navigation
   return (
     <>
       <Layout activeTab={activeTab} onTabChange={handleTabChange}>
@@ -150,7 +148,6 @@ function AppContent() {
         )}
       </Layout>
       
-      {/* ChatBot flotante disponible en todas las pantallas principales */}
       <ChatBot />
     </>
   );
