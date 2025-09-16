@@ -220,8 +220,8 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
                       <AvatarFallback className="bg-primary text-white">{getUserInitials()}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
-                      <p className="font-semibold text-sm">María González</p>
-                      <p className="text-xs text-muted-foreground">Mamá de Sofía (2 años)</p>
+                      <p className="font-semibold text-sm">{user?.usr_nombre} {user?.usr_apellido}</p>
+                      <p className="text-xs text-muted-foreground">{user?.usr_correo}</p>
                       <div className="flex items-center mt-1">
                         <div className="w-2 h-2 bg-success rounded-full mr-2"></div>
                         <span className="text-xs text-success font-medium">Activa</span>
@@ -382,8 +382,8 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
                 <AvatarFallback>{getUserInitials()}</AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-800 truncate">María González</p>
-                <p className="text-xs text-gray-500 truncate">Mamá de Sofía</p>
+                <p className="text-sm font-medium text-gray-800 truncate">{user?.usr_nombre} {user?.usr_apellido}</p>
+                <p className="text-xs text-gray-500 truncate">{user?.usr_correo}</p>
               </div>
             </div>
           </div>
@@ -416,7 +416,7 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
           <div className="p-4 border-t border-gray-200">
             <div className="text-center">
               <p className="text-xs text-gray-500">NutriFamily v2.1.0</p>
-              <p className="text-xs text-gray-400 mt-1">© 2024 Todos los derechos reservados</p>
+              <p className="text-xs text-gray-400 mt-1">© 2025 Todos los derechos reservados</p>
             </div>
           </div>
         </div>
