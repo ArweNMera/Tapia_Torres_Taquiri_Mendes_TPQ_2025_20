@@ -40,12 +40,6 @@ export default function SelfAnthropometry() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg p-6">
-        <h1 className="text-2xl font-bold text-gray-900">Datos Clínicos</h1>
-        <p className="text-gray-600 mt-1">Gestiona tu información antropométrica, alergias y entidades de atención</p>
-      </div>
-
       {/* Navigation Tabs */}
       <div className="bg-white rounded-lg border">
         <div className="border-b border-gray-200">
