@@ -3,11 +3,12 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 from app.infrastructure.db.session import get_db
 from app.schemas.ninos import (
-    NinoCreate, NinoUpdate, NinoResponse, 
+    NinoCreate, NinoUpdate, NinoResponse,
     AnthropometryCreate, AnthropometryResponse,
     CreateChildProfileRequest, CreateChildProfileResponse,
     NinoWithAnthropometry, NutritionalStatusResponse,
-    AlergiaCreate, AlergiaResponse
+    AlergiaCreate, AlergiaResponse,
+    AssignTutorRequest
 )
 from app.application import ninos_service
 from app.application.auth_service import get_current_user
@@ -142,6 +143,31 @@ def add_anthropometry_data(
     Permite seguimiento del crecimiento en el tiempo.
     """
     return ninos_service.add_anthropometry(db, nin_id, antropo_data, current_user.usr_id)
+
+@router.post("/{nin_id}/assign-tutor", response_model=NinoResponse)
+def assign_child_tutor(
+    nin_id: int,
+    payload: AssignTutorRequest,
+    db: Session = Depends(get_db),
+    current_user: UserResponse = Depends(get_current_user)
+):
+    """Asignar un niño existente a un tutor/padre específico."""
+    nrepo = NinosRepository(db)
+    nino_dict = nrepo.get_nino_by_id(nin_id)
+    if not nino_dict:
+        raise HTTPException(status_code=404, detail="Niño no encontrado")
+
+    urepo = UsuariosRepository(db)
+    current_role_code = urepo.get_role_code_by_id(current_user.rol_id)
+    is_admin = current_role_code in {"ADMIN", "SUPERADMIN"}
+    is_self_assignment = payload.usr_id_tutor == current_user.usr_id
+    is_current_responsible = nino_dict.get("usr_id_tutor") == current_user.usr_id or nino_dict.get("usr_id_propietario") == current_user.usr_id
+
+    if not (is_admin or is_self_assignment or is_current_responsible):
+        raise HTTPException(status_code=403, detail="No tienes permiso para asignar este niño")
+
+    updated = ninos_service.asignar_nino_a_tutor(db, nin_id, payload.usr_id_tutor)
+    return updated
 
 @router.get("/{nin_id}/nutritional-status", response_model=NutritionalStatusResponse)
 def get_nutritional_status(

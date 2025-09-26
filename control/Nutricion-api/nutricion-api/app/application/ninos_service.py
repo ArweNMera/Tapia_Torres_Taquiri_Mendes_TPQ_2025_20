@@ -415,3 +415,13 @@ def obtener_tipos_alergias(db: Session) -> List[TipoAlergiaResponse]:
     
     tipos_dict = repo.obtener_tipos_alergias()
     return [TipoAlergiaResponse(**tipo) for tipo in tipos_dict]
+
+def asignar_nino_a_tutor(db: Session, nin_id: int, usr_id_tutor: int) -> NinoResponse:
+    """Asociar un niño existente a un tutor/padre y retornar datos actualizados."""
+    repo = NinosRepository(db)
+
+    nino_dict = repo.assign_child_to_tutor(nin_id, usr_id_tutor)
+    if not nino_dict:
+        raise HTTPException(status_code=404, detail="Niño no encontrado")
+
+    return NinoResponse(**nino_dict)

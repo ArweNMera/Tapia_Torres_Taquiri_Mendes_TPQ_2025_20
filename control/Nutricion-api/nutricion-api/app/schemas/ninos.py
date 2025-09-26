@@ -16,6 +16,7 @@ class NinoCreate(BaseModel):
 class NinoUpdate(BaseModel):
     nin_nombres: Optional[str] = Field(None, min_length=2, max_length=150)
     ent_id: Optional[int] = None
+    nin_fecha_nac: Optional[date] = None
 
 class NinoResponse(BaseModel):
     nin_id: int
@@ -23,6 +24,12 @@ class NinoResponse(BaseModel):
     nin_fecha_nac: date
     nin_sexo: str
     ent_id: Optional[int] = None
+    ent_nombre: Optional[str] = None
+    ent_codigo: Optional[str] = None
+    ent_direccion: Optional[str] = None
+    ent_departamento: Optional[str] = None
+    ent_provincia: Optional[str] = None
+    ent_distrito: Optional[str] = None
     edad_meses: int
     creado_en: str
     actualizado_en: str
@@ -110,3 +117,6 @@ class CreateChildProfileResponse(BaseModel):
     antropometria: AnthropometryResponse
     estado_nutricional: NutritionalStatusResponse
     message: str = "Perfil del niño creado exitosamente"
+
+class AssignTutorRequest(BaseModel):
+    usr_id_tutor: int = Field(..., description="Identificador del tutor o padre")

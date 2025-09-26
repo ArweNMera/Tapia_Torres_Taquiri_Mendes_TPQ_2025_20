@@ -51,7 +51,7 @@ class NinosRepository:
             raise e
 
     def get_nino_by_id(self, nin_id: int) -> Optional[Dict[str, Any]]:
-        """Obtener un niño por su ID (soporta tutor o propietario)."""
+        """Obtener un niño por su ID (considerando tutor o propietario)."""
         try:
             query = text(
                 """
@@ -60,16 +60,22 @@ class NinosRepository:
                   n.usr_id_tutor,
                   n.usr_id_propietario,
                   n.ent_id,
-                  CONCAT(u.usr_nombre, ' ', u.usr_apellido) AS nin_nombres,
-                  up.usrper_fecha_nac AS nin_fecha_nac,
-                  up.usrper_genero AS nin_sexo,
-                  TIMESTAMPDIFF(MONTH, up.usrper_fecha_nac, CURDATE()) AS edad_meses,
+                  COALESCE(n.nin_nombres, CONCAT('Niño ', n.nin_id)) AS nin_nombres,
+                  n.nin_fecha_nac,
+                  n.nin_sexo,
+                  TIMESTAMPDIFF(MONTH, n.nin_fecha_nac, CURDATE()) AS edad_meses,
                   n.creado_en,
-                  n.actualizado_en
+                  n.actualizado_en,
+                  e.ent_nombre,
+                  e.ent_codigo,
+                  e.ent_direccion,
+                  e.ent_departamento,
+                  e.ent_provincia,
+                  e.ent_distrito
                 FROM ninos n
-                JOIN usuarios u ON u.usr_id = COALESCE(n.usr_id_propietario, n.usr_id_tutor)
-                LEFT JOIN usuarios_perfil up ON up.usr_id = u.usr_id
+                LEFT JOIN entidades e ON e.ent_id = n.ent_id
                 WHERE n.nin_id = :nin_id
+                LIMIT 1
                 """
             )
             result = self.db.execute(query, {"nin_id": nin_id}).fetchone()
@@ -80,11 +86,17 @@ class NinosRepository:
                     "usr_id_propietario": result.usr_id_propietario,
                     "ent_id": result.ent_id,
                     "nin_nombres": result.nin_nombres,
-                    "nin_fecha_nac": result.nin_fecha_nac,
+                    "nin_fecha_nac": result.nin_fecha_nac.isoformat() if result.nin_fecha_nac else None,
                     "nin_sexo": result.nin_sexo,
                     "edad_meses": result.edad_meses,
                     "creado_en": result.creado_en.isoformat() if result.creado_en else None,
                     "actualizado_en": result.actualizado_en.isoformat() if result.actualizado_en else None,
+                    "ent_nombre": result.ent_nombre,
+                    "ent_codigo": result.ent_codigo,
+                    "ent_direccion": result.ent_direccion,
+                    "ent_departamento": result.ent_departamento,
+                    "ent_provincia": result.ent_provincia,
+                    "ent_distrito": result.ent_distrito,
                 }
             return None
         except Exception as e:
@@ -104,47 +116,67 @@ class NinosRepository:
             raise e
 
     def get_ninos_by_tutor(self, usr_id_tutor: int) -> List[Dict[str, Any]]:
-        """Obtener todos los niños de un tutor usando procedimiento almacenado"""
-        results = self.db.execute(text("CALL sp_ninos_obtener_por_tutor(:usr_id_tutor)"), {
-            "usr_id_tutor": usr_id_tutor
-        }).fetchall()
-        
+        """Obtener todos los niños asociados al usuario como tutor o propietario."""
+        query = text(
+            """
+            SELECT
+              n.nin_id,
+              n.usr_id_tutor,
+              n.usr_id_propietario,
+              n.ent_id,
+              COALESCE(n.nin_nombres, CONCAT('Niño ', n.nin_id)) AS nin_nombres,
+              n.nin_fecha_nac,
+              n.nin_sexo,
+              TIMESTAMPDIFF(MONTH, n.nin_fecha_nac, CURDATE()) AS edad_meses,
+              n.creado_en,
+              n.actualizado_en,
+              e.ent_nombre,
+              e.ent_codigo,
+              e.ent_direccion,
+              e.ent_departamento,
+              e.ent_provincia,
+              e.ent_distrito
+            FROM ninos n
+            LEFT JOIN entidades e ON e.ent_id = n.ent_id
+            WHERE (n.usr_id_tutor = :usr_id OR n.usr_id_propietario = :usr_id)
+            ORDER BY n.creado_en DESC
+            """
+        )
+
+        results = self.db.execute(query, {"usr_id": usr_id_tutor}).fetchall()
+
         return [{
             "nin_id": row.nin_id,
             "usr_id_tutor": row.usr_id_tutor,
+            "usr_id_propietario": row.usr_id_propietario,
             "ent_id": row.ent_id,
             "nin_nombres": row.nin_nombres,
-            "nin_fecha_nac": row.nin_fecha_nac,
+            "nin_fecha_nac": row.nin_fecha_nac.isoformat() if row.nin_fecha_nac else None,
             "nin_sexo": row.nin_sexo,
             "edad_meses": row.edad_meses,
             "creado_en": row.creado_en.isoformat() if row.creado_en else None,
-            "actualizado_en": row.actualizado_en.isoformat() if row.actualizado_en else None
+            "actualizado_en": row.actualizado_en.isoformat() if row.actualizado_en else None,
+            "ent_nombre": row.ent_nombre,
+            "ent_codigo": row.ent_codigo,
+            "ent_direccion": row.ent_direccion,
+            "ent_departamento": row.ent_departamento,
+            "ent_provincia": row.ent_provincia,
+            "ent_distrito": row.ent_distrito,
         } for row in results]
 
     def update_nino(self, nin_id: int, nino_data: NinoUpdate) -> Optional[Dict[str, Any]]:
         """Actualizar datos de un niño usando procedimiento almacenado"""
         try:
-            result = self.db.execute(text("CALL sp_ninos_actualizar(:nin_id, :nin_nombres, :ent_id)"), {
+            self.db.execute(text("CALL sp_ninos_actualizar(:nin_id, :nin_nombres, :ent_id, :nin_fecha_nac)"), {
                 "nin_id": nin_id,
                 "nin_nombres": nino_data.nin_nombres,
-                "ent_id": nino_data.ent_id
+                "ent_id": nino_data.ent_id,
+                "nin_fecha_nac": nino_data.nin_fecha_nac
             }).fetchone()
             
             self.db.commit()
             
-            if result:
-                return {
-                    "nin_id": result.nin_id,
-                    "usr_id_tutor": result.usr_id_tutor,
-                    "ent_id": result.ent_id,
-                    "nin_nombres": result.nin_nombres,
-                    "nin_fecha_nac": result.nin_fecha_nac,
-                    "nin_sexo": result.nin_sexo,
-                    "edad_meses": result.edad_meses,
-                    "creado_en": result.creado_en.isoformat() if result.creado_en else None,
-                    "actualizado_en": result.actualizado_en.isoformat() if result.actualizado_en else None
-                }
-            return None
+            return self.get_nino_by_id(nin_id)
             
         except Exception as e:
             self.db.rollback()
@@ -161,6 +193,19 @@ class NinosRepository:
                 WHERE nin_id = :nin_id AND (usr_id_propietario IS NULL OR usr_id_propietario = :owner)
             """)
             self.db.execute(query, {"owner": usr_id_propietario, "nin_id": nin_id})
+            self.db.commit()
+            return self.get_nino_by_id(nin_id)
+        except Exception as e:
+            self.db.rollback()
+            raise e
+
+    def assign_child_to_tutor(self, nin_id: int, usr_id_tutor: int) -> Optional[Dict[str, Any]]:
+        """Asociar un niño existente a un tutor/padre usando SP dedicado."""
+        try:
+            self.db.execute(text("CALL sp_ninos_asignar_tutor(:nin_id, :usr_id_tutor)"), {
+                "nin_id": nin_id,
+                "usr_id_tutor": usr_id_tutor
+            }).fetchall()
             self.db.commit()
             return self.get_nino_by_id(nin_id)
         except Exception as e:

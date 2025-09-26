@@ -21,3 +21,8 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     usuario: Optional[str] = None
+
+
+class GoogleLogin(BaseModel):
+    id_token: str
+    access_token: Optional[str] = None

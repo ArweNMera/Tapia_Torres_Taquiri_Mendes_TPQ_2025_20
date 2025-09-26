@@ -24,3 +24,13 @@ class UserProfile(BaseModel):
 class UserRegisterResponse(BaseModel):
     usr_id: int
     msg: str
+
+class UserRoleChangeRequest(BaseModel):
+    rol_codigo: str
+
+class UserRoleChangeResponse(BaseModel):
+    usr_id: int
+    rol_id: int
+    rol_codigo: str
+    rol_nombre: str
+    msg: str

@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 from .endpoints import auth, usuarios, ninos
+from .endpoints import ml as ml_endpoints
 from .endpoints import entidades as entidades_endpoints
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
@@ -36,3 +37,4 @@ def create_allergy_type(payload: dict, db: Session = Depends(get_db)):
 
 api_router.include_router(alergias_router, prefix="/alergias", tags=["alergias"])
 api_router.include_router(entidades_endpoints.router, prefix="/entidades", tags=["entidades"])
+api_router.include_router(ml_endpoints.router, prefix="/ml", tags=["ml"])
