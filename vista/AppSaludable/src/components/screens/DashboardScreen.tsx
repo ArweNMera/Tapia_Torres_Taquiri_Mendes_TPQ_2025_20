@@ -14,6 +14,13 @@ interface DashboardScreenProps {
 
 export function DashboardScreen({ onRecipeClick }: DashboardScreenProps) {
   const { user } = useAuth();
+  const defaultAvatarUrl = 'https://images.unsplash.com/photo-1494790108755-2616b612b577?w=150';
+  const avatarSrc = user?.avatar_url && user.avatar_url.trim().length > 0
+    ? user.avatar_url.trim()
+    : defaultAvatarUrl;
+  const avatarKey = user?.avatar_url && user.avatar_url.trim().length > 0
+    ? user.avatar_url.trim()
+    : 'dashboard-default-avatar';
   
   const todayMeals = [
     {
@@ -48,7 +55,7 @@ export function DashboardScreen({ onRecipeClick }: DashboardScreenProps) {
           <div className="lg:hidden flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <Avatar className="w-12 h-12">
-                <AvatarImage src="https://images.unsplash.com/photo-1494790108755-2616b612b577?w=150" />
+                <AvatarImage key={avatarKey} src={avatarSrc} />
                 <AvatarFallback>
                   {user?.usr_nombre?.charAt(0) || ''}{user?.usr_apellido?.charAt(0) || ''}
                 </AvatarFallback>

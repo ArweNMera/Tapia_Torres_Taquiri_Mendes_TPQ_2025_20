@@ -4,6 +4,11 @@ export interface UserLogin {
   contrasena: string;
 }
 
+export interface GoogleLogin {
+  id_token: string;
+  access_token?: string;
+}
+
 export interface UserRegister {
   nombres: string;
   apellidos: string;
@@ -27,6 +32,18 @@ export interface UserProfile {
 
 export interface UserRegisterResponse {
   usr_id: number;
+  msg: string;
+}
+
+export interface UserRoleChangeRequest {
+  rol_codigo: string;
+}
+
+export interface UserRoleChangeResponse {
+  usr_id: number;
+  rol_id: number;
+  rol_codigo: string;
+  rol_nombre: string;
   msg: string;
 }
 
@@ -66,6 +83,7 @@ export interface NinoCreate {
 export interface NinoUpdate {
   nin_nombres?: string;
   ent_id?: number;
+  nin_fecha_nac?: string;
 }
 
 export interface NinoResponse {
@@ -74,6 +92,12 @@ export interface NinoResponse {
   nin_fecha_nac: string;
   nin_sexo: string;
   ent_id?: number;
+  ent_nombre?: string | null;
+  ent_codigo?: string | null;
+  ent_direccion?: string | null;
+  ent_departamento?: string | null;
+  ent_provincia?: string | null;
+  ent_distrito?: string | null;
   edad_meses: number;
   creado_en: string;
   actualizado_en: string;
@@ -161,12 +185,17 @@ export interface CreateChildProfileResponse {
   message: string;
 }
 
+export interface AssignTutorRequest {
+  usr_id_tutor: number;
+}
+
 // Tipos para respuestas de API
 export interface ApiResponse<T = any> {
   data?: T;
   message?: string;
   error?: string;
   detail?: string;
+  success?: boolean;
 }
 
 export interface PaginatedResponse<T> {
@@ -190,10 +219,11 @@ export interface RolResponse {
 
 // Tipos para respuestas de API
 export interface ApiResponse<T = any> {
-  success: boolean;
+  success?: boolean;
   data?: T;
   message?: string;
   error?: string;
+  detail?: string;
 }
 
 // Contexto de usuario autenticado

@@ -92,3 +92,13 @@ BEGIN
   );
 END;
 
+-- Función para calcular edad en meses
+DELIMITER $$
+CREATE FUNCTION fn_edad_meses(p_fecha_nac DATE)
+RETURNS INT
+DETERMINISTIC
+BEGIN
+  RETURN TIMESTAMPDIFF(MONTH, p_fecha_nac, CURDATE());
+END$$
+DELIMITER ;
+

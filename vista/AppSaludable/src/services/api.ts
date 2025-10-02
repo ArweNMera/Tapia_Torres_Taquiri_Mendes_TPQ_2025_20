@@ -2,6 +2,7 @@
 
 import { 
   UserLogin, 
+  GoogleLogin,
   UserRegister, 
   UserProfile,
   UserRegisterResponse,
@@ -21,7 +22,10 @@ import {
   CreateChildProfileRequest,
   CreateChildProfileResponse,
   ApiResponse,
-  PaginatedResponse
+  PaginatedResponse,
+  UserRoleChangeRequest,
+  UserRoleChangeResponse,
+  AssignTutorRequest
 } from '../types/api';
 
 class ApiService {
@@ -34,7 +38,12 @@ class ApiService {
   }
 
   private getApiUrl(endpoint: string): string {
-    return `${this.baseURL}/api/${this.apiVersion}${endpoint}`;
+    const trimmedBase = this.baseURL.replace(/\/$/, '');
+    const hasApiSegment = /\/api$/i.test(trimmedBase);
+    const basePath = hasApiSegment ? trimmedBase : `${trimmedBase}/api`;
+    const versionSegment = this.apiVersion ? `/${this.apiVersion}` : '';
+
+    return `${basePath}${versionSegment}${endpoint}`;
   }
 
   private async makeRequest<T>(
@@ -105,6 +114,23 @@ class ApiService {
     );
   }
 
+  async loginWithGoogle(googleData: GoogleLogin): Promise<ApiResponse<Token>> {
+    return this.makeRequest<Token>(
+      this.getApiUrl('/auth/google'),
+      {
+        method: 'POST',
+        body: JSON.stringify(googleData),
+      }
+    );
+  }
+
+  getGoogleAuthStartUrl(redirectTo: string): string {
+    const baseUrl = this.getApiUrl('/auth/google/start');
+    const url = new URL(baseUrl);
+    url.searchParams.set('redirect_to', redirectTo);
+    return url.toString();
+  }
+
   // Métodos utilitarios para el token
   setToken(token: string): void {
     localStorage.setItem('auth_token', token);
@@ -136,9 +162,9 @@ class ApiService {
   }
 
   // Obtener todos los niños del usuario actual
-  async getNinos(): Promise<ApiResponse<NinoResponse[]>> {
-    return this.makeRequest<NinoResponse[]>(
-      this.getApiUrl('/ninos')
+  async getNinos(): Promise<ApiResponse<NinoWithAnthropometry[]>> {
+    return this.makeRequest<NinoWithAnthropometry[]>(
+      this.getApiUrl('/ninos/')
     );
   }
 
@@ -166,6 +192,16 @@ class ApiService {
       this.getApiUrl(`/ninos/${ninoId}`),
       {
         method: 'DELETE',
+      }
+    );
+  }
+
+  async assignTutorToChild(ninoId: number, payload: AssignTutorRequest): Promise<ApiResponse<NinoResponse>> {
+    return this.makeRequest<NinoResponse>(
+      this.getApiUrl(`/ninos/${ninoId}/assign-tutor`),
+      {
+        method: 'POST',
+        body: JSON.stringify(payload),
       }
     );
   }
@@ -286,6 +322,16 @@ class ApiService {
     );
   }
 
+  async changeUserRole(usrId: number, payload: UserRoleChangeRequest): Promise<ApiResponse<UserRoleChangeResponse>> {
+    return this.makeRequest<UserRoleChangeResponse>(
+      this.getApiUrl(`/usuarios/${usrId}/role`),
+      {
+        method: 'PUT',
+        body: JSON.stringify(payload),
+      }
+    );
+  }
+
   // ===== MÉTODOS COMBINADOS =====
 
   // Crear perfil completo de niño (niño + antropometría + evaluación)
@@ -334,36 +380,65 @@ class ApiService {
       const [ninoResponse, antropometriasResponse, alergiasResponse] = await Promise.all([
         this.getNino(ninoId),
         this.getAnthropometryHistory(ninoId),
-        this.getAllergies(ninoId)
+        this.getAllergies(ninoId),
       ]);
 
       if (!ninoResponse.data) {
         throw new Error('Error obteniendo información del niño');
       }
 
-      // Intentar obtener la última evaluación nutricional
+      const rawNinoData: any = ninoResponse.data;
+
+      let nino: NinoResponse;
+      let antropometrias: AnthropometryResponse[] = Array.isArray(antropometriasResponse?.data)
+        ? antropometriasResponse.data
+        : [];
+      let alergias: AlergiaResponse[] = Array.isArray(alergiasResponse?.data)
+        ? alergiasResponse.data
+        : [];
       let ultimoEstadoNutricional: NutritionalStatusResponse | undefined;
-      try {
-        const evaluacionResponse = await this.evaluateNutritionalStatus(ninoId);
-        ultimoEstadoNutricional = evaluacionResponse.data;
-      } catch (error) {
-        // Si no hay datos suficientes para evaluar, continuamos sin la evaluación
-        console.warn('No se pudo obtener evaluación nutricional:', error);
+
+      if (rawNinoData && typeof rawNinoData === 'object' && 'nino' in rawNinoData) {
+        nino = rawNinoData.nino as NinoResponse;
+
+        if (!antropometrias.length && Array.isArray(rawNinoData.antropometrias)) {
+          antropometrias = rawNinoData.antropometrias;
+        }
+
+        if (!alergias.length && Array.isArray(rawNinoData.alergias)) {
+          alergias = rawNinoData.alergias;
+        }
+
+        if (rawNinoData.ultimo_estado_nutricional) {
+          ultimoEstadoNutricional = rawNinoData.ultimo_estado_nutricional as NutritionalStatusResponse;
+        }
+      } else {
+        nino = rawNinoData as NinoResponse;
+      }
+
+      if (!ultimoEstadoNutricional) {
+        try {
+          const evaluacionResponse = await this.evaluateNutritionalStatus(ninoId);
+          ultimoEstadoNutricional = evaluacionResponse.data;
+        } catch (error) {
+          // Si no hay datos suficientes para evaluar, continuamos sin la evaluación
+          console.warn('No se pudo obtener evaluación nutricional:', error);
+        }
       }
 
       return {
         success: true,
         data: {
-          nino: ninoResponse.data,
-          antropometrias: antropometriasResponse.data || [],
-          alergias: alergiasResponse.data || [],
-          ultimo_estado_nutricional: ultimoEstadoNutricional
-        }
+          nino,
+          antropometrias,
+          alergias,
+          ultimo_estado_nutricional: ultimoEstadoNutricional,
+        },
       };
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Error obteniendo datos del niño'
+        error: error instanceof Error ? error.message : 'Error obteniendo datos del niño',
       };
     }
   }

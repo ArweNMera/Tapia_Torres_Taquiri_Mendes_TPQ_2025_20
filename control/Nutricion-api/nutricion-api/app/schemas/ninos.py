@@ -31,8 +31,8 @@ class NinoResponse(BaseModel):
     ent_provincia: Optional[str] = None
     ent_distrito: Optional[str] = None
     edad_meses: int
-    creado_en: str
-    actualizado_en: str
+    creado_en: Optional[str] = None
+    actualizado_en: Optional[str] = None
 
     class Config:
         from_attributes = True

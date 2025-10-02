@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import ConfirmationModal from './ui/ConfirmationModal';
 import { useSelfAnthropometryApi } from '../hooks/useApi';
 import type { AnthropometryCreate, AnthropometryResponse, NutritionalStatusResponse } from '../types/api';
 
@@ -16,6 +17,7 @@ export default function AnthropometryManagement() {
   const [currentNinoId, setCurrentNinoId] = useState<number | null>(null);
   const [showSuccess, setShowSuccess] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
+  const [confirmModal, setConfirmModal] = useState<{ isOpen: boolean; type: 'success' | 'error'; title: string; message?: string }>({ isOpen: false, type: 'success', title: '', message: '' });
 
   const loadData = async () => {
     setLoading(true);
@@ -73,11 +75,12 @@ export default function AnthropometryManagement() {
     const saved = await addSelfAnthropometry.execute(normalized);
     if (!saved) {
       setError(addSelfAnthropometry.error || 'Error al guardar medida');
+      setConfirmModal({ isOpen: true, type: 'error', title: 'Error al guardar', message: addSelfAnthropometry.error || 'No se pudo guardar la medida.' });
       return;
     }
     
     setShowSuccess(true);
-    setTimeout(() => setShowSuccess(false), 3000);
+    setConfirmModal({ isOpen: true, type: 'success', title: 'Datos actualizados', message: 'La medida ha sido registrada correctamente.' });
     
     // Recargar datos
     await loadData();
@@ -222,8 +225,8 @@ export default function AnthropometryManagement() {
               {status.recommendations && status.recommendations.length > 0 && (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <div className="text-sm font-medium text-blue-900 mb-2">Recomendaciones:</div>
-                  <ul className="list-disc list-inside text-sm text-blue-800 space-y-1">
-                    {status.recommendations.map((r, i) => (<li key={i}>{r}</li>))}
+                  <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1 list-disc list-inside text-sm text-blue-800">
+                    {status.recommendations.map((r, i) => (<li key={i} className="break-words">{r}</li>))}
                   </ul>
                 </div>
               )}
@@ -291,6 +294,15 @@ export default function AnthropometryManagement() {
           </div>
         )}
       </div>
+
+      {/* Modal de confirmación (éxito/error) */}
+      <ConfirmationModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, type: 'success', title: '', message: '' })}
+        type={confirmModal.type}
+        title={confirmModal.title}
+        message={confirmModal.message}
+      />
     </div>
   );
 }

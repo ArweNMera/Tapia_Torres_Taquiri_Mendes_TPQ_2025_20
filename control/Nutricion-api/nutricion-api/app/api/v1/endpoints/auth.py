@@ -5,8 +5,8 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from app.infrastructure.db.session import get_db
-from app.schemas.auth import GoogleLogin, Token, UserLogin
-from app.application.auth_service import (
+from app.schemas.auth import Token, UserLogin, GoogleLogin
+from app.application.services.auth_service import (
     build_google_authorize_url,
     build_google_oauth_redirect,
     complete_google_oauth,

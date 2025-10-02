@@ -1,0 +1,12 @@
+seed: 42
+features:
+  numeric: [age_months, BMI, muac_cm, head_circumference_cm, dietary_diversity_score, altitude_m, budget_per_day_pen]
+  categorical: [sex, region, edema_pitting, anemia_hemoglobin_g_dl, diarrhea_last_2w]
+model:
+  n_estimators: 300
+  max_depth: null
+  min_samples_leaf: 2
+  class_weight: balanced
+train:
+  test_size: 0.2
+  stratify: label_status

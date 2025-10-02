@@ -64,7 +64,6 @@ export function PublicRoute({ children, redirectTo }: PublicRouteProps) {
     );
   }
 
-  // Si ya está autenticado, redirigir o mostrar contenido alternativo
   if (isAuthenticated && redirectTo) {
     return <>{redirectTo}</>;
   }

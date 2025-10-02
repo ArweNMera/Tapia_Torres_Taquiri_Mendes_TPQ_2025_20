@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { apiService } from '../services/api';
 import type { 
   ApiResponse,
@@ -92,11 +92,19 @@ export function useApi<T>(
 
 // Hooks específicos para casos comunes
 export function useNinosApi() {
-  const createNino = useApi<NinoResponse>(apiService.createNino.bind(apiService));
-  const getNinos = useApi<NinoResponse[]>(apiService.getNinos.bind(apiService));
-  const getNino = useApi<NinoResponse>(apiService.getNino.bind(apiService));
-  const updateNino = useApi<NinoResponse>(apiService.updateNino.bind(apiService));
-  const deleteNino = useApi<{ message: string }>(apiService.deleteNino.bind(apiService));
+  const createNinoFn = useMemo(() => apiService.createNino.bind(apiService), []);
+  const getNinosFn = useMemo(() => apiService.getNinos.bind(apiService), []);
+  const getNinoFn = useMemo(() => apiService.getNino.bind(apiService), []);
+  const updateNinoFn = useMemo(() => apiService.updateNino.bind(apiService), []);
+  const deleteNinoFn = useMemo(() => apiService.deleteNino.bind(apiService), []);
+  const assignTutorFn = useMemo(() => apiService.assignTutorToChild.bind(apiService), []);
+
+  const createNino = useApi<NinoResponse>(createNinoFn);
+  const getNinos = useApi<NinoWithAnthropometry[]>(getNinosFn);
+  const getNino = useApi<NinoResponse>(getNinoFn);
+  const updateNino = useApi<NinoResponse>(updateNinoFn);
+  const deleteNino = useApi<{ message: string }>(deleteNinoFn);
+  const assignTutor = useApi<NinoResponse>(assignTutorFn);
 
   return {
     createNino,
@@ -104,12 +112,16 @@ export function useNinosApi() {
     getNino,
     updateNino,
     deleteNino,
+    assignTutor,
   };
 }
 
 export function useAnthropometryApi() {
-  const addAnthropometry = useApi<AnthropometryResponse>(apiService.addAnthropometry.bind(apiService));
-  const getAnthropometryHistory = useApi<AnthropometryResponse[]>(apiService.getAnthropometryHistory.bind(apiService));
+  const addAnthropometryFn = useMemo(() => apiService.addAnthropometry.bind(apiService), []);
+  const getAnthropometryHistoryFn = useMemo(() => apiService.getAnthropometryHistory.bind(apiService), []);
+
+  const addAnthropometry = useApi<AnthropometryResponse>(addAnthropometryFn);
+  const getAnthropometryHistory = useApi<AnthropometryResponse[]>(getAnthropometryHistoryFn);
 
   return {
     addAnthropometry,
@@ -118,7 +130,8 @@ export function useAnthropometryApi() {
 }
 
 export function useNutritionalEvaluationApi() {
-  const evaluateNutritionalStatus = useApi<NutritionalStatusResponse>(apiService.evaluateNutritionalStatus.bind(apiService));
+  const evaluateStatusFn = useMemo(() => apiService.evaluateNutritionalStatus.bind(apiService), []);
+  const evaluateNutritionalStatus = useApi<NutritionalStatusResponse>(evaluateStatusFn);
 
   return {
     evaluateNutritionalStatus,
@@ -126,11 +139,17 @@ export function useNutritionalEvaluationApi() {
 }
 
 export function useAllergiesApi() {
-  const addAllergy = useApi<AlergiaResponse>(apiService.addAllergy.bind(apiService));
-  const getAllergies = useApi<AlergiaResponse[]>(apiService.getAllergies.bind(apiService));
-  const removeAllergy = useApi<{ message: string }>(apiService.removeAllergy.bind(apiService));
-  const getAllergyTypes = useApi<TipoAlergiaResponse[]>(apiService.getAllergyTypes.bind(apiService));
-  const createAllergyType = useApi<TipoAlergiaResponse>(apiService.createAllergyType.bind(apiService));
+  const addAllergyFn = useMemo(() => apiService.addAllergy.bind(apiService), []);
+  const getAllergiesFn = useMemo(() => apiService.getAllergies.bind(apiService), []);
+  const removeAllergyFn = useMemo(() => apiService.removeAllergy.bind(apiService), []);
+  const getAllergyTypesFn = useMemo(() => apiService.getAllergyTypes.bind(apiService), []);
+  const createAllergyTypeFn = useMemo(() => apiService.createAllergyType.bind(apiService), []);
+
+  const addAllergy = useApi<AlergiaResponse>(addAllergyFn);
+  const getAllergies = useApi<AlergiaResponse[]>(getAllergiesFn);
+  const removeAllergy = useApi<{ message: string }>(removeAllergyFn);
+  const getAllergyTypes = useApi<TipoAlergiaResponse[]>(getAllergyTypesFn);
+  const createAllergyType = useApi<TipoAlergiaResponse>(createAllergyTypeFn);
 
   return {
     addAllergy,
@@ -142,8 +161,11 @@ export function useAllergiesApi() {
 }
 
 export function useChildProfileApi() {
-  const createChildProfile = useApi<CreateChildProfileResponse>(apiService.createChildProfile.bind(apiService));
-  const getChildWithData = useApi<NinoWithAnthropometry>(apiService.getChildWithData.bind(apiService));
+  const createChildProfileFn = useMemo(() => apiService.createChildProfile.bind(apiService), []);
+  const getChildWithDataFn = useMemo(() => apiService.getChildWithData.bind(apiService), []);
+
+  const createChildProfile = useApi<CreateChildProfileResponse>(createChildProfileFn);
+  const getChildWithData = useApi<NinoWithAnthropometry>(getChildWithDataFn);
 
   return {
     createChildProfile,
@@ -152,8 +174,11 @@ export function useChildProfileApi() {
 }
 
 export function useUserApi() {
-  const updateProfile = useApi<UserResponse>(apiService.updateProfile.bind(apiService));
-  const getProfile = useApi<UserResponse>(apiService.getProfile.bind(apiService));
+  const updateProfileFn = useMemo(() => apiService.updateProfile.bind(apiService), []);
+  const getProfileFn = useMemo(() => apiService.getProfile.bind(apiService), []);
+
+  const updateProfile = useApi<UserResponse>(updateProfileFn);
+  const getProfile = useApi<UserResponse>(getProfileFn);
 
   return {
     updateProfile,
@@ -162,10 +187,15 @@ export function useUserApi() {
 }
 
 export function useSelfAnthropometryApi() {
-  const getSelfChild = useApi<NinoResponse>(apiService.getSelfChild.bind(apiService));
-  const addSelfAnthropometry = useApi<AnthropometryResponse>(apiService.addSelfAnthropometry.bind(apiService));
-  const getSelfAnthropometryHistory = useApi<AnthropometryResponse[]>(apiService.getSelfAnthropometryHistory.bind(apiService));
-  const getSelfNutritionalStatus = useApi<NutritionalStatusResponse>(apiService.getSelfNutritionalStatus.bind(apiService));
+  const getSelfChildFn = useMemo(() => apiService.getSelfChild.bind(apiService), []);
+  const addSelfAnthropometryFn = useMemo(() => apiService.addSelfAnthropometry.bind(apiService), []);
+  const getSelfHistoryFn = useMemo(() => apiService.getSelfAnthropometryHistory.bind(apiService), []);
+  const getSelfStatusFn = useMemo(() => apiService.getSelfNutritionalStatus.bind(apiService), []);
+
+  const getSelfChild = useApi<NinoResponse>(getSelfChildFn);
+  const addSelfAnthropometry = useApi<AnthropometryResponse>(addSelfAnthropometryFn);
+  const getSelfAnthropometryHistory = useApi<AnthropometryResponse[]>(getSelfHistoryFn);
+  const getSelfNutritionalStatus = useApi<NutritionalStatusResponse>(getSelfStatusFn);
 
   return {
     getSelfChild,
@@ -176,7 +206,10 @@ export function useSelfAnthropometryApi() {
 }
 
 export function useEntitiesApi() {
-  const searchEntities = useApi<any[]>(apiService.searchEntities.bind(apiService));
-  const getEntityTypes = useApi<any[]>(apiService.getEntityTypes.bind(apiService));
+  const searchEntitiesFn = useMemo(() => apiService.searchEntities.bind(apiService), []);
+  const getEntityTypesFn = useMemo(() => apiService.getEntityTypes.bind(apiService), []);
+
+  const searchEntities = useApi<any[]>(searchEntitiesFn);
+  const getEntityTypes = useApi<any[]>(getEntityTypesFn);
   return { searchEntities, getEntityTypes };
 }

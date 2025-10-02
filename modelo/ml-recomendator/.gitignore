@@ -1,0 +1,10 @@
+# Local environment
+.env
+
+# Generated artifacts
+models/
+reports/
+data/interim/
+data/processed/
+__pycache__/
+

@@ -19,6 +19,14 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const { user, logout } = useAuth();
 
+  const defaultAvatarUrl = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face&auto=format&q=80';
+  const resolvedAvatar = user?.avatar_url && user.avatar_url.trim().length > 0
+    ? user.avatar_url.trim()
+    : defaultAvatarUrl;
+  const avatarKey = user?.avatar_url && user.avatar_url.trim().length > 0
+    ? user.avatar_url.trim()
+    : 'default-avatar';
+
   const handleLogout = () => {
     if (confirm('¿Estás seguro de que quieres cerrar sesión?')) {
       logout();
@@ -143,9 +151,10 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
               onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
             >
               <Avatar className="h-10 w-10 border-2 border-primary/20">
-                <AvatarImage 
-                  src={(user as any)?.avatar_url || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face&auto=format&q=80'} 
-                  alt={user?.usr_usuario || 'Usuario'} 
+                <AvatarImage
+                  key={avatarKey}
+                  src={resolvedAvatar}
+                  alt={user?.usr_usuario || 'Usuario'}
                 />
                 <AvatarFallback className="bg-primary text-white font-semibold text-sm">
                   {getUserInitials()}
@@ -229,7 +238,7 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
                 <div className="p-4 border-b bg-muted/20">
                   <div className="flex items-center space-x-3">
                     <Avatar className="w-12 h-12 ring-2 ring-primary/20">
-                      <AvatarImage src={(user as any)?.avatar_url || 'https://images.unsplash.com/photo-1494790108755-2616b612b577?w=150'} />
+                    <AvatarImage key={`${avatarKey}-sheet`} src={resolvedAvatar} />
                       <AvatarFallback className="bg-primary text-white">{getUserInitials()}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
@@ -391,7 +400,7 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
           <div className="p-4 border-b border-gray-200">
             <div className="flex items-center space-x-3">
               <Avatar className="w-10 h-10">
-                <AvatarImage src={(user as any)?.avatar_url || 'https://images.unsplash.com/photo-1494790108755-2616b612b577?w=150'} />
+                <AvatarImage key={`${avatarKey}-sidebar`} src={resolvedAvatar} />
                 <AvatarFallback>{getUserInitials()}</AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
@@ -467,7 +476,8 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
                 >
                   <Avatar className="h-10 w-10 border-2 border-primary/20">
                     <AvatarImage 
-                      src={(user as any)?.avatar_url || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face&auto=format&q=80'} 
+                      key={`${avatarKey}-bottom`}
+                      src={resolvedAvatar}
                       alt={user?.usr_usuario || 'Usuario'} 
                     />
                     <AvatarFallback className="bg-primary text-white font-semibold">

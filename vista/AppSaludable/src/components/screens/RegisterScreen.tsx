@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
-import { Eye, EyeOff, User, ArrowLeft, Loader2 } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Eye, EyeOff, ArrowLeft, Loader2, User } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { Separator } from '../ui/separator';
 import { Checkbox } from '../ui/checkbox';
+import { Separator } from '../ui/separator';
 import { motion } from 'motion/react';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -13,6 +13,12 @@ interface RegisterScreenProps {
 }
 
 export function RegisterScreen({ onRegister, onBackToLogin }: RegisterScreenProps) {
+  const ROLE_OPTIONS = [
+    { code: 'TUTOR', label: 'Tutor', registerName: 'Tutor', description: 'Responsable de menores y acompañamiento diario.' },
+    { code: 'USR', label: 'Usuario', registerName: 'Usuario', description: 'Acceso personal sin responsabilidades adicionales.' },
+    { code: 'PADRES', label: 'Padres', registerName: 'PADRES', description: 'Padres o madres que registran a sus hijos.' },
+  ] as const;
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -23,10 +29,11 @@ export function RegisterScreen({ onRegister, onBackToLogin }: RegisterScreenProp
     password: '',
     confirmPassword: ''
   });
+  const [selectedRole, setSelectedRole] = useState<typeof ROLE_OPTIONS[number]['code']>('PADRES');
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [error, setError] = useState('');
   
-  const { register, isLoading } = useAuth();
+  const { register: registerUser, beginGoogleLogin, isLoading, googleAuthError, clearGoogleAuthError } = useAuth();
 
   const handleInputChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({
@@ -62,14 +69,16 @@ export function RegisterScreen({ onRegister, onBackToLogin }: RegisterScreenProp
       return;
     }
 
-    const result = await register({
+    const roleDefinition = ROLE_OPTIONS.find(option => option.code === selectedRole) || ROLE_OPTIONS[0];
+
+    const result = await registerUser({
       nombres: formData.firstName.trim(),
       apellidos: formData.lastName.trim(),
       usuario: formData.username.trim(),
       correo: formData.email.trim(),
       contrasena: formData.password,
-      rol_nombre: 'TUTOR' // Rol por defecto para nuevos usuarios
-    });
+      rol_nombre: roleDefinition.registerName
+    }, selectedRole);
 
     if (result.success) {
       onRegister();
@@ -77,6 +86,18 @@ export function RegisterScreen({ onRegister, onBackToLogin }: RegisterScreenProp
       setError(result.error || 'Error al crear la cuenta');
     }
   };
+
+  const handleGoogleLogin = () => {
+    setError('');
+    beginGoogleLogin(window.location.origin);
+  };
+
+  useEffect(() => {
+    if (googleAuthError) {
+      setError(googleAuthError);
+      clearGoogleAuthError();
+    }
+  }, [googleAuthError, clearGoogleAuthError]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-secondary/10 via-accent/5 to-primary/10 flex">
@@ -178,6 +199,39 @@ export function RegisterScreen({ onRegister, onBackToLogin }: RegisterScreenProp
                   required
                   disabled={isLoading}
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1">
+                  Selecciona tu rol en la plataforma
+                </label>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Define cómo quieres utilizar App Saludable. Puedes actualizarlo luego en tu perfil.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {ROLE_OPTIONS.map(option => {
+                    const isActive = selectedRole === option.code;
+                    return (
+                      <button
+                        key={option.code}
+                        type="button"
+                        onClick={() => setSelectedRole(option.code)}
+                        className={`text-left border rounded-lg p-3 transition-all ${
+                          isActive
+                            ? 'border-primary bg-primary/10 shadow-sm'
+                            : 'border-border hover:border-primary/50 bg-background'
+                        }`}
+                        disabled={isLoading}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="font-medium text-sm text-foreground">{option.label}</span>
+                          {isActive && <span className="text-xs text-primary font-semibold">Seleccionado</span>}
+                        </div>
+                        <p className="text-xs text-muted-foreground leading-snug">{option.description}</p>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               <div>
@@ -293,6 +347,8 @@ export function RegisterScreen({ onRegister, onBackToLogin }: RegisterScreenProp
                 variant="outline" 
                 className="w-full h-10 border-border hover:bg-muted"
                 type="button"
+                onClick={handleGoogleLogin}
+                disabled={isLoading}
               >
                 <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -535,7 +591,12 @@ export function RegisterScreen({ onRegister, onBackToLogin }: RegisterScreenProp
             </div>
 
             <div className="grid grid-cols-2 gap-2 mb-4">
-              <Button variant="outline" className="w-full h-9 text-xs">
+              <Button 
+                variant="outline" 
+                className="w-full h-9 text-xs"
+                onClick={handleGoogleLogin}
+                disabled={isLoading}
+              >
                 <svg className="w-3 h-3 mr-1" viewBox="0 0 24 24">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                   <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>

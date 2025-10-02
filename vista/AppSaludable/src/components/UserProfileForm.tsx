@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import ConfirmationModal from './ui/ConfirmationModal';
 import { useUserApi } from '../hooks/useApi';
+import { useAuth } from '../contexts/AuthContext';
 import type { UserProfile, UserResponse } from '../types/api';
 
 interface Props {
@@ -21,6 +23,14 @@ const UserProfileForm: React.FC<Props> = ({ onSaved }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
   const { getProfile, updateProfile } = useUserApi();
+  const { user } = useAuth();
+
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    type: 'success' | 'error';
+    title: string;
+    message?: string;
+  }>({ isOpen: false, type: 'success', title: '', message: '' });
 
   useEffect(() => {
     getProfile.execute();
@@ -32,7 +42,7 @@ const UserProfileForm: React.FC<Props> = ({ onSaved }) => {
         dni: getProfile.data.dni || '',
         nombres: getProfile.data.usr_nombre || '',
         apellidos: getProfile.data.usr_apellido || '',
-        avatar_url: getProfile.data.avatar_url || '',
+        avatar_url: getProfile.data.avatar_url || user?.avatar_url || '',
         telefono: getProfile.data.telefono || '',
         direccion: getProfile.data.direccion || '',
         genero: getProfile.data.genero,
@@ -40,7 +50,7 @@ const UserProfileForm: React.FC<Props> = ({ onSaved }) => {
         idioma: getProfile.data.idioma || 'es',
       });
     }
-  }, [getProfile.data]);
+  }, [getProfile.data, user?.avatar_url]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -68,13 +78,25 @@ const UserProfileForm: React.FC<Props> = ({ onSaved }) => {
     }
 
     const result = await updateProfile.execute(payload);
-    if (result) {
-      setIsEditing(false);
-      alert('Perfil actualizado correctamente');
-      onSaved?.(result);
-      window.dispatchEvent(new CustomEvent('profile:updated'));
-      getProfile.execute();
+    if (!result) {
+      setConfirmModal({
+        isOpen: true,
+        type: 'error',
+        title: 'Error al actualizar',
+        message: String(updateProfile.error || 'No se pudo actualizar el perfil.'),
+      });
+      return;
     }
+    setIsEditing(false);
+    onSaved?.(result);
+    window.dispatchEvent(new CustomEvent('profile:updated'));
+    getProfile.execute();
+    setConfirmModal({
+      isOpen: true,
+      type: 'success',
+      title: 'Perfil actualizado',
+      message: 'Tu información se guardó correctamente.',
+    });
   };
 
   const formatDate = (dateString: string) => {
@@ -106,7 +128,7 @@ const UserProfileForm: React.FC<Props> = ({ onSaved }) => {
   return (
     <div className="max-w-5xl mx-auto">
       {/* Encabezado compacto */}
-      <div className="bg-white border rounded-xl p-5 mb-6 shadow-sm">
+      <div className="rounded-xl p-5 mb-6 shadow-sm border border-emerald-100 bg-gradient-to-r from-emerald-50 to-green-50">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center text-lg font-semibold text-gray-700">
             {formData.avatar_url ? (
@@ -131,45 +153,19 @@ const UserProfileForm: React.FC<Props> = ({ onSaved }) => {
               </span>
             )}
           </div>
-          <div className="flex items-center gap-2">
-            {isEditing ? (
-              <>
-                <button
-                  form="user-profile-form"
-                  type="submit"
-                  className="px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700"
-                >
-                  Guardar
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsEditing(false)}
-                  className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm font-medium hover:bg-gray-200"
-                >
-                  Cancelar
-                </button>
-              </>
-            ) : (
-              <button
-                onClick={() => setIsEditing(prev => !prev)}
-                className="px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700"
-              >
-                Editar
-              </button>
-            )}
-          </div>
+          {/* Botones del encabezado removidos para evitar doble edición */}
         </div>
       </div>
 
       {/* Tarjeta de información personal */}
-      <div className="bg-white border rounded-xl p-6 shadow-sm mb-6">
+      <div className="bg-white border border-emerald-100 rounded-xl p-6 shadow-sm mb-6">
         <div className="mb-4 flex items-center justify-between">
           <div>
             <h2 className="text-lg font-semibold text-gray-900">Información Personal</h2>
             <p className="text-sm text-gray-500">Gestiona tu información personal y preferencias</p>
           </div>
           {!isEditing && (
-            <button onClick={() => setIsEditing(true)} className="px-3 py-2 rounded-md bg-green-600 text-white text-sm hover:bg-green-700">Editar</button>
+            <button onClick={() => setIsEditing(true)} className="px-3 py-2 rounded-md bg-green-600 text-white text-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-400">Editar</button>
           )}
         </div>
 
@@ -177,7 +173,7 @@ const UserProfileForm: React.FC<Props> = ({ onSaved }) => {
           <form id="user-profile-form" onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm text-gray-600 mb-1">DNI/Cédula</label>
+                <label className="block text-sm text-gray-600 mb-1">DNI</label>
                 <input name="dni" value={formData.dni} onChange={handleInputChange} className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
               </div>
               <div>
@@ -271,7 +267,7 @@ const UserProfileForm: React.FC<Props> = ({ onSaved }) => {
       </div>
 
       {/* Tarjeta de cuenta */}
-      <div className="bg-white border rounded-xl p-6 shadow-sm">
+      <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Información de la Cuenta</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
@@ -301,6 +297,15 @@ const UserProfileForm: React.FC<Props> = ({ onSaved }) => {
           Este perfil está administrado por un tutor. Algunas opciones de edición pueden estar limitadas.
         </div>
       )}
+
+      {/* Modal de confirmación (éxito/error) */}
+      <ConfirmationModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, type: 'success', title: '', message: '' })}
+        type={confirmModal.type}
+        title={confirmModal.title}
+        message={confirmModal.message}
+      />
     </div>
   );
 };

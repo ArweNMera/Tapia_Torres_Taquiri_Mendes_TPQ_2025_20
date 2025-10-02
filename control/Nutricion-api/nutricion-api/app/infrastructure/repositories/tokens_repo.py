@@ -8,17 +8,14 @@ class TokensRepository:
 
     def revoke(self, db: Session, jti: str, username: str, exp: datetime):
         db.execute(
-            text("""
-                INSERT IGNORE INTO tokens_revocados(jti, usuario, expira_en)
-                VALUES (:jti, :usuario, :expira_en)
-            """),
+            text("CALL sp_tokens_revocar(:jti, :usuario, :expira_en)"),
             {"jti": jti, "usuario": username, "expira_en": exp},
-        )
+        ).fetchone()
         db.commit()
 
     def is_revoked(self, db: Session, jti: str) -> bool:
         res = db.execute(
-            text("SELECT 1 FROM tokens_revocados WHERE jti = :jti LIMIT 1"),
+            text("CALL sp_tokens_esta_revocado(:jti)"),
             {"jti": jti},
         ).fetchone()
-        return res is not None
+        return bool(res and getattr(res, "esta_revocado", 0))

@@ -29,13 +29,24 @@ export default function AllergiesAndEntities() {
       }
       
       setCurrentNinoId(self.nin_id);
-      
+
       // Cargar alergias
       const als = await getAllergies.execute(self.nin_id);
       setAllergies(als || []);
-      
+
       // Si hay una entidad asociada, obtener sus detalles
       if (self.ent_id) {
+        if (self.ent_nombre || self.ent_codigo) {
+          setCurrentEntity({
+            ent_id: self.ent_id,
+            ent_nombre: self.ent_nombre,
+            ent_codigo: self.ent_codigo,
+            ent_direccion: self.ent_direccion,
+            ent_departamento: self.ent_departamento,
+            ent_provincia: self.ent_provincia,
+            ent_distrito: self.ent_distrito,
+          });
+        }
         try {
           // Obtener todas las entidades (sin filtro) para encontrar la específica
           const allEntities = await searchEntities.execute('');
@@ -116,6 +127,22 @@ export default function AllergiesAndEntities() {
       setSelectedEntity(null);
       setEntityQuery('');
       setEntityResults([]);
+      
+      // Refrescar datos del niño
+      const refreshedChild = await getSelfChild.execute();
+      if (refreshedChild) {
+        // Actualizar entidad actual con los datos frescos
+        if (refreshedChild.ent_nombre) {
+          setCurrentEntity({
+            ent_id: refreshedChild.ent_id || 0,
+            ent_nombre: refreshedChild.ent_nombre,
+            ent_codigo: refreshedChild.ent_codigo || '',
+            ent_distrito: refreshedChild.ent_distrito || '',
+            ent_provincia: refreshedChild.ent_provincia || '',
+            ent_departamento: refreshedChild.ent_departamento || '',
+          });
+        }
+      }
       
       // Mostrar mensaje de éxito
       alert('Entidad asociada correctamente');

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import ConfirmationModal from '../ui/ConfirmationModal';
 import { useChildProfileApi, useNutritionalEvaluationApi, useAnthropometryApi } from '../../hooks/useApi';
 import type { NinoWithAnthropometry, AnthropometryCreate } from '../../types/api';
 
@@ -19,6 +20,8 @@ const ChildProfileView: React.FC<ChildProfileViewProps> = ({ childId, onClose })
   const { evaluateNutritionalStatus } = useNutritionalEvaluationApi();
   const { addAnthropometry } = useAnthropometryApi();
 
+  const [confirmModal, setConfirmModal] = useState<{ isOpen: boolean; type: 'success' | 'error'; title: string; message?: string }>({ isOpen: false, type: 'success', title: '', message: '' });
+
   useEffect(() => {
     getChildWithData.execute(childId);
   }, [childId]);
@@ -27,7 +30,7 @@ const ChildProfileView: React.FC<ChildProfileViewProps> = ({ childId, onClose })
     e.preventDefault();
     
     if (!newMeasurement.ant_peso_kg || !newMeasurement.ant_talla_cm) {
-      alert('Por favor, completa peso y talla.');
+      setConfirmModal({ isOpen: true, type: 'error', title: 'Campos incompletos', message: 'Por favor, completa peso y talla.' });
       return;
     }
 
@@ -54,16 +57,15 @@ const ChildProfileView: React.FC<ChildProfileViewProps> = ({ childId, onClose })
       });
       setShowAddMeasurement(false);
       
-      alert('Medición agregada exitosamente. Estado nutricional actualizado.');
+      setConfirmModal({ isOpen: true, type: 'success', title: 'Datos actualizados', message: 'Medición agregada y estado nutricional actualizado.' });
     }
   };
 
   const handleEvaluateNutrition = async () => {
     const result = await evaluateNutritionalStatus.execute(childId);
     if (result) {
-      // Recargar datos para mostrar la nueva evaluación
       await getChildWithData.execute(childId);
-      alert('Evaluación nutricional actualizada.');
+      setConfirmModal({ isOpen: true, type: 'success', title: 'Evaluación actualizada', message: 'La evaluación nutricional se actualizó correctamente.' });
     }
   };
 
@@ -163,9 +165,9 @@ const ChildProfileView: React.FC<ChildProfileViewProps> = ({ childId, onClose })
         <div className="mb-6">
           <h3 className="text-lg font-semibold text-gray-700 mb-2">Recomendaciones</h3>
           <div className="bg-blue-50 p-4 rounded-lg">
-            <ul className="list-disc list-inside space-y-1">
+            <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 list-disc list-inside">
               {ultimo_estado_nutricional.recommendations.map((rec, index) => (
-                <li key={index} className="text-blue-800">{rec}</li>
+                <li key={index} className="text-blue-800 break-words">{rec}</li>
               ))}
             </ul>
           </div>
@@ -314,6 +316,14 @@ const ChildProfileView: React.FC<ChildProfileViewProps> = ({ childId, onClose })
           Error evaluando estado nutricional: {evaluateNutritionalStatus.error}
         </div>
       )}
+
+      <ConfirmationModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, type: 'success', title: '', message: '' })}
+        type={confirmModal.type}
+        title={confirmModal.title}
+        message={confirmModal.message}
+      />
     </div>
   );
 };

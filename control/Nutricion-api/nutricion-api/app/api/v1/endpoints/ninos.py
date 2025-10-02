@@ -10,8 +10,8 @@ from app.schemas.ninos import (
     AlergiaCreate, AlergiaResponse,
     AssignTutorRequest
 )
-from app.application import ninos_service
-from app.application.auth_service import get_current_user
+from app.application.services import ninos_service
+from app.application.services.auth_service import get_current_user
 from app.schemas.auth import UserResponse
 from typing import List
 from app.infrastructure.repositories.ninos_repo import NinosRepository
@@ -83,7 +83,46 @@ def create_child_profile(
     Crear perfil completo de niño con datos antropométricos iniciales.
     Este endpoint cumple con el PMV 1: permite registrar niños con edad, peso y talla.
     """
-    return ninos_service.create_child_profile(db, profile_data, current_user.usr_id)
+    from app.domain.utils.nutrition_recommendations import generar_recomendaciones_nutricionales
+    
+    repo = NinosRepository(db)
+    
+    # 1. Crear el niño
+    nino_dict = repo.create_nino(profile_data.nino, current_user.usr_id)
+    if not nino_dict:
+        raise HTTPException(status_code=400, detail="Error al crear el perfil del niño")
+    
+    nin_id = nino_dict["nin_id"]
+    
+    # 2. Agregar antropometría inicial
+    antropometria_dict = repo.agregar_antropometria(nin_id, profile_data.antropometria.model_dump())
+    if not antropometria_dict:
+        raise HTTPException(status_code=400, detail="Error al agregar datos antropométricos")
+    
+    # 3. Evaluar estado nutricional
+    estado = repo.evaluar_estado_nutricional(nin_id)
+    if not estado:
+        raise HTTPException(status_code=400, detail="Error al evaluar estado nutricional")
+    
+    # 4. Generar recomendaciones
+    clasificacion = estado.get("en_clasificacion", "")
+    imc = estado.get("imc_calculado", 0)
+    edad_meses = nino_dict.get("edad_meses", 0)
+    
+    estado_nutricional = {
+        "imc": imc,
+        "z_score_imc": estado.get("en_z_score_imc"),
+        "classification": clasificacion,
+        "percentile": estado.get("percentil_calculado"),
+        "risk_level": estado.get("en_nivel_riesgo"),
+        "recommendations": generar_recomendaciones_nutricionales(clasificacion, imc, edad_meses)
+    }
+    
+    return CreateChildProfileResponse(
+        nino=NinoResponse(**nino_dict),
+        antropometria=AnthropometryResponse(**antropometria_dict),
+        estado_nutricional=NutritionalStatusResponse(**estado_nutricional)
+    )
 
 @router.get("/", response_model=List[NinoWithAnthropometry])
 def get_my_children(
@@ -94,7 +133,8 @@ def get_my_children(
     Obtener todos los niños del tutor actual con sus datos antropométricos
     y estado nutricional calculado.
     """
-    return ninos_service.get_children_by_tutor(db, current_user.usr_id)
+    repo = NinosRepository(db)
+    return repo.get_ninos_completos_by_tutor(current_user.usr_id)
 
 @router.get("/{nin_id}", response_model=NinoWithAnthropometry)
 def get_child_by_id(
@@ -106,7 +146,11 @@ def get_child_by_id(
     Obtener un niño específico con todos sus datos antropométricos
     y estado nutricional actual.
     """
-    return ninos_service.get_child_by_id(db, nin_id, current_user.usr_id)
+    repo = NinosRepository(db)
+    child = repo.get_perfil_completo_con_datos(nin_id)
+    if not child:
+        raise HTTPException(status_code=404, detail="Niño no encontrado")
+    return child
 
 @router.put("/{nin_id}", response_model=NinoResponse)
 def update_child(
@@ -118,7 +162,18 @@ def update_child(
     """
     Actualizar datos básicos de un niño (nombre, alergias, entidad).
     """
-    return ninos_service.update_child(db, nin_id, nino_data, current_user.usr_id)
+    repo = NinosRepository(db)
+    # Verificar que el niño existe
+    nino = repo.get_nino_by_id(nin_id)
+    if not nino:
+        raise HTTPException(status_code=404, detail="Niño no encontrado")
+    
+    # Actualizar
+    updated = repo.actualizar_nino(nin_id, nino_data.model_dump(exclude_unset=True))
+    if not updated:
+        raise HTTPException(status_code=400, detail="No se pudo actualizar el niño")
+    
+    return NinoResponse(**updated)
 
 @router.delete("/{nin_id}")
 def delete_child(
@@ -129,7 +184,18 @@ def delete_child(
     """
     Eliminar un niño del sistema.
     """
-    return ninos_service.delete_child(db, nin_id, current_user.usr_id)
+    repo = NinosRepository(db)
+    # Verificar que el niño existe
+    nino = repo.get_nino_by_id(nin_id)
+    if not nino:
+        raise HTTPException(status_code=404, detail="Niño no encontrado")
+    
+    # Eliminar
+    success = repo.delete_nino(nin_id)
+    if not success:
+        raise HTTPException(status_code=400, detail="No se pudo eliminar el niño")
+    
+    return {"message": "Niño eliminado exitosamente"}
 
 @router.post("/{nin_id}/anthropometry", response_model=AnthropometryResponse, status_code=status.HTTP_201_CREATED)
 def add_anthropometry_data(
@@ -142,7 +208,18 @@ def add_anthropometry_data(
     Agregar nuevos datos antropométricos (peso, talla) a un niño.
     Permite seguimiento del crecimiento en el tiempo.
     """
-    return ninos_service.add_anthropometry(db, nin_id, antropo_data, current_user.usr_id)
+    repo = NinosRepository(db)
+    # Verificar que el niño existe
+    nino = repo.get_nino_by_id(nin_id)
+    if not nino:
+        raise HTTPException(status_code=404, detail="Niño no encontrado")
+    
+    # Agregar antropometría
+    antropometria_dict = repo.agregar_antropometria(nin_id, antropo_data.model_dump())
+    if not antropometria_dict:
+        raise HTTPException(status_code=400, detail="No se pudo agregar la medición antropométrica")
+    
+    return AnthropometryResponse(**antropometria_dict)
 
 @router.post("/{nin_id}/assign-tutor", response_model=NinoResponse)
 def assign_child_tutor(
@@ -166,8 +243,11 @@ def assign_child_tutor(
     if not (is_admin or is_self_assignment or is_current_responsible):
         raise HTTPException(status_code=403, detail="No tienes permiso para asignar este niño")
 
-    updated = ninos_service.asignar_nino_a_tutor(db, nin_id, payload.usr_id_tutor)
-    return updated
+    updated = nrepo.assign_child_to_tutor(nin_id, payload.usr_id_tutor)
+    if not updated:
+        raise HTTPException(status_code=400, detail="No se pudo asignar el tutor")
+    
+    return NinoResponse(**updated)
 
 @router.get("/{nin_id}/nutritional-status", response_model=NutritionalStatusResponse)
 def get_nutritional_status(
@@ -182,15 +262,19 @@ def get_nutritional_status(
     Cumple con PMV 1: predice estado nutricional (bajo peso, normal, sobrepeso)
     a partir de datos antropométricos comparados con estándares.
     """
-    child_data = ninos_service.get_child_by_id(db, nin_id, current_user.usr_id)
+    repo = NinosRepository(db)
+    child_data = repo.get_perfil_completo_con_datos(nin_id)
+    if not child_data:
+        raise HTTPException(status_code=404, detail="Niño no encontrado")
     
-    if not child_data.ultimo_estado_nutricional:
+    ultimo_estado = child_data.get("ultimo_estado_nutricional")
+    if not ultimo_estado:
         raise HTTPException(
             status_code=404, 
             detail="No hay datos antropométricos disponibles para calcular el estado nutricional"
         )
     
-    return child_data.ultimo_estado_nutricional
+    return NutritionalStatusResponse(**ultimo_estado)
 
 # Endpoints adicionales para casos específicos
 
@@ -204,6 +288,20 @@ def create_child_basic(
     Crear solo el perfil básico de un niño sin datos antropométricos.
     Para casos donde se quiere registrar el niño primero y agregar medidas después.
     """
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    # 🔍 DEBUG LOG
+    logger.warning(f"🔍 CREATE CHILD DEBUG:")
+    logger.warning(f"  📝 Datos recibidos del formulario:")
+    logger.warning(f"    - nin_nombres: {nino_data.nin_nombres}")
+    logger.warning(f"    - nin_fecha_nac: {nino_data.nin_fecha_nac}")
+    logger.warning(f"    - nin_sexo: {nino_data.nin_sexo}")
+    logger.warning(f"    - ent_id: {nino_data.ent_id}")
+    logger.warning(f"  👤 Usuario actual (tutor/propietario):")
+    logger.warning(f"    - usr_id: {current_user.usr_id}")
+    logger.warning(f"    - usr_usuario: {current_user.usr_usuario if hasattr(current_user, 'usr_usuario') else 'N/A'}")
+    
     from app.infrastructure.repositories.ninos_repo import NinosRepository
     
     repo = NinosRepository(db)
@@ -225,11 +323,11 @@ def get_child_anthropometry_history(
     Obtener el historial de datos antropométricos de un niño.
     Útil para ver la evolución del crecimiento en el tiempo.
     """
-    # Verificar que el niño pertenece al tutor
-    child_data = ninos_service.get_child_by_id(db, nin_id, current_user.usr_id)
-    
-    from app.infrastructure.repositories.ninos_repo import NinosRepository
     repo = NinosRepository(db)
+    # Verificar que el niño existe
+    nino = repo.get_nino_by_id(nin_id)
+    if not nino:
+        raise HTTPException(status_code=404, detail="Niño no encontrado")
     
     antropometrias_dict = repo.get_antropometrias_by_nino(nin_id, limit=limit)
     return [AnthropometryResponse(**ant) for ant in antropometrias_dict]
@@ -242,9 +340,12 @@ def add_child_allergy(
     db: Session = Depends(get_db),
     current_user: UserResponse = Depends(get_current_user)
 ):
-    # Verifica pertenencia
-    _ = ninos_service.get_child_by_id(db, nin_id, current_user.usr_id)
     repo = NinosRepository(db)
+    # Verificar que el niño existe
+    nino = repo.get_nino_by_id(nin_id)
+    if not nino:
+        raise HTTPException(status_code=404, detail="Niño no encontrado")
+    
     result_list = repo.agregar_alergia(nin_id, alergia.ta_codigo, alergia.severidad or "LEVE")
     if not result_list:
         raise HTTPException(status_code=400, detail="No se pudo agregar la alergia")
@@ -258,8 +359,12 @@ def get_child_allergies(
     db: Session = Depends(get_db),
     current_user: UserResponse = Depends(get_current_user)
 ):
-    _ = ninos_service.get_child_by_id(db, nin_id, current_user.usr_id)
     repo = NinosRepository(db)
+    # Verificar que el niño existe
+    nino = repo.get_nino_by_id(nin_id)
+    if not nino:
+        raise HTTPException(status_code=404, detail="Niño no encontrado")
+    
     items = repo.obtener_alergias(nin_id)
     return [AlergiaResponse(**it) for it in items]
 
@@ -270,7 +375,12 @@ def delete_child_allergy(
     db: Session = Depends(get_db),
     current_user: UserResponse = Depends(get_current_user)
 ):
-    _ = ninos_service.get_child_by_id(db, nin_id, current_user.usr_id)
+    repo = NinosRepository(db)
+    # Verificar que el niño existe
+    nino = repo.get_nino_by_id(nin_id)
+    if not nino:
+        raise HTTPException(status_code=404, detail="Niño no encontrado")
+    
     # Eliminar relación específica
     affected = db.execute(text("DELETE FROM ninos_alergias WHERE na_id = :na_id AND nin_id = :nin_id"), {
         "na_id": alergia_id,

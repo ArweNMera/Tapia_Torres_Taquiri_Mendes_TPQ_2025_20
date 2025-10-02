@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import UserProfileForm from './UserProfileForm';
-import { ChildrenList } from './children';
 
 interface ProfileSection {
-  id: 'personal' | 'children' | 'anthropometry';
+  id: 'personal';
   title: string;
   icon: string;
   description: string;
@@ -18,70 +17,11 @@ const ProfileManagement: React.FC = () => {
       title: 'Información Personal',
       icon: '👤',
       description: 'Gestiona tu información personal y configuración de cuenta'
-    },
-    {
-      id: 'children',
-      title: 'Mis Niños',
-      icon: '👶',
-      description: 'Gestiona los perfiles de tus niños y sus datos antropométricos'
-    },
-    {
-      id: 'anthropometry',
-      title: 'Datos Antropométricos',
-      icon: '📏',
-      description: 'Agrega y actualiza medidas antropométricas de tus niños'
     }
   ];
 
   const renderSectionContent = () => {
-    switch (activeSection) {
-      case 'personal':
-        return <UserProfileForm />;
-      case 'children':
-        return (
-          <div className="bg-white rounded-lg shadow-md">
-            <div className="p-6 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-800">Gestión de Niños</h2>
-              <p className="text-gray-600 mt-1">
-                Administra los perfiles de tus niños y sus datos antropométricos
-              </p>
-            </div>
-            <div className="p-6">
-              <ChildrenList />
-            </div>
-          </div>
-        );
-      case 'anthropometry':
-        return (
-          <div className="bg-white rounded-lg shadow-md">
-            <div className="p-6 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-800">Datos Antropométricos</h2>
-              <p className="text-gray-600 mt-1">
-                Agrega nuevas medidas antropométricas para seguimiento nutricional
-              </p>
-            </div>
-            <div className="p-6">
-              <div className="text-center py-8">
-                <div className="text-6xl mb-4">📏</div>
-                <h3 className="text-lg font-medium text-gray-800 mb-2">
-                  Gestión de Medidas Antropométricas
-                </h3>
-                <p className="text-gray-600 mb-6">
-                  Selecciona un niño desde la sección "Mis Niños" para agregar nuevas medidas o ver su historial completo.
-                </p>
-                <button
-                  onClick={() => setActiveSection('children')}
-                  className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-colors"
-                >
-                  Ver Mis Niños
-                </button>
-              </div>
-            </div>
-          </div>
-        );
-      default:
-        return <UserProfileForm />;
-    }
+    return <UserProfileForm />;
   };
 
   return (
@@ -95,27 +35,29 @@ const ProfileManagement: React.FC = () => {
           </p>
         </div>
 
-        {/* Navigation Tabs */}
-        <div className="mb-8">
-          <div className="border-b border-gray-200">
-            <nav className="-mb-px flex space-x-8">
-              {sections.map((section) => (
-                <button
-                  key={section.id}
-                  onClick={() => setActiveSection(section.id)}
-                  className={`${
-                    activeSection === section.id
-                      ? 'border-blue-500 text-blue-600 bg-blue-50'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  } whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm rounded-t-lg transition-all duration-200 flex items-center space-x-2`}
-                >
-                  <span className="text-lg">{section.icon}</span>
-                  <span>{section.title}</span>
-                </button>
-              ))}
-            </nav>
+        {/* Navigation Tabs (solo si hay más de una sección) */}
+        {sections.length > 1 && (
+          <div className="mb-8">
+            <div className="border-b border-gray-200">
+              <nav className="-mb-px flex space-x-8">
+                {sections.map((section) => (
+                  <button
+                    key={section.id}
+                    onClick={() => setActiveSection(section.id)}
+                    className={`${
+                      activeSection === section.id
+                        ? 'border-blue-500 text-blue-600 bg-blue-50'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    } whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm rounded-t-lg transition-all duration-200 flex items-center space-x-2`}
+                  >
+                    <span className="text-lg">{section.icon}</span>
+                    <span>{section.title}</span>
+                  </button>
+                ))}
+              </nav>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Section Description */}
         <div className="mb-6">
