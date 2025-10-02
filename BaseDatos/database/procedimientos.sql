@@ -75,6 +75,104 @@ BEGIN
 END;
 
 create
+    definer = root@`%` procedure sp_antropometria_obtener_por_nino(IN p_nin_id bigint unsigned, IN p_limit int)
+BEGIN
+  DECLARE v_sql TEXT;
+
+  SET v_sql = CONCAT(
+    'SELECT ant_id, nin_id, ant_fecha, ant_edad_meses, ant_peso_kg, ant_talla_cm, ',
+    'ant_z_imc, ant_z_peso_edad, ant_z_talla_edad, ',
+    'ROUND(ant_peso_kg / POWER((ant_talla_cm / 100), 2), 2) as imc_calculado, ',
+    'creado_en FROM antropometrias WHERE nin_id = ', p_nin_id,
+    ' ORDER BY ant_fecha DESC, creado_en DESC'
+  );
+
+  IF p_limit IS NOT NULL AND p_limit > 0 THEN
+    SET v_sql = CONCAT(v_sql, ' LIMIT ', p_limit);
+  END IF;
+
+  SET @sql = v_sql;
+  PREPARE stmt FROM @sql;
+  EXECUTE stmt;
+  DEALLOCATE PREPARE stmt;
+END;
+
+create
+    definer = root@`%` procedure sp_entidad_tipos_listar()
+BEGIN
+  SELECT
+    entti_id,
+    entti_codigo,
+    entti_nombre,
+    creado_en
+  FROM entidad_tipos
+  ORDER BY entti_nombre;
+END;
+
+create
+    definer = root@`%` procedure sp_entidades_buscar(IN p_query varchar(100), IN p_limit int)
+BEGIN
+  DECLARE v_limit INT DEFAULT 20;
+
+  -- Establecer límite (máximo 100)
+  IF p_limit IS NOT NULL AND p_limit > 0 AND p_limit <= 100 THEN
+    SET v_limit = p_limit;
+  END IF;
+
+  -- Si no hay query, retornar todos
+  IF p_query IS NULL OR TRIM(p_query) = '' THEN
+    SELECT
+      e.ent_id,
+      e.ent_codigo,
+      e.ent_nombre,
+      e.ent_descripcion,
+      e.ent_direccion,
+      e.ent_departamento,
+      e.ent_provincia,
+      e.ent_distrito,
+      e.entti_id,
+      t.entti_codigo,
+      t.entti_nombre,
+      e.creado_en
+    FROM entidades e
+    JOIN entidad_tipos t ON e.entti_id = t.entti_id
+    ORDER BY e.ent_nombre
+    LIMIT v_limit;
+  ELSE
+    -- Buscar por código, nombre o tipo
+    SELECT
+      e.ent_id,
+      e.ent_codigo,
+      e.ent_nombre,
+      e.ent_descripcion,
+      e.ent_direccion,
+      e.ent_departamento,
+      e.ent_provincia,
+      e.ent_distrito,
+      e.entti_id,
+      t.entti_codigo,
+      t.entti_nombre,
+      e.creado_en
+    FROM entidades e
+    JOIN entidad_tipos t ON e.entti_id = t.entti_id
+    WHERE
+      e.ent_codigo LIKE CONCAT('%', p_query, '%')
+      OR e.ent_nombre LIKE CONCAT('%', p_query, '%')
+      OR t.entti_nombre LIKE CONCAT('%', p_query, '%')
+    ORDER BY
+      CASE
+        WHEN e.ent_codigo = p_query THEN 1
+        WHEN e.ent_nombre = p_query THEN 2
+        WHEN e.ent_codigo LIKE CONCAT(p_query, '%') THEN 3
+        WHEN e.ent_nombre LIKE CONCAT(p_query, '%') THEN 4
+        ELSE 5
+      END,
+      e.ent_nombre
+    LIMIT v_limit;
+  END IF;
+END;
+
+create
     definer = root@`%` procedure sp_evaluar_estado_nutricional(IN p_nin_id bigint unsigned)
 BEGIN
   DECLARE v_ant_id BIGINT UNSIGNED;
@@ -267,9 +365,35 @@ BEGIN
   WHERE u.usr_usuario = p_usuario
   LIMIT 1;
 END;
+
+create
+    definer = root@`%` procedure sp_login_get_hash(IN p_usuario varchar(150))
+BEGIN
+  DECLARE v_count INT DEFAULT 0;
+
+  SELECT COUNT(*) INTO v_count FROM usuarios WHERE usr_usuario = p_usuario LIMIT 1;
+  IF v_count = 0 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Usuario no encontrado';
+  END IF;
+
+  -- Devolvemos SOLO una fila (si hubiese duplicados, es problema de datos)
+  SELECT
+    u.usr_id,
+    u.usr_usuario,
+    u.usr_correo,
+    u.usr_nombre,
+    u.usr_apellido,
+    u.rol_id,
+    u.usr_activo,
+    u.usr_contrasena AS password_hash
+  FROM usuarios u
+  WHERE u.usr_usuario = p_usuario
+  LIMIT 1;
+END;
+
 create
     definer = root@`%` procedure sp_ninos_actualizar(IN p_nin_id bigint unsigned, IN p_nin_nombres varchar(150),
-                                                     IN p_ent_id smallint unsigned)
+                                                     IN p_ent_id smallint unsigned, IN p_nin_fecha_nac date)
 BEGIN
   -- Validar que el niño existe
   IF NOT EXISTS(SELECT 1 FROM ninos WHERE nin_id = p_nin_id) THEN
@@ -280,6 +404,7 @@ BEGIN
   UPDATE ninos SET
     nin_nombres = COALESCE(p_nin_nombres, nin_nombres),
     ent_id = COALESCE(p_ent_id, ent_id),
+    nin_fecha_nac = COALESCE(p_nin_fecha_nac, nin_fecha_nac),
     actualizado_en = NOW()
   WHERE nin_id = p_nin_id;
 
@@ -297,6 +422,7 @@ BEGIN
   FROM ninos
   WHERE nin_id = p_nin_id;
 END;
+
 create
     definer = root@`%` procedure sp_ninos_agregar_alergia(IN p_nin_id bigint unsigned, IN p_ta_codigo varchar(20),
                                                           IN p_severidad enum ('LEVE', 'MODERADA', 'SEVERA'))
@@ -415,21 +541,31 @@ BEGIN
 END;
 
 create
-    definer = root@`%` procedure sp_ninos_eliminar(IN p_nin_id bigint unsigned)
+    definer = root@`%` procedure sp_ninos_eliminar_alergia(IN p_na_id bigint unsigned, IN p_nin_id bigint unsigned)
 BEGIN
-  DECLARE v_filas_afectadas INT DEFAULT 0;
-  
-  -- Verificar si el niño existe
-  IF NOT EXISTS(SELECT 1 FROM ninos WHERE nin_id = p_nin_id) THEN
-    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El niño no existe';
+  -- Validar que la alergia existe y pertenece al niño especificado
+  IF NOT EXISTS(SELECT 1 FROM ninos_alergias WHERE na_id = p_na_id AND nin_id = p_nin_id) THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Alergia no encontrada para este niño';
   END IF;
-  
-  -- Eliminar el niño (hard delete)
-  DELETE FROM ninos WHERE nin_id = p_nin_id;
-  
-  SET v_filas_afectadas = ROW_COUNT();
-  
-  SELECT v_filas_afectadas AS filas_afectadas, 'OK' AS msg;
+
+  -- Soft delete: marcar como inactiva en lugar de eliminar
+  UPDATE ninos_alergias
+  SET na_activo = 0
+  WHERE na_id = p_na_id AND nin_id = p_nin_id;
+
+  -- Retornar las alergias activas restantes del niño
+  SELECT
+    na.na_id,
+    na.nin_id,
+    ta.ta_codigo,
+    ta.ta_nombre,
+    ta.ta_categoria,
+    na.na_severidad,
+    na.creado_en
+  FROM ninos_alergias na
+  JOIN tipos_alergias ta ON na.ta_id = ta.ta_id
+  WHERE na.nin_id = p_nin_id AND na.na_activo = 1
+  ORDER BY na.creado_en DESC;
 END;
 
 create
@@ -471,7 +607,6 @@ BEGIN
     na.na_id,
     na.nin_id,
     ta.ta_codigo,
-  
     ta.ta_nombre,
     ta.ta_categoria,
     na.na_severidad,
@@ -587,6 +722,15 @@ BEGIN
 END;
 
 create
+    definer = root@`%` procedure sp_roles_get_codigo_by_id(IN p_rol_id bigint unsigned)
+BEGIN
+  SELECT rol_codigo
+  FROM roles
+  WHERE rol_id = p_rol_id
+  LIMIT 1;
+END;
+
+create
     definer = root@`%` procedure sp_roles_insertar(IN p_rol_codigo varchar(32), IN p_rol_nombre varchar(80))
 BEGIN
   DECLARE v_id SMALLINT UNSIGNED;
@@ -605,6 +749,135 @@ BEGIN
 
   -- Resultado uniforme
   SELECT v_id AS rol_id, 'OK' AS msg;
+END;
+
+create
+    definer = root@`%` procedure sp_tipos_alergias_buscar(IN p_query varchar(100), IN p_limit int)
+BEGIN
+  DECLARE v_limit INT DEFAULT 50;
+
+  -- Establecer límite (máximo 100)
+  IF p_limit IS NOT NULL AND p_limit > 0 AND p_limit <= 100 THEN
+    SET v_limit = p_limit;
+  END IF;
+
+  -- Si no hay query, retornar todos los activos
+  IF p_query IS NULL OR TRIM(p_query) = '' THEN
+    SELECT
+      ta_id,
+      ta_codigo,
+      ta_nombre,
+      ta_categoria,
+      ta_activo,
+      creado_en
+    FROM tipos_alergias
+    WHERE ta_activo = 1
+    ORDER BY ta_nombre
+    LIMIT v_limit;
+  ELSE
+    -- Buscar por código o nombre
+    SELECT
+      ta_id,
+      ta_codigo,
+      ta_nombre,
+      ta_categoria,
+      ta_activo,
+      creado_en
+    FROM tipos_alergias
+    WHERE ta_activo = 1
+      AND (
+        ta_codigo LIKE CONCAT('%', p_query, '%')
+        OR ta_nombre LIKE CONCAT('%', p_query, '%')
+      )
+    ORDER BY
+      CASE
+        WHEN ta_codigo = p_query THEN 1
+        WHEN ta_nombre = p_query THEN 2
+        WHEN ta_codigo LIKE CONCAT(p_query, '%') THEN 3
+        WHEN ta_nombre LIKE CONCAT(p_query, '%') THEN 4
+        ELSE 5
+      END,
+      ta_nombre
+    LIMIT v_limit;
+  END IF;
+END;
+
+create
+    definer = root@`%` procedure sp_usuarios_existe_username(IN p_username varchar(50))
+BEGIN
+  SELECT EXISTS(
+    SELECT 1
+    FROM usuarios
+    WHERE usr_usuario = p_username
+  ) as existe;
+END;
+
+create
+    definer = root@`%` procedure sp_usuarios_obtener_por_email(IN p_correo varchar(255))
+BEGIN
+  SELECT
+    u.usr_id,
+    u.usr_usuario,
+    u.usr_correo,
+    u.usr_nombre,
+    u.usr_apellido,
+    u.rol_id,
+    u.usr_activo,
+    u.usr_contrasena AS password_hash,
+    u.creado_en,
+    u.actualizado_en
+  FROM usuarios u
+  WHERE u.usr_correo = p_correo
+  LIMIT 1;
+END;
+
+create
+    definer = root@`%` procedure sp_usuarios_obtener_por_id(IN p_usr_id bigint unsigned)
+BEGIN
+  SELECT
+    u.usr_id,
+    u.usr_usuario,
+    u.usr_correo,
+    u.usr_nombre,
+    u.usr_apellido,
+    u.rol_id,
+    u.usr_activo,
+    u.usr_contrasena AS password_hash,
+    u.creado_en,
+    u.actualizado_en
+  FROM usuarios u
+  WHERE u.usr_id = p_usr_id
+  LIMIT 1;
+END;
+
+create
+    definer = root@`%` procedure sp_usuarios_perfil_actualizar_avatar(IN p_usr_id bigint unsigned,
+                                                                      IN p_avatar_url mediumtext,
+                                                                      IN p_telefono varchar(20),
+                                                                      IN p_idioma varchar(10))
+BEGIN
+  DECLARE v_telefono VARCHAR(20);
+  DECLARE v_idioma VARCHAR(10);
+
+  -- Valores por defecto
+  SET v_telefono = COALESCE(NULLIF(TRIM(p_telefono), ''), '000000000');
+  SET v_idioma = COALESCE(NULLIF(TRIM(p_idioma), ''), 'es-PE');
+
+  -- Insertar o actualizar el perfil
+  INSERT INTO usuarios_perfil (
+    usr_id,
+    usrper_avatar_url,
+    usrper_telefono,
+    usrper_idioma
+  ) VALUES (
+    p_usr_id,
+    p_avatar_url,
+    v_telefono,
+    v_idioma
+  )
+  ON DUPLICATE KEY UPDATE
+    usrper_avatar_url = VALUES(usrper_avatar_url),
+    actualizado_en = NOW();
 END;
 
 create
@@ -720,266 +993,3 @@ BEGIN
   SELECT v_usr_id AS usr_id, 'OK' AS msg;
 END;
 
-
-
-create
-    definer = root@`%` procedure sp_roles_get_codigo_by_id(IN p_rol_id bigint unsigned)
-BEGIN
-  SELECT rol_codigo
-  FROM roles
-  WHERE rol_id = p_rol_id
-  LIMIT 1;
-END;
-
--- Procedimiento: sp_usuarios_existe_username
--- Descripción: Verifica si un nombre de usuario ya existe
-create
-    definer = root@`%` procedure sp_usuarios_existe_username(IN p_username varchar(50))
-BEGIN
-  SELECT EXISTS(
-    SELECT 1
-    FROM usuarios
-    WHERE usr_usuario = p_username
-  ) as existe;
-END;
-
--- Procedimiento: sp_usuarios_perfil_actualizar_avatar
--- Descripción: Actualiza o crea el perfil del usuario con su avatar y datos básicos
-create
-    definer = root@`%` procedure sp_usuarios_perfil_actualizar_avatar(
-    IN p_usr_id bigint unsigned,
-    IN p_avatar_url mediumtext,
-    IN p_telefono varchar(20),
-    IN p_idioma varchar(10)
-)
-BEGIN
-  DECLARE v_telefono VARCHAR(20);
-  DECLARE v_idioma VARCHAR(10);
-
-  -- Valores por defecto
-  SET v_telefono = COALESCE(NULLIF(TRIM(p_telefono), ''), '000000000');
-  SET v_idioma = COALESCE(NULLIF(TRIM(p_idioma), ''), 'es-PE');
-
-  -- Insertar o actualizar el perfil
-  INSERT INTO usuarios_perfil (
-    usr_id,
-    usrper_avatar_url,
-    usrper_telefono,
-    usrper_idioma
-  ) VALUES (
-    p_usr_id,
-    p_avatar_url,
-    v_telefono,
-    v_idioma
-  )
-  ON DUPLICATE KEY UPDATE
-    usrper_avatar_url = VALUES(usrper_avatar_url),
-    actualizado_en = NOW();
-END;
-
-
--- Procedimiento: sp_tipos_alergias_buscar
--- Descripción: Busca tipos de alergias por código o nombre
-create
-    definer = root@`%` procedure sp_tipos_alergias_buscar(
-    IN p_query varchar(100),
-    IN p_limit int
-)
-BEGIN
-  DECLARE v_limit INT DEFAULT 50;
-
-  -- Establecer límite (máximo 100)
-  IF p_limit IS NOT NULL AND p_limit > 0 AND p_limit <= 100 THEN
-    SET v_limit = p_limit;
-  END IF;
-
-  -- Si no hay query, retornar todos los activos
-  IF p_query IS NULL OR TRIM(p_query) = '' THEN
-    SELECT
-      ta_id,
-      ta_codigo,
-      ta_nombre,
-      ta_categoria,
-      ta_activo,
-      creado_en
-    FROM tipos_alergias
-    WHERE ta_activo = 1
-    ORDER BY ta_nombre
-    LIMIT v_limit;
-  ELSE
-    -- Buscar por código o nombre
-    SELECT
-      ta_id,
-      ta_codigo,
-      ta_nombre,
-      ta_categoria,
-      ta_activo,
-      creado_en
-    FROM tipos_alergias
-    WHERE ta_activo = 1
-      AND (
-        ta_codigo LIKE CONCAT('%', p_query, '%')
-        OR ta_nombre LIKE CONCAT('%', p_query, '%')
-      )
-    ORDER BY
-      CASE
-        WHEN ta_codigo = p_query THEN 1
-        WHEN ta_nombre = p_query THEN 2
-        WHEN ta_codigo LIKE CONCAT(p_query, '%') THEN 3
-        WHEN ta_nombre LIKE CONCAT(p_query, '%') THEN 4
-        ELSE 5
-      END,
-      ta_nombre
-    LIMIT v_limit;
-  END IF;
-END;
-
--- Procedimiento: sp_entidades_buscar
--- Descripción: Busca entidades por código, nombre o tipo
-create
-    definer = root@`%` procedure sp_entidades_buscar(
-    IN p_query varchar(100),
-    IN p_limit int
-)
-BEGIN
-  DECLARE v_limit INT DEFAULT 20;
-
-  -- Establecer límite (máximo 100)
-  IF p_limit IS NOT NULL AND p_limit > 0 AND p_limit <= 100 THEN
-    SET v_limit = p_limit;
-  END IF;
-
-  -- Si no hay query, retornar todos
-  IF p_query IS NULL OR TRIM(p_query) = '' THEN
-    SELECT
-      e.ent_id,
-      e.ent_codigo,
-      e.ent_nombre,
-      e.ent_descripcion,
-      e.ent_direccion,
-      e.ent_departamento,
-      e.ent_provincia,
-      e.ent_distrito,
-      e.entti_id,
-      t.entti_codigo,
-      t.entti_nombre,
-      e.creado_en
-    FROM entidades e
-    JOIN entidad_tipos t ON e.entti_id = t.entti_id
-    ORDER BY e.ent_nombre
-    LIMIT v_limit;
-  ELSE
-    -- Buscar por código, nombre o tipo
-    SELECT
-      e.ent_id,
-      e.ent_codigo,
-      e.ent_nombre,
-      e.ent_descripcion,
-      e.ent_direccion,
-      e.ent_departamento,
-      e.ent_provincia,
-      e.ent_distrito,
-      e.entti_id,
-      t.entti_codigo,
-      t.entti_nombre,
-      e.creado_en
-    FROM entidades e
-    JOIN entidad_tipos t ON e.entti_id = t.entti_id
-    WHERE
-      e.ent_codigo LIKE CONCAT('%', p_query, '%')
-      OR e.ent_nombre LIKE CONCAT('%', p_query, '%')
-      OR t.entti_nombre LIKE CONCAT('%', p_query, '%')
-    ORDER BY
-      CASE
-        WHEN e.ent_codigo = p_query THEN 1
-        WHEN e.ent_nombre = p_query THEN 2
-        WHEN e.ent_codigo LIKE CONCAT(p_query, '%') THEN 3
-        WHEN e.ent_nombre LIKE CONCAT(p_query, '%') THEN 4
-        ELSE 5
-      END,
-      e.ent_nombre
-    LIMIT v_limit;
-  END IF;
-END;
-
--- Procedimiento: sp_entidad_tipos_listar
--- Descripción: Lista todos los tipos de entidades
-create
-    definer = root@`%` procedure sp_entidad_tipos_listar()
-BEGIN
-  SELECT
-    entti_id,
-    entti_codigo,
-    entti_nombre,
-    creado_en
-  FROM entidad_tipos
-  ORDER BY entti_nombre;
-END;
-
-create
-    definer = root@`%` procedure sp_usuarios_obtener_por_id(IN p_usr_id bigint unsigned)
-BEGIN
-  SELECT
-    u.usr_id,
-    u.usr_usuario,
-    u.usr_correo,
-    u.usr_nombre,
-    u.usr_apellido,
-    u.rol_id,
-    u.usr_activo,
-    u.usr_contrasena AS password_hash,
-    u.creado_en,
-    u.actualizado_en
-  FROM usuarios u
-  WHERE u.usr_id = p_usr_id
-  LIMIT 1;
-END;
-
--- Procedimiento: sp_usuarios_obtener_por_email
--- Descripción: Obtener usuario completo por correo electrónico
-create
-    definer = root@`%` procedure sp_usuarios_obtener_por_email(IN p_correo varchar(255))
-BEGIN
-  SELECT
-    u.usr_id,
-    u.usr_usuario,
-    u.usr_correo,
-    u.usr_nombre,
-    u.usr_apellido,
-    u.rol_id,
-    u.usr_activo,
-    u.usr_contrasena AS password_hash,
-    u.creado_en,
-    u.actualizado_en
-  FROM usuarios u
-  WHERE u.usr_correo = p_correo
-  LIMIT 1;
-END;
-
-create
-    definer = root@`%` procedure sp_ninos_eliminar_alergia(IN p_na_id bigint unsigned, IN p_nin_id bigint unsigned)
-BEGIN
-  -- Validar que la alergia existe y pertenece al niño especificado
-  IF NOT EXISTS(SELECT 1 FROM ninos_alergias WHERE na_id = p_na_id AND nin_id = p_nin_id) THEN
-    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Alergia no encontrada para este niño';
-  END IF;
-
-  -- Soft delete: marcar como inactiva en lugar de eliminar
-  UPDATE ninos_alergias
-  SET na_activo = 0
-  WHERE na_id = p_na_id AND nin_id = p_nin_id;
-
-  -- Retornar las alergias activas restantes del niño
-  SELECT
-    na.na_id,
-    na.nin_id,
-    ta.ta_codigo,
-    ta.ta_nombre,
-    ta.ta_categoria,
-    na.na_severidad,
-    na.creado_en
-  FROM ninos_alergias na
-  JOIN tipos_alergias ta ON na.ta_id = ta.ta_id
-  WHERE na.nin_id = p_nin_id AND na.na_activo = 1
-  ORDER BY na.creado_en DESC;
-END;
