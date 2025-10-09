@@ -127,7 +127,7 @@ export function DashboardScreen({ onRecipeClick }: DashboardScreenProps) {
               <NutritionCard
                 title="IMC infantil"
                 value="Normal"
-                subtitle="Percentil 65"
+                subtitle="Percentil 57.7"
                 icon={<Apple size={24} />}
                 color="blue"
               />

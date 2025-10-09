@@ -65,6 +65,11 @@ class ApiService {
       const response = await fetch(url, config);
       
       if (!response.ok) {
+        // Si el token expiró o es inválido (401), disparar evento de logout
+        if (response.status === 401) {
+          this.handleUnauthorized();
+        }
+        
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
       }
@@ -81,6 +86,26 @@ class ApiService {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error occurred',
       };
+    }
+  }
+
+  private handleUnauthorized(): void {
+    // Limpiar token y datos locales
+    this.removeToken();
+    if (typeof window !== 'undefined') {
+      try {
+        window.localStorage.removeItem('auth_avatar_hint');
+      } catch (e) {
+        console.warn('Error limpiando localStorage:', e);
+      }
+      
+      // Disparar evento personalizado para que AuthContext lo maneje
+      window.dispatchEvent(new CustomEvent('auth:unauthorized'));
+      
+      // Redirigir al login después de un pequeño delay
+      setTimeout(() => {
+        window.location.href = '/login';
+      }, 100);
     }
   }
 

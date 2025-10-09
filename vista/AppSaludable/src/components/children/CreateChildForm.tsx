@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useChildProfileApi, useAllergiesApi } from '../../hooks/useApi';
 import type { CreateChildProfileRequest, AlergiaCreate } from '../../types/api';
-import ConfirmationModal from '../ui/ConfirmationModal';
+import { toast } from 'sonner';
 
 interface CreateChildFormProps {
   onSuccess?: (childId: number) => void;
@@ -24,18 +24,6 @@ const CreateChildForm: React.FC<CreateChildFormProps> = ({ onSuccess, onCancel }
 
   const [selectedAllergies, setSelectedAllergies] = useState<string[]>([]);
   const [allergySearchTerm, setAllergySearchTerm] = useState('');
-  
-  const [confirmModal, setConfirmModal] = useState<{
-    isOpen: boolean;
-    type: 'success' | 'error';
-    title: string;
-    message?: string;
-  }>({
-    isOpen: false,
-    type: 'success',
-    title: '',
-    message: '',
-  });
   
   const { createChildProfile } = useChildProfileApi();
   const { getAllergyTypes, addAllergy } = useAllergiesApi();
@@ -79,22 +67,16 @@ const CreateChildForm: React.FC<CreateChildFormProps> = ({ onSuccess, onCancel }
     
     if (!formData.nin_nombres || !formData.nin_apellidos || !formData.nin_fecha_nac || !formData.nin_sexo || 
         !formData.ant_peso_kg || !formData.ant_talla_cm) {
-      setConfirmModal({
-        isOpen: true,
-        type: 'error',
-        title: 'Campos incompletos',
-        message: 'Por favor, completa todos los campos obligatorios.',
+      toast.error('Campos incompletos', {
+        description: 'Por favor, completa todos los campos obligatorios.',
       });
       return;
     }
 
     const fullName = `${formData.nin_nombres.trim()} ${formData.nin_apellidos.trim()}`.replace(/\s+/g, ' ').trim();
     if (!fullName) {
-      setConfirmModal({
-        isOpen: true,
-        type: 'error',
-        title: 'Datos inválidos',
-        message: 'Debes ingresar nombres y apellidos válidos.',
+      toast.error('Datos inválidos', {
+        description: 'Debes ingresar nombres y apellidos válidos.',
       });
       return;
     }
@@ -102,11 +84,8 @@ const CreateChildForm: React.FC<CreateChildFormProps> = ({ onSuccess, onCancel }
     // Validar edad (debe ser menor a 19 años)
     const ageInMonths = calculateAge(formData.nin_fecha_nac);
     if (ageInMonths > 228) { // 19 años * 12 meses
-      setConfirmModal({
-        isOpen: true,
-        type: 'error',
-        title: 'Edad no válida',
-        message: 'La aplicación está diseñada para niños y adolescentes menores de 19 años.',
+      toast.error('Edad no válida', {
+        description: 'La aplicación está diseñada para niños y adolescentes menores de 19 años.',
       });
       return;
     }
@@ -139,25 +118,23 @@ const CreateChildForm: React.FC<CreateChildFormProps> = ({ onSuccess, onCancel }
           await addAllergy.execute(childId, allergyData);
         }
 
+        toast.success('¡Niño registrado!', {
+          description: 'Perfil creado exitosamente con evaluación nutricional.',
+        });
+
         // Ejecutar callback de éxito inmediatamente
         if (onSuccess) {
           onSuccess(childId);
         }
       } else {
-        setConfirmModal({
-          isOpen: true,
-          type: 'error',
-          title: 'Error al registrar',
-          message: createChildProfile.error || 'No se pudo crear el perfil del niño.',
+        toast.error('Error al registrar', {
+          description: createChildProfile.error || 'No se pudo crear el perfil del niño.',
         });
       }
     } catch (error) {
       console.error('Error creating child profile:', error);
-      setConfirmModal({
-        isOpen: true,
-        type: 'error',
-        title: 'Error inesperado',
-        message: 'Hubo un error al crear el perfil. Intenta nuevamente.',
+      toast.error('Error inesperado', {
+        description: 'Hubo un error al crear el perfil. Intenta nuevamente.',
       });
     }
   };
@@ -427,17 +404,6 @@ const CreateChildForm: React.FC<CreateChildFormProps> = ({ onSuccess, onCancel }
           </button>
         </div>
       </form>
-
-      {/* Modal de confirmación */}
-      <ConfirmationModal
-        isOpen={confirmModal.isOpen}
-        onClose={() => {
-          setConfirmModal({ isOpen: false, type: 'success', title: '', message: '' });
-        }}
-        type={confirmModal.type}
-        title={confirmModal.title}
-        message={confirmModal.message}
-      />
     </div>
   );
 };

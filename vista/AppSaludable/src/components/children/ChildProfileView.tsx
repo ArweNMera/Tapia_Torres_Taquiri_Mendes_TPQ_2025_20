@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import ConfirmationModal from '../ui/ConfirmationModal';
 import { useChildProfileApi, useNutritionalEvaluationApi, useAnthropometryApi } from '../../hooks/useApi';
 import type { NinoWithAnthropometry, AnthropometryCreate } from '../../types/api';
+import { toast } from 'sonner';
 
 interface ChildProfileViewProps {
   childId: number;
@@ -20,17 +20,17 @@ const ChildProfileView: React.FC<ChildProfileViewProps> = ({ childId, onClose })
   const { evaluateNutritionalStatus } = useNutritionalEvaluationApi();
   const { addAnthropometry } = useAnthropometryApi();
 
-  const [confirmModal, setConfirmModal] = useState<{ isOpen: boolean; type: 'success' | 'error'; title: string; message?: string }>({ isOpen: false, type: 'success', title: '', message: '' });
-
   useEffect(() => {
     getChildWithData.execute(childId);
   }, [childId]);
 
   const handleAddMeasurement = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!newMeasurement.ant_peso_kg || !newMeasurement.ant_talla_cm) {
-      setConfirmModal({ isOpen: true, type: 'error', title: 'Campos incompletos', message: 'Por favor, completa peso y talla.' });
+      toast.error('Campos incompletos', {
+        description: 'Por favor, completa peso y talla.',
+      });
       return;
     }
 
@@ -41,14 +41,14 @@ const ChildProfileView: React.FC<ChildProfileViewProps> = ({ childId, onClose })
     };
 
     const result = await addAnthropometry.execute(childId, measurementData);
-    
+
     if (result) {
       // Actualizar la evaluación nutricional
       await evaluateNutritionalStatus.execute(childId);
-      
+
       // Recargar datos del niño
       await getChildWithData.execute(childId);
-      
+
       // Limpiar formulario
       setNewMeasurement({
         ant_peso_kg: '',
@@ -56,8 +56,14 @@ const ChildProfileView: React.FC<ChildProfileViewProps> = ({ childId, onClose })
         ant_fecha: new Date().toISOString().split('T')[0],
       });
       setShowAddMeasurement(false);
-      
-      setConfirmModal({ isOpen: true, type: 'success', title: 'Datos actualizados', message: 'Medición agregada y estado nutricional actualizado.' });
+
+      toast.success('Medición agregada', {
+        description: 'Medición agregada y estado nutricional actualizado.',
+      });
+    } else {
+      toast.error('Error al agregar medición', {
+        description: addAnthropometry.error || 'No se pudo agregar la medición.',
+      });
     }
   };
 
@@ -65,7 +71,13 @@ const ChildProfileView: React.FC<ChildProfileViewProps> = ({ childId, onClose })
     const result = await evaluateNutritionalStatus.execute(childId);
     if (result) {
       await getChildWithData.execute(childId);
-      setConfirmModal({ isOpen: true, type: 'success', title: 'Evaluación actualizada', message: 'La evaluación nutricional se actualizó correctamente.' });
+      toast.success('Evaluación actualizada', {
+        description: 'La evaluación nutricional se actualizó correctamente.',
+      });
+    } else {
+      toast.error('Error al evaluar', {
+        description: evaluateNutritionalStatus.error || 'No se pudo actualizar la evaluación.',
+      });
     }
   };
 
@@ -164,12 +176,16 @@ const ChildProfileView: React.FC<ChildProfileViewProps> = ({ childId, onClose })
       {ultimo_estado_nutricional && ultimo_estado_nutricional.recommendations.length > 0 && (
         <div className="mb-6">
           <h3 className="text-lg font-semibold text-gray-700 mb-2">Recomendaciones</h3>
-          <div className="bg-blue-50 p-4 rounded-lg">
-            <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 list-disc list-inside">
-              {ultimo_estado_nutricional.recommendations.map((rec, index) => (
-                <li key={index} className="text-blue-800 break-words">{rec}</li>
-              ))}
-            </ul>
+          <div className="bg-blue-50 p-4 rounded-lg space-y-3">
+            {ultimo_estado_nutricional.recommendations.map((rec, index) => (
+              <div key={index} className="flex gap-3">
+                <span className="text-2xl flex-shrink-0">{rec.icono}</span>
+                <div className="flex-1">
+                  <p className="font-medium text-blue-900">{rec.titulo}</p>
+                  <p className="text-sm text-blue-700 mt-1">{rec.descripcion}</p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}
@@ -316,14 +332,6 @@ const ChildProfileView: React.FC<ChildProfileViewProps> = ({ childId, onClose })
           Error evaluando estado nutricional: {evaluateNutritionalStatus.error}
         </div>
       )}
-
-      <ConfirmationModal
-        isOpen={confirmModal.isOpen}
-        onClose={() => setConfirmModal({ isOpen: false, type: 'success', title: '', message: '' })}
-        type={confirmModal.type}
-        title={confirmModal.title}
-        message={confirmModal.message}
-      />
     </div>
   );
 };

@@ -148,6 +148,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     bootstrap();
   }, [hydrateUserFromProfile]);
 
+  // Escuchar eventos de token expirado/inválido
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      console.warn('Token expirado o inválido. Cerrando sesión...');
+      setUser(null);
+      apiService.removeToken();
+      if (typeof window !== 'undefined') {
+        try {
+          window.localStorage.removeItem('auth_avatar_hint');
+        } catch (e) {
+          console.warn('Error limpiando localStorage:', e);
+        }
+      }
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('auth:unauthorized', handleUnauthorized);
+      return () => {
+        window.removeEventListener('auth:unauthorized', handleUnauthorized);
+      };
+    }
+  }, []);
+
   const login = async (userData: UserLogin): Promise<{ success: boolean; error?: string }> => {
     setIsLoading(true);
     try {

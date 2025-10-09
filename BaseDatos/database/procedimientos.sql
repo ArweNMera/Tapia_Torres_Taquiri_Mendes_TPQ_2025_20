@@ -646,26 +646,33 @@ END;
 create
     definer = root@`%` procedure sp_ninos_obtener_por_tutor(IN p_usr_id_tutor bigint unsigned)
 BEGIN
+  -- ✅ ARREGLADO: Ahora busca tanto por usr_id_tutor como usr_id_propietario
   SELECT
     n.nin_id,
     n.usr_id_tutor,
+    n.usr_id_propietario,
     n.ent_id,
-    n.nin_nombres,                                          -- ✅ Desde tabla ninos
-    n.nin_fecha_nac,                                        -- ✅ Desde tabla ninos
-    n.nin_sexo,                                             -- ✅ Desde tabla ninos
-    e.ent_nombre,                                           -- ✅ Desde tabla entidades
-    e.ent_codigo,                                           -- ✅ Desde tabla entidades
-    e.ent_direccion,                                        -- ✅ Desde tabla entidades
-    e.ent_departamento,                                     -- ✅ Desde tabla entidades
-    e.ent_provincia,                                        -- ✅ Desde tabla entidades
-    e.ent_distrito,                                         -- ✅ Desde tabla entidades
-    fn_edad_meses(n.nin_fecha_nac) as edad_meses,          -- ✅ Calculado correctamente
+    n.nin_nombres,
+    n.nin_fecha_nac,
+    n.nin_sexo,
+    e.ent_nombre,
+    e.ent_codigo,
+    e.ent_direccion,
+    e.ent_departamento,
+    e.ent_provincia,
+    e.ent_distrito,
+    fn_edad_meses(n.nin_fecha_nac) as edad_meses,
     n.creado_en,
     n.actualizado_en
   FROM ninos n
-  JOIN usuarios u ON n.usr_id_tutor = u.usr_id
-  LEFT JOIN entidades e ON n.ent_id = e.ent_id             -- ✅ JOIN con entidades
-  WHERE n.usr_id_tutor = p_usr_id_tutor AND u.usr_activo = 1
+  LEFT JOIN entidades e ON n.ent_id = e.ent_id
+  WHERE (
+    -- Buscar por tutor (menores de 13 años)
+    n.usr_id_tutor = p_usr_id_tutor
+    OR
+    -- Buscar por propietario (autogestionados, mayores de 13 años)
+    n.usr_id_propietario = p_usr_id_tutor
+  )
   ORDER BY n.creado_en DESC;
 END;
 

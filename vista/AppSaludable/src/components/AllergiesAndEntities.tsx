@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAllergiesApi, useEntitiesApi, useNinosApi, useSelfAnthropometryApi } from '../hooks/useApi';
 import type { AlergiaResponse, TipoAlergiaResponse } from '../types/api';
+import { toast } from 'sonner';
 
 export default function AllergiesAndEntities() {
   const { getSelfChild } = useSelfAnthropometryApi();
@@ -104,16 +105,33 @@ export default function AllergiesAndEntities() {
       setAllergies(als || []);
       setNewAllergy({ ta_codigo: '', severidad: 'LEVE' });
       setAllergyQuery('');
+      toast.success('Alergia agregada', {
+        description: 'La alergia se registró correctamente.',
+      });
+    } else {
+      toast.error('Error al agregar alergia', {
+        description: addAllergy.error || 'No se pudo registrar la alergia.',
+      });
     }
   };
 
   const handleRemoveAllergy = async (allergyId: number) => {
     if (!currentNinoId) return;
     
+    const confirmed = window.confirm('¿Estás seguro de que deseas eliminar esta alergia?');
+    if (!confirmed) return;
+    
     const ok = await removeAllergy.execute(currentNinoId, allergyId);
     if (ok) {
       const als = await getAllergies.execute(currentNinoId);
       setAllergies(als || []);
+      toast.success('Alergia eliminada', {
+        description: 'La alergia se eliminó correctamente.',
+      });
+    } else {
+      toast.error('Error al eliminar alergia', {
+        description: removeAllergy.error || 'No se pudo eliminar la alergia.',
+      });
     }
   };
 
@@ -144,22 +162,32 @@ export default function AllergiesAndEntities() {
         }
       }
       
-      // Mostrar mensaje de éxito
-      alert('Entidad asociada correctamente');
+      toast.success('Entidad asociada', {
+        description: `Se asoció correctamente con ${selectedEntity.ent_nombre}.`,
+      });
     } else {
-      alert(`Error: ${updateNino.error || 'No se pudo actualizar'}`);
+      toast.error('Error al asociar entidad', {
+        description: updateNino.error || 'No se pudo actualizar.',
+      });
     }
   };
 
   const handleRemoveEntity = async () => {
     if (!currentNinoId) return;
     
+    const confirmed = window.confirm('¿Estás seguro de que deseas desasociar esta entidad?');
+    if (!confirmed) return;
+    
     const updated = await updateNino.execute(currentNinoId, { ent_id: null });
     if (updated) {
       setCurrentEntity(null);
-      alert('Entidad desasociada correctamente');
+      toast.success('Entidad desasociada', {
+        description: 'La entidad se desasoció correctamente.',
+      });
     } else {
-      alert(`Error: ${updateNino.error || 'No se pudo desasociar la entidad'}`);
+      toast.error('Error al desasociar entidad', {
+        description: updateNino.error || 'No se pudo desasociar la entidad.',
+      });
     }
   };
 

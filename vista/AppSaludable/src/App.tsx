@@ -17,6 +17,7 @@ import { SettingsScreen } from './components/screens/SettingsScreen';
 import SelfAnthropometry from './components/SelfAnthropometry';
 import ProfileHubScreen from './components/screens/ProfileHubScreen';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { Toaster } from './components/ui/toaster';
 
 type AppState = 'login' | 'register' | 'onboarding' | 'main';
 type ActiveTab = 'home' | 'meal-plan' | 'scan' | 'risk-prediction' | 'progress' | 'community' | 'gamification' | 'profile' | 'clinical';
@@ -157,6 +158,7 @@ export default function App() {
   return (
     <AuthProvider>
       <AppContent />
+      <Toaster />
     </AuthProvider>
   );
 }

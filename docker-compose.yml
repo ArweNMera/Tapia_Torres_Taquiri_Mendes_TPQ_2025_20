@@ -1,0 +1,86 @@
+services:
+  # Backend - API de Nutrición
+  backend:
+    build:
+      context: ./control/Nutricion-api
+      dockerfile: Dockerfile
+    container_name: nutricion-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      # Hot-reload: monta el código fuente
+      - ./control/Nutricion-api/nutricion-api:/app
+    environment:
+      - DATABASE_URL=mysql+pymysql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}
+      - SECRET_KEY=${SECRET_KEY}
+      - ALGORITHM=HS256
+      - ACCESS_TOKEN_EXPIRE_MINUTES=30
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI}
+      - GOOGLE_POST_LOGIN_REDIRECT=${GOOGLE_POST_LOGIN_REDIRECT}
+      - GOOGLE_ALLOWED_REDIRECTS=${GOOGLE_ALLOWED_REDIRECTS}
+      - ML_API_URL=http://modelo-ml:8001
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - app-network
+    depends_on:
+      - modelo-ml
+    restart: unless-stopped
+
+  # Frontend - React + Vite
+  frontend:
+    build:
+      context: ./vista/AppSaludable
+      dockerfile: Dockerfile
+    container_name: nutricion-frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      # Hot-reload: monta el código fuente
+      - ./vista/AppSaludable:/app
+      - /app/node_modules  # Evita sobrescribir node_modules
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8000
+      - VITE_API_VERSION=v1
+      - VITE_TOKEN_KEY=auth_token
+      - VITE_GOOGLE_POST_LOGIN_REDIRECT=http://localhost:5173
+    stdin_open: true
+    tty: true
+    networks:
+      - app-network
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  # Modelo ML - API de Machine Learning
+  modelo-ml:
+    build:
+      context: ./modelo/ml-recomendator
+      dockerfile: Dockerfile
+    container_name: nutricion-modelo-ml
+    ports:
+      - "8001:8001"
+    volumes:
+      # Hot-reload: monta el código fuente
+      - ./modelo/ml-recomendator:/app
+      # Persiste el modelo entrenado
+      - ./modelo/ml-recomendator/models:/app/models
+      - ./modelo/ml-recomendator/data:/app/data
+    environment:
+      - DB_HOST=host.docker.internal
+      - DB_PORT=3306
+      - DB_USER=root
+      - DB_PASSWORD=root123456
+      - DB_NAME=nutricion
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - app-network
+    restart: unless-stopped
+
+networks:
+  app-network:
+    driver: bridge
+

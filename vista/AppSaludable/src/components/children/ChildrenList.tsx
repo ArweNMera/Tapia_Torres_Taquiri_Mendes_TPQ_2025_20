@@ -4,10 +4,18 @@ import CreateChildForm from './CreateChildForm';
 import ChildProfileView from './ChildProfileView';
 import type { NinoWithAnthropometry, NutritionalStatusResponse } from '../../types/api';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
-import ConfirmationModal from '../ui/ConfirmationModal';
-import ActionConfirmModal from '../ui/ActionConfirmModal';
+import { toast } from 'sonner';
 
-type ClassificationKey = 'normal' | 'sobrepeso' | 'obesidad' | 'desnutrición' | 'desnutricion' | 'bajo peso' | 'sin_datos';
+// 7 Categorías OMS
+type ClassificationKey =
+  | 'DESNUTRICION_SEVERA'
+  | 'DESNUTRICION_MODERADA'
+  | 'RIESGO_DESNUTRICION'
+  | 'NORMAL'
+  | 'RIESGO_SOBREPESO'
+  | 'SOBREPESO'
+  | 'OBESIDAD'
+  | 'sin_datos';
 
 interface ClassificationTheme {
   badgeBg: string;
@@ -15,50 +23,65 @@ interface ClassificationTheme {
   cardBg: string;
   cardBorder: string;
   avatarBg: string;
+  displayName: string;
 }
 
 const CLASSIFICATION_THEMES: Record<ClassificationKey, ClassificationTheme> = {
-  normal: {
+  DESNUTRICION_SEVERA: {
+    badgeBg: 'bg-red-100',
+    badgeText: 'text-red-800',
+    cardBg: 'bg-white',
+    cardBorder: 'border-red-300',
+    avatarBg: 'bg-red-600',
+    displayName: 'Desnutrición Severa',
+  },
+  DESNUTRICION_MODERADA: {
+    badgeBg: 'bg-orange-100',
+    badgeText: 'text-orange-800',
+    cardBg: 'bg-white',
+    cardBorder: 'border-orange-300',
+    avatarBg: 'bg-orange-600',
+    displayName: 'Desnutrición Moderada',
+  },
+  RIESGO_DESNUTRICION: {
+    badgeBg: 'bg-yellow-100',
+    badgeText: 'text-yellow-800',
+    cardBg: 'bg-white',
+    cardBorder: 'border-yellow-300',
+    avatarBg: 'bg-yellow-600',
+    displayName: 'Riesgo de Desnutrición',
+  },
+  NORMAL: {
     badgeBg: 'bg-emerald-100',
-    badgeText: 'text-emerald-700',
+    badgeText: 'text-emerald-800',
     cardBg: 'bg-emerald-50',
     cardBorder: 'border-emerald-200',
     avatarBg: 'bg-emerald-500',
+    displayName: 'Normal',
   },
-  sobrepeso: {
+  RIESGO_SOBREPESO: {
     badgeBg: 'bg-amber-100',
-    badgeText: 'text-amber-700',
+    badgeText: 'text-amber-800',
     cardBg: 'bg-white',
-    cardBorder: 'border-amber-200',
-    avatarBg: 'bg-amber-500',
+    cardBorder: 'border-amber-300',
+    avatarBg: 'bg-amber-600',
+    displayName: 'Riesgo de Sobrepeso',
   },
-  obesidad: {
-    badgeBg: 'bg-rose-100',
-    badgeText: 'text-rose-700',
-    cardBg: 'bg-white',
-    cardBorder: 'border-rose-200',
-    avatarBg: 'bg-rose-500',
-  },
-  desnutrición: {
+  SOBREPESO: {
     badgeBg: 'bg-orange-100',
-    badgeText: 'text-orange-700',
+    badgeText: 'text-orange-800',
     cardBg: 'bg-white',
-    cardBorder: 'border-orange-200',
-    avatarBg: 'bg-orange-500',
+    cardBorder: 'border-orange-300',
+    avatarBg: 'bg-orange-600',
+    displayName: 'Sobrepeso',
   },
-  desnutricion: {
-    badgeBg: 'bg-orange-100',
-    badgeText: 'text-orange-700',
+  OBESIDAD: {
+    badgeBg: 'bg-purple-100',
+    badgeText: 'text-purple-800',
     cardBg: 'bg-white',
-    cardBorder: 'border-orange-200',
-    avatarBg: 'bg-orange-500',
-  },
-  'bajo peso': {
-    badgeBg: 'bg-sky-100',
-    badgeText: 'text-sky-700',
-    cardBg: 'bg-white',
-    cardBorder: 'border-sky-200',
-    avatarBg: 'bg-sky-500',
+    cardBorder: 'border-purple-300',
+    avatarBg: 'bg-purple-600',
+    displayName: 'Obesidad',
   },
   sin_datos: {
     badgeBg: 'bg-slate-100',
@@ -66,6 +89,7 @@ const CLASSIFICATION_THEMES: Record<ClassificationKey, ClassificationTheme> = {
     cardBg: 'bg-white',
     cardBorder: 'border-slate-200',
     avatarBg: 'bg-emerald-500',
+    displayName: 'Sin Evaluación',
   },
 };
 
@@ -74,23 +98,30 @@ const normalizeClassificationKey = (classification?: string): ClassificationKey 
     return 'sin_datos';
   }
 
-  const normalized = classification.trim().toLowerCase();
+  const normalized = classification.trim().toUpperCase();
 
+  // Mapeo directo de las 7 categorías OMS
   if (normalized in CLASSIFICATION_THEMES) {
     return normalized as ClassificationKey;
   }
 
+  // Compatibilidad con nombres alternativos
   switch (normalized) {
-    case 'bajo_peso':
-    case 'bajo-peso':
-    case 'bajo peso':
-      return 'bajo peso';
-    case 'desnutricion':
-      return 'desnutricion';
-    case 'desnutrición':
-      return 'desnutrición';
-    case 'sobre peso':
-      return 'sobrepeso';
+    case 'DESNUTRICION SEVERA':
+    case 'DESNUTRICIÓN SEVERA':
+    case 'SEVERO':
+      return 'DESNUTRICION_SEVERA';
+    case 'DESNUTRICION MODERADA':
+    case 'DESNUTRICIÓN MODERADA':
+    case 'MODERADO':
+      return 'DESNUTRICION_MODERADA';
+    case 'RIESGO DESNUTRICION':
+    case 'RIESGO DESNUTRICIÓN':
+    case 'RIESGO':
+      return 'RIESGO_DESNUTRICION';
+    case 'RIESGO SOBREPESO':
+    case 'RIESGO DE SOBREPESO':
+      return 'RIESGO_SOBREPESO';
     default:
       return 'sin_datos';
   }
@@ -113,37 +144,18 @@ const getInitials = (fullName: string): string => {
 const formatClassification = (status?: NutritionalStatusResponse | null) => {
   const classification = status?.classification;
   if (!classification) return 'SIN EVALUACIÓN';
-  return classification.toUpperCase();
+
+  const key = normalizeClassificationKey(classification);
+  const theme = CLASSIFICATION_THEMES[key];
+
+  return theme.displayName.toUpperCase();
 };
 
 const ChildrenList: React.FC = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedChildId, setSelectedChildId] = useState<number | null>(null);
   const [hasInitialized, setHasInitialized] = useState(false);
-  
-  // Estados para modales de confirmación
-  const [confirmModal, setConfirmModal] = useState<{
-    isOpen: boolean;
-    type: 'success' | 'error';
-    title: string;
-    message?: string;
-  }>({
-    isOpen: false,
-    type: 'success',
-    title: '',
-    message: '',
-  });
 
-  const [deleteConfirmModal, setDeleteConfirmModal] = useState<{
-    isOpen: boolean;
-    childId: number | null;
-    childName: string;
-  }>({
-    isOpen: false,
-    childId: null,
-    childName: '',
-  });
-  
   const { getNinos, deleteNino, updateNino } = useNinosApi();
 
   useEffect(() => {
@@ -156,17 +168,14 @@ const ChildrenList: React.FC = () => {
   const handleChildCreated = (childId: number) => {
     setIsCreateModalOpen(false);
     setSelectedChildId(childId);
+
+    // ✅ FORZAR RECARGA SIN CACHÉ
     getNinos.execute();
-    
-    // Mostrar modal de confirmación después de cerrar el modal de creación
+
+    // ✅ RECARGAR DE NUEVO DESPUÉS DE 500ms por si acaso
     setTimeout(() => {
-      setConfirmModal({
-        isOpen: true,
-        type: 'success',
-        title: 'Niño registrado',
-        message: '¡Perfil del niño creado exitosamente! Se ha realizado la evaluación nutricional.',
-      });
-    }, 300);
+      getNinos.execute();
+    }, 500);
   };
 
   const [editingChild, setEditingChild] = useState<{
@@ -180,28 +189,16 @@ const ChildrenList: React.FC = () => {
     ? getNinos.data
     : [];
 
-  const handleDeleteChild = (childId: number, childName: string) => {
-    setDeleteConfirmModal({
-      isOpen: true,
-      childId,
-      childName,
-    });
-  };
+  const handleDeleteChild = async (childId: number, childName: string) => {
+    const confirmed = window.confirm(`¿Estás seguro de que deseas eliminar a "${childName}" y todos sus datos asociados? Esta acción no se puede deshacer.`);
 
-  const confirmDeleteChild = async () => {
-    const { childId, childName } = deleteConfirmModal;
-    if (!childId) return;
+    if (!confirmed) return;
 
     const deleted = await deleteNino.execute(childId);
-    
-    setDeleteConfirmModal({ isOpen: false, childId: null, childName: '' });
 
     if (!deleted) {
-      setConfirmModal({
-        isOpen: true,
-        type: 'error',
-        title: 'Error al eliminar',
-        message: deleteNino.error || 'No se pudo eliminar al niño.',
+      toast.error('Error al eliminar', {
+        description: deleteNino.error || 'No se pudo eliminar al niño.',
       });
       return;
     }
@@ -210,12 +207,9 @@ const ChildrenList: React.FC = () => {
       setSelectedChildId(null);
     }
     await getNinos.execute();
-    
-    setConfirmModal({
-      isOpen: true,
-      type: 'success',
-      title: 'Niño eliminado',
-      message: `${childName} ha sido eliminado correctamente.`,
+
+    toast.success('Niño eliminado', {
+      description: `${childName} ha sido eliminado correctamente.`,
     });
   };
 
@@ -240,7 +234,7 @@ const ChildrenList: React.FC = () => {
 
     const originalName = childProfiles.find(c => c.nino.nin_id === editingChild.id)?.nino.nin_nombres;
     const originalBirthDate = childProfiles.find(c => c.nino.nin_id === editingChild.id)?.nino.nin_fecha_nac?.split('T')[0];
-    
+
     const nameChanged = trimmedName !== originalName;
     const dateChanged = editingChild.birthDate !== originalBirthDate;
 
@@ -257,11 +251,8 @@ const ChildrenList: React.FC = () => {
     if (!result) {
       setEditingChild(null);
       setEditError(null);
-      setConfirmModal({
-        isOpen: true,
-        type: 'error',
-        title: 'Error al actualizar',
-        message: updateNino.error || 'No se pudo actualizar la información.',
+      toast.error('Error al actualizar', {
+        description: updateNino.error || 'No se pudo actualizar la información.',
       });
       return;
     }
@@ -269,28 +260,23 @@ const ChildrenList: React.FC = () => {
     setEditingChild(null);
     setEditError(null);
     await getNinos.execute();
-    
+
     // Mensaje personalizado según lo que cambió
     let title = 'Datos actualizados';
-    let message = 'La información del niño ha sido actualizada correctamente.';
-    
+    let description = 'La información del niño ha sido actualizada correctamente.';
+
     if (nameChanged && dateChanged) {
       title = 'Nombre y fecha actualizados';
-      message = 'El nombre y la fecha de nacimiento han sido actualizados correctamente.';
+      description = 'El nombre y la fecha de nacimiento han sido actualizados correctamente.';
     } else if (nameChanged) {
       title = 'Nombre actualizado';
-      message = 'El nombre del niño ha sido actualizado correctamente.';
+      description = 'El nombre del niño ha sido actualizado correctamente.';
     } else if (dateChanged) {
       title = 'Fecha actualizada';
-      message = 'La fecha de nacimiento ha sido actualizada correctamente.';
+      description = 'La fecha de nacimiento ha sido actualizada correctamente.';
     }
-    
-    setConfirmModal({
-      isOpen: true,
-      type: 'success',
-      title,
-      message,
-    });
+
+    toast.success(title, { description });
   };
 
   const formatDate = (dateString?: string | null) => {
@@ -317,7 +303,7 @@ const ChildrenList: React.FC = () => {
     const diffMonths = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 30.44));
     const years = Math.floor(diffMonths / 12);
     const months = diffMonths % 12;
-    
+
     if (years > 0) {
       return `${years} año${years > 1 ? 's' : ''}${months > 0 ? ` y ${months} mes${months > 1 ? 'es' : ''}` : ''}`;
     } else {
@@ -328,7 +314,7 @@ const ChildrenList: React.FC = () => {
   // Si se está mostrando el perfil de un niño específico
   if (selectedChildId) {
     return (
-      <ChildProfileView 
+      <ChildProfileView
         childId={selectedChildId}
         onClose={() => {
           setSelectedChildId(null);
@@ -454,9 +440,9 @@ const ChildrenList: React.FC = () => {
                             type="button"
                             className="inline-flex h-9 items-center justify-center rounded-lg px-4 text-sm text-white shadow-sm transition hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-300"
                             style={{ backgroundColor: '#dc2626' }}
-                            onClick={(event) => {
+                            onClick={async (event) => {
                               event.stopPropagation();
-                              handleDeleteChild(nino.nin_id, nino.nin_nombres);
+                              await handleDeleteChild(nino.nin_id, nino.nin_nombres);
                             }}
                             aria-label={`Eliminar ${nino.nin_nombres}`}
                           >
@@ -665,26 +651,6 @@ const ChildrenList: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Modal de confirmación de eliminación */}
-      <ActionConfirmModal
-        isOpen={deleteConfirmModal.isOpen}
-        onClose={() => setDeleteConfirmModal({ isOpen: false, childId: null, childName: '' })}
-        onConfirm={confirmDeleteChild}
-        title="¿Eliminar niño?"
-        description={`¿Estás seguro de que deseas eliminar a "${deleteConfirmModal.childName}" y todos sus datos asociados? Esta acción no se puede deshacer.`}
-        confirmText="Eliminar"
-        cancelText="Cancelar"
-        isLoading={deleteNino.loading}
-      />
-
-      {/* Modal de confirmación de acciones */}
-      <ConfirmationModal
-        isOpen={confirmModal.isOpen}
-        onClose={() => setConfirmModal({ isOpen: false, type: 'success', title: '', message: '' })}
-        type={confirmModal.type}
-        title={confirmModal.title}
-        message={confirmModal.message}
-      />
     </div>
   );
 };

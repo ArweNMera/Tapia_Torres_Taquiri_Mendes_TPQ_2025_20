@@ -125,12 +125,18 @@ export interface AnthropometryResponse {
 }
 
 // Tipos para evaluación nutricional
+export interface RecomendacionNutricional {
+  icono: string;
+  titulo: string;
+  descripcion: string;
+}
+
 export interface NutritionalStatusResponse {
   imc: number;
   z_score_imc?: number;
   classification: string;
   percentile?: number;
-  recommendations: string[];
+  recommendations: RecomendacionNutricional[];
   risk_level: string;
 }
 

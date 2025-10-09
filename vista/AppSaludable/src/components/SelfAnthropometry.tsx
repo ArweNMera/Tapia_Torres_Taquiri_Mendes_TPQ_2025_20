@@ -29,8 +29,7 @@ import {
   DialogHeader,
   DialogTitle
 } from './ui/dialog';
-import ConfirmationModal from './ui/ConfirmationModal';
-import ActionConfirmModal from './ui/ActionConfirmModal';
+import { toast } from 'sonner';
 
 interface ClinicalSection {
   id: 'anthropometry' | 'allergies-entities';
@@ -111,28 +110,7 @@ export default function SelfAnthropometry() {
   } | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
 
-  // Estados para modales de confirmación
-  const [confirmModal, setConfirmModal] = useState<{
-    isOpen: boolean;
-    type: 'success' | 'error';
-    title: string;
-    message?: string;
-  }>({
-    isOpen: false,
-    type: 'success',
-    title: '',
-    message: '',
-  });
 
-  const [deleteAllergyModal, setDeleteAllergyModal] = useState<{
-    isOpen: boolean;
-    allergyId: number | null;
-    allergyName: string;
-  }>({
-    isOpen: false,
-    allergyId: null,
-    allergyName: '',
-  });
 
   const fetchChildDetail = getChildWithData.execute;
   const fetchAllergyCatalog = getAllergyTypes.execute;
@@ -278,12 +256,12 @@ export default function SelfAnthropometry() {
       handleSelectChild(childId);
     }
     setActiveChildModal(modal);
-    
+
     // Si es el modal de medidas, pre-llenar con las últimas mediciones
     if (modal === 'measure') {
       // Cargar datos del niño si no están ya cargados
       const childData = await fetchChildDetail(childId);
-      
+
       if (childData?.antropometrias && childData.antropometrias.length > 0) {
         const latestMeasurement = childData.antropometrias[0];
         setMeasurementForm({
@@ -321,26 +299,40 @@ export default function SelfAnthropometry() {
   const handleMeasurementSubmit = async (event: React.FormEvent): Promise<boolean> => {
     event.preventDefault();
     if (!selectedChildId || !measurementForm.ant_peso_kg || !measurementForm.ant_talla_cm) {
+      toast.error('Campos incompletos', {
+        description: 'Por favor, completa peso y talla.',
+      });
       return false;
     }
 
     setAddingMeasurement(true);
     let success = false;
     try {
-      await addAnthropometry.execute(selectedChildId, {
+      const result = await addAnthropometry.execute(selectedChildId, {
         ant_peso_kg: parseFloat(measurementForm.ant_peso_kg),
         ant_talla_cm: parseFloat(measurementForm.ant_talla_cm),
         ant_fecha: measurementForm.ant_fecha,
       });
-      await evaluateNutritionalStatus.execute(selectedChildId);
-      await fetchChildDetail(selectedChildId);
-      await getNinos.execute();
-      setMeasurementForm({
-        ant_peso_kg: '',
-        ant_talla_cm: '',
-        ant_fecha: new Date().toISOString().split('T')[0],
-      });
-      success = true;
+
+      if (result) {
+        await evaluateNutritionalStatus.execute(selectedChildId);
+        await fetchChildDetail(selectedChildId);
+        await getNinos.execute();
+        setMeasurementForm({
+          ant_peso_kg: '',
+          ant_talla_cm: '',
+          ant_fecha: new Date().toISOString().split('T')[0],
+        });
+        success = true;
+
+        toast.success('Medición agregada', {
+          description: 'Medición agregada y estado nutricional actualizado.',
+        });
+      } else {
+        toast.error('Error al agregar medición', {
+          description: addAnthropometry.error || 'No se pudo agregar la medición.',
+        });
+      }
     } finally {
       setAddingMeasurement(false);
     }
@@ -353,9 +345,19 @@ export default function SelfAnthropometry() {
     }
     setEvaluatingStatus(true);
     try {
-      await evaluateNutritionalStatus.execute(selectedChildId);
-      await fetchChildDetail(selectedChildId);
-      await getNinos.execute();
+      const result = await evaluateNutritionalStatus.execute(selectedChildId);
+      if (result) {
+        await fetchChildDetail(selectedChildId);
+        await getNinos.execute();
+
+        toast.success('Evaluación actualizada', {
+          description: 'La evaluación nutricional se actualizó correctamente.',
+        });
+      } else {
+        toast.error('Error al evaluar', {
+          description: evaluateNutritionalStatus.error || 'No se pudo actualizar la evaluación.',
+        });
+      }
     } finally {
       setEvaluatingStatus(false);
     }
@@ -363,19 +365,32 @@ export default function SelfAnthropometry() {
 
   const handleAddAllergyClick = async (): Promise<boolean> => {
     if (!selectedChildId || !newAllergy.ta_codigo) {
+      toast.error('Datos incompletos', {
+        description: 'Selecciona una alergia antes de continuar.',
+      });
       return false;
     }
+
     setAddingAllergy(true);
     let success = false;
     try {
-      const result = await addAllergy.execute(selectedChildId, newAllergy);
+      const result = await addAllergy.execute(selectedChildId, { ta_codigo: newAllergy.ta_codigo, severidad: newAllergy.severidad });
       if (result) {
         await fetchChildDetail(selectedChildId);
         await getNinos.execute();
         setNewAllergy({ ta_codigo: '', severidad: 'LEVE' });
         setAllergySearch('');
         setAllergyOptions([]);
+        setActiveChildModal(null);
         success = true;
+
+        toast.success('Alergia agregada', {
+          description: 'Se agregó la alergia correctamente.',
+        });
+      } else {
+        toast.error('Error al agregar alergia', {
+          description: addAllergy.error || 'No se pudo agregar la alergia.',
+        });
       }
     } finally {
       setAddingAllergy(false);
@@ -383,16 +398,29 @@ export default function SelfAnthropometry() {
     return success;
   };
 
-  const handleRemoveAllergyClick = async (allergyId: number) => {
+  const handleRemoveAllergyClick = async (allergyId: number, allergyName: string) => {
     if (!selectedChildId) {
       return;
     }
-    
+
+    const confirmed = window.confirm(`¿Estás seguro de que deseas eliminar la alergia: ${allergyName}?`);
+    if (!confirmed) return;
+
     setRemovingAllergyId(allergyId);
     try {
-      await removeAllergy.execute(selectedChildId, allergyId);
-      await fetchChildDetail(selectedChildId);
-      await getNinos.execute();
+      const result = await removeAllergy.execute(selectedChildId, allergyId);
+      if (result) {
+        await fetchChildDetail(selectedChildId);
+        await getNinos.execute();
+
+        toast.success('Alergia eliminada', {
+          description: `Se eliminó la alergia: ${allergyName}`,
+        });
+      } else {
+        toast.error('Error al eliminar alergia', {
+          description: removeAllergy.error || 'No se pudo eliminar la alergia.',
+        });
+      }
     } finally {
       setRemovingAllergyId(null);
     }
@@ -400,6 +428,9 @@ export default function SelfAnthropometry() {
 
   const handleAssignEntity = async (): Promise<boolean> => {
     if (!selectedChildId || !selectedEntityResult) {
+      toast.error('Datos incompletos', {
+        description: 'Selecciona una entidad antes de continuar.',
+      });
       return false;
     }
     setUpdatingEntity(true);
@@ -414,6 +445,14 @@ export default function SelfAnthropometry() {
         setSelectedEntityResult(null);
         await getNinos.execute();
         success = true;
+
+        toast.success('Entidad asociada', {
+          description: `Se asoció correctamente con ${selectedEntityResult.ent_nombre}.`,
+        });
+      } else {
+        toast.error('Error al asociar entidad', {
+          description: updateNino.error || 'No se pudo asociar la entidad.',
+        });
       }
     } finally {
       setUpdatingEntity(false);
@@ -425,6 +464,10 @@ export default function SelfAnthropometry() {
     if (!selectedChildId) {
       return;
     }
+
+    const confirmed = window.confirm('¿Estás seguro de que deseas desasociar esta entidad?');
+    if (!confirmed) return;
+
     setUpdatingEntity(true);
     try {
       const result = await updateNino.execute(selectedChildId, { ent_id: null });
@@ -435,6 +478,14 @@ export default function SelfAnthropometry() {
         setEntityResults([]);
         setSelectedEntityResult(null);
         await getNinos.execute();
+
+        toast.success('Entidad desasociada', {
+          description: 'La entidad se desasoció correctamente.',
+        });
+      } else {
+        toast.error('Error al desasociar entidad', {
+          description: updateNino.error || 'No se pudo desasociar la entidad.',
+        });
       }
     } finally {
       setUpdatingEntity(false);
@@ -442,14 +493,14 @@ export default function SelfAnthropometry() {
   };
 
   const handleDeleteChild = async (childId: number, childName: string) => {
-    const confirmed = window.confirm(`¿Eliminar a "${childName}" y todos sus registros asociados?`);
-    if (!confirmed) {
-      return;
-    }
+    const confirmed = window.confirm(`¿Estás seguro de que deseas eliminar a "${childName}" y todos sus datos asociados? Esta acción no se puede deshacer.`);
+    if (!confirmed) return;
 
     const result = await deleteNino.execute(childId);
     if (!result) {
-      alert(deleteNino.error || 'No se pudo eliminar al niño.');
+      toast.error('Error al eliminar', {
+        description: deleteNino.error || 'No se pudo eliminar al niño.',
+      });
       return;
     }
 
@@ -465,6 +516,10 @@ export default function SelfAnthropometry() {
     if (childId === getChildWithData.data?.nino.nin_id) {
       getChildWithData.reset();
     }
+
+    toast.success('Niño eliminado', {
+      description: `${childName} ha sido eliminado correctamente.`,
+    });
   };
 
   const openEditChildModal = (child: NinoWithAnthropometry['nino']) => {
@@ -483,6 +538,9 @@ export default function SelfAnthropometry() {
     const trimmedName = editingChild.name.trim();
     if (!trimmedName) {
       setEditError('El nombre es obligatorio.');
+      toast.error('Nombre requerido', {
+        description: 'El nombre es obligatorio.',
+      });
       return;
     }
 
@@ -494,6 +552,9 @@ export default function SelfAnthropometry() {
     const result = await updateNino.execute(editingChild.id, payload);
     if (!result) {
       setEditError(updateNino.error || 'No se pudo actualizar la información.');
+      toast.error('Error al actualizar', {
+        description: updateNino.error || 'No se pudo actualizar la información.',
+      });
       return;
     }
 
@@ -503,6 +564,10 @@ export default function SelfAnthropometry() {
     if (selectedChildId === editingChild.id) {
       await fetchChildDetail(editingChild.id);
     }
+
+    toast.success('Información actualizada', {
+      description: 'Los datos del niño se actualizaron correctamente.',
+    });
   };
 
   const formatDate = (iso: string | null | undefined) => {
@@ -652,13 +717,12 @@ export default function SelfAnthropometry() {
                   <div className="flex justify-between">
                     <span>Nivel de riesgo</span>
                     <span
-                      className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
-                        nutritionalStatus.risk_level === 'ALTO'
-                          ? 'bg-red-100 text-red-700'
-                          : nutritionalStatus.risk_level === 'MODERADO'
+                      className={`rounded-full px-2 py-0.5 text-xs font-semibold ${nutritionalStatus.risk_level === 'ALTO'
+                        ? 'bg-red-100 text-red-700'
+                        : nutritionalStatus.risk_level === 'MODERADO'
                           ? 'bg-yellow-100 text-yellow-700'
                           : 'bg-emerald-100 text-emerald-700'
-                      }`}
+                        }`}
                     >
                       {nutritionalStatus.risk_level}
                     </span>
@@ -666,11 +730,17 @@ export default function SelfAnthropometry() {
                   {nutritionalStatus.recommendations?.length ? (
                     <div className="pt-2">
                       <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Recomendaciones</p>
-                      <ul className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1 list-disc pl-4 text-sm">
-                        {nutritionalStatus.recommendations.map((item, index) => (
-                          <li key={`${item}-${index}`} className="break-words">{item}</li>
+                      <div className="mt-2 space-y-3">
+                        {nutritionalStatus.recommendations.map((rec, index) => (
+                          <div key={index} className="flex gap-2">
+                            <span className="text-lg flex-shrink-0">{rec.icono}</span>
+                            <div className="flex-1">
+                              <p className="font-medium text-sm text-slate-900">{rec.titulo}</p>
+                              <p className="text-xs text-slate-600 mt-0.5">{rec.descripcion}</p>
+                            </div>
+                          </div>
                         ))}
-                      </ul>
+                      </div>
                     </div>
                   ) : null}
                 </div>
@@ -829,7 +899,7 @@ export default function SelfAnthropometry() {
                       </span>
                       <button
                         type="button"
-                        onClick={() => handleRemoveAllergyClick(alergia.na_id)}
+                        onClick={() => handleRemoveAllergyClick(alergia.na_id, alergia.ta_nombre)}
                         disabled={removingAllergyId === alergia.na_id}
                         className="text-amber-600 hover:text-red-600"
                         aria-label="Eliminar alergia"
@@ -911,13 +981,7 @@ export default function SelfAnthropometry() {
                 </button>
                 <button
                   type="button"
-                  onClick={async () => {
-                    const added = await handleAddAllergyClick();
-                    if (added) {
-                      setAllergySearch('');
-                      setActiveChildModal(null);
-                    }
-                  }}
+                  onClick={handleAddAllergyClick}
                   disabled={addingAllergy || !newAllergy.ta_codigo}
                   className={PRIMARY_BUTTON}
                 >
@@ -1047,22 +1111,20 @@ export default function SelfAnthropometry() {
           <button
             type="button"
             onClick={() => handleSelectFlow('yes')}
-            className={`${PRIMARY_BUTTON} flex-1 sm:flex-none ${
-              childFlow === 'yes'
-                ? 'ring-2 ring-offset-2 ring-offset-white ring-primary'
-                : ''
-            }`}
+            className={`${PRIMARY_BUTTON} flex-1 sm:flex-none ${childFlow === 'yes'
+              ? 'ring-2 ring-offset-2 ring-offset-white ring-primary'
+              : ''
+              }`}
           >
             ✨ Sí, quiero registrarlos
           </button>
           <button
             type="button"
             onClick={() => handleSelectFlow('no')}
-            className={`${PRIMARY_BUTTON} flex-1 sm:flex-none ${
-              childFlow === 'no'
-                ? 'ring-2 ring-offset-2 ring-offset-white ring-primary'
-                : ''
-            }`}
+            className={`${PRIMARY_BUTTON} flex-1 sm:flex-none ${childFlow === 'no'
+              ? 'ring-2 ring-offset-2 ring-offset-white ring-primary'
+              : ''
+              }`}
           >
             👤 No tengo hijos
           </button>
@@ -1137,8 +1199,8 @@ export default function SelfAnthropometry() {
                   ? child.ultimo_estado_nutricional.risk_level === 'ALTO'
                     ? 'bg-red-100 text-red-700'
                     : child.ultimo_estado_nutricional.risk_level === 'MODERADO'
-                    ? 'bg-amber-100 text-amber-700'
-                    : 'bg-emerald-100 text-emerald-700'
+                      ? 'bg-amber-100 text-amber-700'
+                      : 'bg-emerald-100 text-emerald-700'
                   : '';
                 const entityName = info.ent_nombre || info.ent_codigo || null;
                 const entityLocation = [
@@ -1163,18 +1225,16 @@ export default function SelfAnthropometry() {
                         handleSelectChild(info.nin_id);
                       }
                     }}
-                    className={`group w-full rounded-2xl border px-4 py-4 text-left transition-shadow ${
-                      isActive
-                        ? 'border-primary bg-primary/10 shadow-md'
-                        : 'border-gray-200 bg-white hover:border-primary/60 hover:shadow'
-                    } cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/30`}
+                    className={`group w-full rounded-2xl border px-4 py-4 text-left transition-shadow ${isActive
+                      ? 'border-primary bg-primary/10 shadow-md'
+                      : 'border-gray-200 bg-white hover:border-primary/60 hover:shadow'
+                      } cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/30`}
                   >
                     <div className="flex flex-col gap-4 md:flex-row md:items-stretch md:justify-between">
                       <div className="flex flex-1 items-start gap-3 text-left">
                         <span
-                          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${
-                            isActive ? 'bg-primary text-white' : 'bg-primary/10 text-primary'
-                          }`}
+                          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${isActive ? 'bg-primary text-white' : 'bg-primary/10 text-primary'
+                            }`}
                         >
                           {getInitials(childName)}
                         </span>
@@ -1330,11 +1390,10 @@ export default function SelfAnthropometry() {
               <button
                 key={section.id}
                 onClick={() => setActiveSection(section.id)}
-                className={`flex-1 border-b-2 px-6 py-4 text-sm font-medium transition-colors duration-200 ${
-                  activeSection === section.id
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-slate-500 hover:border-primary hover:text-primary'
-                }`}
+                className={`flex-1 border-b-2 px-6 py-4 text-sm font-medium transition-colors duration-200 ${activeSection === section.id
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-slate-500 hover:border-primary hover:text-primary'
+                  }`}
               >
                 <span className="mr-2 text-xl">{section.icon}</span>
                 <span>{section.title}</span>
