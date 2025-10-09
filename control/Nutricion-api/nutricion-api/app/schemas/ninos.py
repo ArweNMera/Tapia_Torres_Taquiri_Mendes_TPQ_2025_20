@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 from datetime import date
-from typing import Optional, List
+from typing import Optional, List, Union
 from enum import Enum
 
 class SexoEnum(str, Enum):
@@ -94,12 +94,17 @@ class AnthropometryResponse(BaseModel):
     class Config:
         from_attributes = True
 
+class RecomendacionNutricional(BaseModel):
+    icono: str
+    titulo: str
+    descripcion: str
+
 class NutritionalStatusResponse(BaseModel):
     imc: float
     z_score_imc: Optional[float] = None
     classification: str  # "bajo_peso", "normal", "sobrepeso", "obesidad"
     percentile: Optional[float] = None
-    recommendations: List[str] = []
+    recommendations: List[Union[RecomendacionNutricional, str]] = []  # Acepta ambos formatos
     risk_level: str  # "BAJO", "MODERADO", "ALTO"
 
 class NinoWithAnthropometry(BaseModel):

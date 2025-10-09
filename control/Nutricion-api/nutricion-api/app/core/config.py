@@ -15,6 +15,9 @@ class Settings(BaseSettings):
     GOOGLE_REDIRECT_URI: Optional[str] = None
     GOOGLE_POST_LOGIN_REDIRECT: Optional[str] = "http://localhost:5173"
     GOOGLE_ALLOWED_REDIRECTS: Optional[str] = None
+    
+    # ML API Configuration
+    ML_API_URL: str = "http://localhost:8001"
 
     class Config:
         env_file = ".env"

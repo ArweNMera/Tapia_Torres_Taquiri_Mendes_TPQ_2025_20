@@ -358,7 +358,101 @@ class NinosRepository(INinosRepository):
             raise e
 
     def evaluar_estado_nutricional(self, nin_id: int) -> Dict[str, Any]:
-        """Evaluar estado nutricional usando WHO standards con sp_evaluar_estado_nutricional"""
+        """
+        Evaluar estado nutricional usando modelo ML (Random Forest 93.92% accuracy).
+        
+        Reemplaza el procedimiento almacenado sp_evaluar_estado_nutricional
+        con llamada a la API ML en puerto 8003.
+        """
+        import httpx
+        from app.core.config import settings
+        from datetime import datetime
+        import logging
+        
+        logger = logging.getLogger(__name__)
+        
+        try:
+            # Obtener última antropometría del niño
+            query = text("""
+                SELECT a.ant_id, a.ant_peso_kg, a.ant_talla_cm, a.ant_fecha,
+                       n.nin_id, n.nin_nombres,
+                       TIMESTAMPDIFF(MONTH, n.nin_fecha_nac, a.ant_fecha) as edad_meses
+                FROM antropometrias a
+                JOIN ninos n ON a.nin_id = n.nin_id
+                WHERE a.nin_id = :nin_id
+                ORDER BY a.ant_fecha DESC, a.creado_en DESC
+                LIMIT 1
+            """)
+            
+            ant_result = self.db.execute(query, {"nin_id": nin_id}).fetchone()
+            
+            if not ant_result:
+                logger.warning(f"No se encontró antropometría para nin_id={nin_id}")
+                return None
+            
+            # Llamar a API ML para análisis nutricional
+            try:
+                with httpx.Client(timeout=10.0) as client:
+                    payload = {
+                        "nin_id": nin_id,
+                        "peso_kg": float(ant_result.ant_peso_kg),
+                        "talla_cm": float(ant_result.ant_talla_cm),
+                        "fecha_medicion": ant_result.ant_fecha.strftime("%Y-%m-%d") if ant_result.ant_fecha else None
+                    }
+                    
+                    logger.info(f"🔍 Llamando API ML para nin_id={nin_id}: {payload}")
+                    
+                    response = client.post(
+                        f"{settings.ML_API_URL}/ml/analisis_nutricional",
+                        json=payload
+                    )
+                    
+                    logger.info(f"📡 API ML response status: {response.status_code}")
+                    
+                    if response.status_code == 200:
+                        ml_result = response.json()
+                        
+                        logger.info(f"✅ API ML result: diagnostico={ml_result.get('diagnostico')}, percentil={ml_result.get('percentil')}")
+                        
+                        # Mapear respuesta de ML al formato esperado
+                        result = {
+                            "en_id": None,  # No se guarda en BD por ahora
+                            "nin_id": nin_id,
+                            "ant_id": ant_result.ant_id,
+                            "en_edad_meses": ant_result.edad_meses,
+                            "imc_calculado": ml_result["imc"],
+                            "en_z_score_imc": ml_result["baz"],
+                            "percentil_calculado": ml_result["percentil"],
+                            "en_clasificacion": ml_result["diagnostico"],
+                            "en_nivel_riesgo": ml_result["nivel_riesgo"],
+                            "oms_usado": True,  # Modelo ML usa tablas OMS
+                            "evaluado_en": datetime.now().isoformat(),
+                            # Campos adicionales del modelo ML
+                            "probabilidad": ml_result.get("probabilidad"),
+                            "probabilidades": ml_result.get("probabilidades"),
+                            "recomendaciones": ml_result.get("recomendaciones"),
+                            "modelo_usado": ml_result.get("modelo_usado", True),
+                            "modelo_version": ml_result.get("modelo_version", "v1.0")
+                        }
+                        
+                        logger.info(f"📊 Returning result with percentil_calculado={result['percentil_calculado']}")
+                        return result
+                    else:
+                        # Fallback a procedimiento almacenado si API ML falla
+                        logger.warning(f"⚠️  API ML falló (status {response.status_code}), usando procedimiento almacenado")
+                        return self._evaluar_con_procedimiento(nin_id)
+                        
+            except (httpx.ConnectError, httpx.TimeoutException) as e:
+                # Fallback a procedimiento almacenado si no se puede conectar
+                logger.warning(f"⚠️  No se puede conectar a API ML: {e}, usando procedimiento almacenado")
+                return self._evaluar_con_procedimiento(nin_id)
+            
+        except Exception as e:
+            logger.error(f"❌ Error en evaluar_estado_nutricional: {e}")
+            raise e
+    
+    def _evaluar_con_procedimiento(self, nin_id: int) -> Dict[str, Any]:
+        """Fallback: evaluar usando procedimiento almacenado."""
         try:
             result = self.db.execute(text("CALL sp_evaluar_estado_nutricional(:nin_id)"), {
                 "nin_id": nin_id
@@ -379,7 +473,6 @@ class NinosRepository(INinosRepository):
                     "evaluado_en": result.evaluado_en.isoformat() if result.evaluado_en else None
                 }
             return None
-            
         except Exception as e:
             raise e
 
@@ -549,7 +642,8 @@ class NinosRepository(INinosRepository):
                 "classification": clasificacion,
                 "percentile": estado.get("percentil_calculado"),
                 "risk_level": estado.get("en_nivel_riesgo"),
-                "recommendations": generar_recomendaciones_nutricionales(clasificacion, imc, edad_meses)
+                # Usar recomendaciones del modelo ML si están disponibles, sino generar
+                "recommendations": estado.get("recomendaciones") or generar_recomendaciones_nutricionales(clasificacion, imc, edad_meses)
             }
         
         return {
@@ -595,7 +689,8 @@ class NinosRepository(INinosRepository):
                             "classification": clasificacion,
                             "percentile": estado.get("percentil_calculado"),
                             "risk_level": estado.get("en_nivel_riesgo"),
-                            "recommendations": generar_recomendaciones_nutricionales(clasificacion, imc, edad_meses)
+                            # Usar recomendaciones del modelo ML si están disponibles, sino generar
+                            "recommendations": estado.get("recomendaciones") or generar_recomendaciones_nutricionales(clasificacion, imc, edad_meses)
                         }
                 except:
                     pass
