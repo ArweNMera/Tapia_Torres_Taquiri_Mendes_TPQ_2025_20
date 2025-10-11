@@ -17,7 +17,7 @@ export function LoginScreen({ onLogin, onSignUp }: LoginScreenProps) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   
-  const { login, beginGoogleLogin, isLoading, googleAuthError, clearGoogleAuthError } = useAuth();
+  const { login, beginGoogleLogin, beginGithubLogin, isLoading, socialAuthError, clearSocialAuthError } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,15 +42,20 @@ export function LoginScreen({ onLogin, onSignUp }: LoginScreenProps) {
 
   const handleGoogleLogin = () => {
     setError('');
-    beginGoogleLogin(window.location.origin);
+    beginGoogleLogin();
+  };
+
+  const handleGithubLogin = () => {
+    setError('');
+    beginGithubLogin();
   };
 
   useEffect(() => {
-    if (googleAuthError) {
-      setError(googleAuthError);
-      clearGoogleAuthError();
+    if (socialAuthError) {
+      setError(socialAuthError);
+      clearSocialAuthError();
     }
-  }, [googleAuthError, clearGoogleAuthError]);
+  }, [socialAuthError, clearSocialAuthError]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-secondary/10 via-accent/5 to-primary/10 flex">
@@ -177,11 +182,13 @@ export function LoginScreen({ onLogin, onSignUp }: LoginScreenProps) {
                 variant="outline" 
                 className="w-full h-12 border-border hover:bg-muted"
                 type="button"
+                onClick={handleGithubLogin}
+                disabled={isLoading}
               >
-                <svg className="w-5 h-5 mr-3" fill="#1877F2" viewBox="0 0 24 24">
-                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.38 7.86 10.9.58.11.79-.26.79-.57 0-.28-.01-1.02-.02-2-3.2.69-3.88-1.54-3.88-1.54-.53-1.34-1.29-1.69-1.29-1.69-1.06-.73.08-.72.08-.72 1.17.08 1.78 1.2 1.78 1.2 1.04 1.78 2.73 1.26 3.4.96.11-.75.41-1.26.74-1.55-2.55-.29-5.23-1.27-5.23-5.63 0-1.24.44-2.26 1.16-3.05-.12-.29-.5-1.45.11-3.02 0 0 .96-.31 3.15 1.16a10.9 10.9 0 0 1 2.87-.39c.97 0 1.95.13 2.87.39 2.19-1.47 3.14-1.16 3.14-1.16.61 1.57.24 2.73.12 3.02.72.79 1.15 1.81 1.15 3.05 0 4.37-2.69 5.33-5.25 5.61.42.36.8 1.08.8 2.17 0 1.57-.01 2.83-.01 3.22 0 .31.21.68.8.57A10.51 10.51 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z"/>
                 </svg>
-                Continuar con Facebook
+                Continuar con GitHub
               </Button>
             </div>
 

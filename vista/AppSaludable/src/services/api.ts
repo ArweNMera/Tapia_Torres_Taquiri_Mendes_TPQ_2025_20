@@ -31,10 +31,12 @@ import {
 class ApiService {
   private baseURL: string;
   private apiVersion: string;
+  private tokenKey: string;
 
   constructor() {
     this.baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
     this.apiVersion = import.meta.env.VITE_API_VERSION || 'v1';
+    this.tokenKey = import.meta.env.VITE_TOKEN_KEY || 'auth_token';
   }
 
   private getApiUrl(endpoint: string): string {
@@ -51,7 +53,7 @@ class ApiService {
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
     try {
-      const token = localStorage.getItem(import.meta.env.VITE_TOKEN_KEY || 'auth_token');
+      const token = localStorage.getItem(this.tokenKey);
       
       const config: RequestInit = {
         headers: {
@@ -139,34 +141,32 @@ class ApiService {
     );
   }
 
-  async loginWithGoogle(googleData: GoogleLogin): Promise<ApiResponse<Token>> {
-    return this.makeRequest<Token>(
-      this.getApiUrl('/auth/google'),
-      {
-        method: 'POST',
-        body: JSON.stringify(googleData),
-      }
-    );
+  async loginWithFirebase(idToken: string): Promise<ApiResponse<Token>> {
+    if (!idToken) {
+      return { success: false, error: 'id_token faltante en la solicitud' };
+    }
+
+    return this.makeRequest<Token>(this.getApiUrl('/auth/google'), {
+      method: 'POST',
+      body: JSON.stringify({ id_token: idToken }),
+    });
   }
 
-  getGoogleAuthStartUrl(redirectTo: string): string {
-    const baseUrl = this.getApiUrl('/auth/google/start');
-    const url = new URL(baseUrl);
-    url.searchParams.set('redirect_to', redirectTo);
-    return url.toString();
+  async loginWithGoogle(googleData: GoogleLogin): Promise<ApiResponse<Token>> {
+    return this.loginWithFirebase(googleData?.id_token || '');
   }
 
   // Métodos utilitarios para el token
   setToken(token: string): void {
-    localStorage.setItem('auth_token', token);
+    localStorage.setItem(this.tokenKey, token);
   }
 
   getToken(): string | null {
-    return localStorage.getItem('auth_token');
+    return localStorage.getItem(this.tokenKey);
   }
 
   removeToken(): void {
-    localStorage.removeItem('auth_token');
+    localStorage.removeItem(this.tokenKey);
   }
 
   isAuthenticated(): boolean {

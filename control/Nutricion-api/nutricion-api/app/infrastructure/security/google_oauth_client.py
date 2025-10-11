@@ -2,6 +2,7 @@
 Servicio de infraestructura para Google OAuth.
 Encapsula la lógica de autenticación con Google.
 """
+import logging
 from typing import Dict, Tuple
 from urllib.parse import urlencode, urlparse, parse_qsl, urlunparse
 from datetime import datetime, timedelta
@@ -19,6 +20,7 @@ class GoogleOAuthClient:
     """Cliente para operaciones de Google OAuth"""
     
     def __init__(self):
+        self.logger = logging.getLogger(__name__)
         self.client_id = settings.GOOGLE_CLIENT_ID
         self.client_secret = settings.GOOGLE_CLIENT_SECRET
         self.redirect_uri = settings.GOOGLE_REDIRECT_URI
@@ -52,6 +54,7 @@ class GoogleOAuthClient:
                 self.client_id,
             )
         except ValueError as exc:
+            self.logger.error("Error verificando id_token de Google: %s", exc)
             raise HTTPException(status_code=400, detail="Token de Google inválido") from exc
         
         # Validar emisor

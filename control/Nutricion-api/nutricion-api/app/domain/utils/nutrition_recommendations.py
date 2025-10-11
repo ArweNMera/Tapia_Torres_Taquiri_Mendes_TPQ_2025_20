@@ -3,117 +3,306 @@ Utilidades para generar recomendaciones nutricionales personalizadas.
 Este módulo contiene la lógica de negocio para generar recomendaciones
 basadas en el estado nutricional del niño.
 """
-from typing import List
+from typing import List, Dict, Any
+
+# Catálogo base usado tanto para sugerencias dinámicas como para poblar la tabla recomendaciones_tipos
+RECOMMENDATION_CATALOG: Dict[str, List[Dict[str, Any]]] = {
+    "DESNUTRICION_SEVERA": [
+        {
+            "codigo": "DES_SEVERA_ATENCION",
+            "icono": "⚠️",
+            "titulo": "Atención médica urgente",
+            "descripcion": "Consulta inmediata con pediatra o nutricionista especializado",
+            "prioridad": 1,
+        },
+        {
+            "codigo": "DES_SEVERA_EVALUACION",
+            "icono": "⚠️",
+            "titulo": "Evaluación clínica completa",
+            "descripcion": "Descartar enfermedades subyacentes y complicaciones metabólicas",
+            "prioridad": 2,
+        },
+        {
+            "codigo": "DES_SEVERA_PLAN_RECUP",
+            "icono": "🍲",
+            "titulo": "Plan de recuperación nutricional",
+            "descripcion": "Diseñar plan hipercalórico e hiperproteico supervisado por profesional de salud",
+            "prioridad": 3,
+        },
+        {
+            "codigo": "DES_SEVERA_SUPLEMENTOS",
+            "icono": "💊",
+            "titulo": "Suplementación específica",
+            "descripcion": "Evaluar uso de suplementos vitamínico-minerales bajo supervisión médica",
+            "prioridad": 4,
+        },
+        {
+            "codigo": "DES_SEVERA_MONITOREO",
+            "icono": "📈",
+            "titulo": "Monitoreo semanal",
+            "descripcion": "Control de peso, talla y signos vitales cada semana durante la recuperación",
+            "prioridad": 5,
+        },
+    ],
+    "DESNUTRICION": [
+        {
+            "codigo": "DES_MODERADA_CONSULTA",
+            "icono": "⚠️",
+            "titulo": "Consulta nutricional prioritaria",
+            "descripcion": "Agendar cita con nutricionista pediátrico en un plazo menor a 7 días",
+            "prioridad": 1,
+        },
+        {
+            "codigo": "DES_MODERADA_FRECUENCIA",
+            "icono": "🍽️",
+            "titulo": "Aumentar frecuencia de comidas",
+            "descripcion": "Distribuir 5 a 6 comidas pequeñas con alta densidad energética",
+            "prioridad": 2,
+        },
+        {
+            "codigo": "DES_MODERADA_PROTEINAS",
+            "icono": "🥚",
+            "titulo": "Potenciar alimentos proteicos",
+            "descripcion": "Incluir carnes magras, huevos, lácteos y legumbres en cada comida principal",
+            "prioridad": 3,
+        },
+        {
+            "codigo": "DES_MODERADA_GRASAS_SALUDABLES",
+            "icono": "🥑",
+            "titulo": "Agregar grasas saludables",
+            "descripcion": "Usar palta, aceite de oliva y frutos secos para aumentar calorías de calidad",
+            "prioridad": 4,
+        },
+        {
+            "codigo": "DES_MODERADA_SUPLEMENTOS",
+            "icono": "💊",
+            "titulo": "Evaluar suplementación",
+            "descripcion": "Considerar multivitamínicos o fortificantes según indicación profesional",
+            "prioridad": 5,
+        },
+    ],
+    "RIESGO": [
+        {
+            "codigo": "RIESGO_CONSULTA_PREVENTIVA",
+            "icono": "🍎",
+            "titulo": "Consulta preventiva",
+            "descripcion": "Coordinar asesoría nutricional para prevenir progresión del riesgo",
+            "prioridad": 1,
+        },
+        {
+            "codigo": "RIESGO_PORCIONES",
+            "icono": "🥗",
+            "titulo": "Incremento gradual de porciones",
+            "descripcion": "Aumentar ligeramente la cantidad en comidas principales con alimentos densos en nutrientes",
+            "prioridad": 2,
+        },
+        {
+            "codigo": "RIESGO_MERiENDAS",
+            "icono": "🍌",
+            "titulo": "Meriendas saludables",
+            "descripcion": "Añadir dos meriendas nutritivas diarios con frutas, yogur o frutos secos",
+            "prioridad": 3,
+        },
+        {
+            "codigo": "RIESGO_PRIORIZAR_NUTRIENTES",
+            "icono": "🥦",
+            "titulo": "Priorizar alimentos nutritivos",
+            "descripcion": "Garantizar presencia diaria de frutas, verduras, proteínas y lácteos",
+            "prioridad": 4,
+        },
+        {
+            "codigo": "RIESGO_MONITOREO",
+            "icono": "📈",
+            "titulo": "Monitoreo mensual",
+            "descripcion": "Controlar peso y talla cada mes para confirmar mejoría",
+            "prioridad": 5,
+        },
+    ],
+    "NORMAL": [
+        {
+            "codigo": "NORMAL_MANTENER_HABITOS",
+            "icono": "✅",
+            "titulo": "Mantener hábitos actuales",
+            "descripcion": "Conservar alimentación balanceada y horarios regulares",
+            "prioridad": 1,
+        },
+        {
+            "codigo": "NORMAL_VARIAR_ALIMENTOS",
+            "icono": "🥗",
+            "titulo": "Variedad diaria",
+            "descripcion": "Incluir frutas, verduras, proteínas, cereales integrales y lácteos cada día",
+            "prioridad": 2,
+        },
+        {
+            "codigo": "NORMAL_HIDRATACION",
+            "icono": "💧",
+            "titulo": "Buena hidratación",
+            "descripcion": "Preferir agua sobre bebidas azucaradas y mantener consumo constante",
+            "prioridad": 3,
+        },
+        {
+            "codigo": "NORMAL_ACTIVIDAD",
+            "icono": "⚽",
+            "titulo": "Actividad física regular",
+            "descripcion": "Fomentar al menos 60 minutos diarios de actividad acorde a la edad",
+            "prioridad": 4,
+        },
+        {
+            "codigo": "NORMAL_SEGUIMIENTO",
+            "icono": "📅",
+            "titulo": "Seguimiento periódico",
+            "descripcion": "Realizar control de crecimiento cada 3 a 6 meses",
+            "prioridad": 5,
+        },
+    ],
+    "SOBREPESO": [
+        {
+            "codigo": "SOBREPESO_CONSULTA",
+            "icono": "⚠️",
+            "titulo": "Consulta nutricional especializada",
+            "descripcion": "Diseñar un plan alimentario personalizado con nutricionista",
+            "prioridad": 1,
+        },
+        {
+            "codigo": "SOBREPESO_PORCIONES",
+            "icono": "🍽️",
+            "titulo": "Control de porciones",
+            "descripcion": "Reducir gradualmente raciones grandes sin eliminar grupos alimenticios",
+            "prioridad": 2,
+        },
+        {
+            "codigo": "SOBREPESO_FRUTAS_VERDURAS",
+            "icono": "🥦",
+            "titulo": "Mayor consumo de vegetales y frutas",
+            "descripcion": "Cubrir al menos cinco porciones diarias entre frutas y verduras frescas",
+            "prioridad": 3,
+        },
+        {
+            "codigo": "SOBREPESO_BEBIDAS",
+            "icono": "🚫",
+            "titulo": "Eliminar bebidas azucaradas",
+            "descripcion": "Reemplazar gaseosas y jugos industrializados por agua",
+            "prioridad": 4,
+        },
+        {
+            "codigo": "SOBREPESO_ACTIVIDAD",
+            "icono": "🏃",
+            "titulo": "Incrementar actividad física",
+            "descripcion": "Realizar al menos 60 minutos diarios de actividad moderada",
+            "prioridad": 5,
+        },
+    ],
+    "OBESIDAD": [
+        {
+            "codigo": "OBESIDAD_CONSULTA_INTEGRAL",
+            "icono": "⚠️",
+            "titulo": "Consulta integral prioritaria",
+            "descripcion": "Atención conjunta con nutricionista, pediatra y psicología si es necesario",
+            "prioridad": 1,
+        },
+        {
+            "codigo": "OBESIDAD_EVALUACION_METAB",
+            "icono": "🩺",
+            "titulo": "Evaluación metabólica",
+            "descripcion": "Solicitar controles de glucosa, perfil lipídico y presión arterial",
+            "prioridad": 2,
+        },
+        {
+            "codigo": "OBESIDAD_PLAN_FAMILIAR",
+            "icono": "👨‍👩‍👧",
+            "titulo": "Plan alimentario familiar",
+            "descripcion": "Implementar cambios de alimentación y estilo de vida para todo el hogar",
+            "prioridad": 3,
+        },
+        {
+            "codigo": "OBESIDAD_ACTIVIDAD_PROGRESIVA",
+            "icono": "🏊",
+            "titulo": "Actividad física progresiva",
+            "descripcion": "Iniciar con 30 minutos diarios y aumentar gradualmente la intensidad",
+            "prioridad": 4,
+        },
+        {
+            "codigo": "OBESIDAD_MONITOREO_FRECUENTE",
+            "icono": "📈",
+            "titulo": "Monitoreo quincenal",
+            "descripcion": "Controlar peso y medidas cada 2 semanas durante los primeros 3 meses",
+            "prioridad": 5,
+        },
+    ],
+}
+
+DEFAULT_RECOMMENDATIONS: List[Dict[str, Any]] = [
+    {
+        "codigo": "GENERAL_EVALUACION",
+        "icono": "🍎",
+        "titulo": "Evaluación nutricional periódica",
+        "descripcion": "Mantener controles regulares con el profesional de salud",
+        "prioridad": 1,
+    },
+    {
+        "codigo": "GENERAL_ALIMENTACION_BALANCEADA",
+        "icono": "🥗",
+        "titulo": "Alimentación balanceada",
+        "descripcion": "Priorizar alimentos frescos y limitar los ultraprocesados",
+        "prioridad": 2,
+    },
+    {
+        "codigo": "GENERAL_HIDRATACION",
+        "icono": "💧",
+        "titulo": "Hidratación adecuada",
+        "descripcion": "Promover el consumo de agua durante todo el día",
+        "prioridad": 3,
+    },
+    {
+        "codigo": "GENERAL_ACTIVIDAD",
+        "icono": "⚽",
+        "titulo": "Actividad física cotidiana",
+        "descripcion": "Practicar juegos activos y actividades recreativas diarias",
+        "prioridad": 4,
+    },
+    {
+        "codigo": "GENERAL_HABITOS",
+        "icono": "📅",
+        "titulo": "Hábitos consistentes",
+        "descripcion": "Establecer horarios regulares de comida y descanso",
+        "prioridad": 5,
+    },
+]
+
+RECOMMENDATION_LOOKUP: Dict[str, Dict[str, Any]] = {
+    item["codigo"]: item
+    for items in list(RECOMMENDATION_CATALOG.values()) + [DEFAULT_RECOMMENDATIONS]
+    for item in items
+}
 
 
-def generar_recomendaciones_nutricionales(clasificacion: str, imc: float, edad_meses: int) -> List[str]:
+def generar_recomendaciones_nutricionales(
+    clasificacion: str,
+    imc: float,
+    edad_meses: int
+) -> List[Dict[str, str]]:
     """
     Genera recomendaciones personalizadas basadas en el estado nutricional.
-    
-    Args:
-        clasificacion: Clasificación nutricional (DESNUTRICION_SEVERA, DESNUTRICION, etc.)
-        imc: Índice de masa corporal
-        edad_meses: Edad del niño en meses
-        
-    Returns:
-        Lista de recomendaciones específicas
+    Usa el catálogo base y limita la salida a cinco recomendaciones.
     """
-    recomendaciones = []
-    edad_anios = edad_meses // 12
-    
-    if clasificacion == "DESNUTRICION_SEVERA":
-        recomendaciones = [
-            "⚠️ URGENTE: Consulta inmediata con pediatra o nutricionista especializado",
-            "Evaluación médica completa para descartar enfermedades subyacentes",
-            "Plan de recuperación nutricional supervisado por profesional de salud",
-            "Alimentación frecuente (cada 2-3 horas) con alimentos de alta densidad energética",
-            "Suplementación nutricional bajo supervisión médica",
-            "Monitoreo semanal de peso y talla durante la recuperación",
-            "Considerar hospitalización si hay complicaciones asociadas"
-        ]
-    
-    elif clasificacion == "DESNUTRICION":
-        recomendaciones = [
-            "⚠️ Consulta con nutricionista pediátrico en los próximos 7 días",
-            "Aumentar frecuencia de comidas a 5-6 veces al día",
-            "Incluir alimentos ricos en proteínas: carnes magras, huevos, lácteos, legumbres",
-            "Agregar grasas saludables: palta, frutos secos, aceite de oliva",
-            "Enriquecer preparaciones con leche en polvo, queso rallado",
-            "Evitar líquidos antes de las comidas para no reducir el apetito",
-            "Monitoreo de peso cada 2 semanas",
-            "Evaluar suplementación vitamínica con profesional de salud"
-        ]
-    
-    elif clasificacion == "RIESGO":
-        recomendaciones = [
-            "Consulta nutricional preventiva recomendada",
-            "Aumentar gradualmente las porciones de alimentos",
-            "Incluir meriendas saludables entre comidas principales",
-            "Priorizar alimentos nutritivos: frutas, verduras, proteínas, lácteos",
-            "Asegurar 3 comidas principales + 2 meriendas al día",
-            "Limitar consumos de bebidas azucaradas y alimentos procesados",
-            "Monitoreo mensual de crecimiento",
-            "Fomentar actividad física adecuada para la edad"
-        ]
-    
-    elif clasificacion == "NORMAL":
-        recomendaciones = [
-            "✅ Mantener alimentación balanceada y variada actual",
-            "Continuar con 3 comidas principales y 2 meriendas saludables",
-            "Incluir diariamente: frutas, verduras, proteínas, lácteos y cereales integrales",
-            "Hidratación adecuada con agua (evitar bebidas azucaradas)",
-            "Fomentar actividad física regular según edad",
-            "Limitar consumo de alimentos ultraprocesados y comida rápida",
-            "Monitoreo de crecimiento cada 3-6 meses",
-            "Mantener buenos hábitos alimenticios y horarios regulares"
-        ]
-    
-    elif clasificacion == "SOBREPESO":
-        recomendaciones = [
-            "Consulta con nutricionista para plan alimentario personalizado",
-            "Reducir porciones gradualmente sin eliminar grupos alimenticios",
-            "Aumentar consumo de frutas y verduras frescas",
-            "Limitar alimentos altos en azúcares y grasas saturadas",
-            "Evitar bebidas azucaradas, jugos procesados y gaseosas",
-            "Incrementar actividad física: mínimo 60 minutos diarios",
-            "Establecer horarios regulares de comida (evitar picoteos)",
-            "Involucrar a toda la familia en cambios de estilo de vida",
-            "Monitoreo mensual de peso y control cada 2 meses"
-        ]
-    
-    elif clasificacion == "OBESIDAD":
-        recomendaciones = [
-            "⚠️ Consulta prioritaria con nutricionista y pediatra",
-            "Evaluación médica completa para descartar comorbilidades",
-            "Plan de alimentación individualizado y supervisado",
-            "Reducir consumo de alimentos ultraprocesados y azúcares añadidos",
-            "Eliminar bebidas azucaradas y reemplazar por agua",
-            "Aumentar actividad física progresivamente (iniciar con 30 min/día)",
-            "Modificar hábitos familiares de alimentación y actividad física",
-            "Apoyo psicológico si es necesario para manejo emocional",
-            "Monitoreo quincenal inicial, luego mensual",
-            "Evaluación de factores metabólicos (glucosa, lípidos) con médico"
-        ]
-    
-    else:
-        recomendaciones = [
-            "Consulta con profesional de salud para evaluación personalizada",
-            "Mantener alimentación equilibrada y variada",
-            "Monitoreo regular de crecimiento y desarrollo"
-        ]
-    
-    # Agregar recomendaciones específicas por edad
-    if edad_meses < 24:  # Menores de 2 años
-        recomendaciones.append("💡 Lactancia materna exclusiva hasta los 6 meses (si aplica)")
-        recomendaciones.append("Introducción progresiva de alimentos complementarios después de 6 meses")
-    elif edad_anios < 5:  # 2-5 años
-        recomendaciones.append("💡 Fomentar autonomía en la alimentación con supervisión")
-        recomendaciones.append("Presentar alimentos de forma atractiva y variada")
-    elif edad_anios < 12:  # 5-12 años
-        recomendaciones.append("💡 Educar sobre elecciones alimentarias saludables")
-        recomendaciones.append("Involucrar en preparación de alimentos saludables")
-    else:  # Adolescentes
-        recomendaciones.append("💡 Promover imagen corporal positiva y autoestima")
-        recomendaciones.append("Educación nutricional para autonomía alimentaria")
-    
-    return recomendaciones
+    catalog = RECOMMENDATION_CATALOG.get(clasificacion) or DEFAULT_RECOMMENDATIONS
+    return [
+        {
+            "icono": item["icono"],
+            "titulo": item["titulo"],
+            "descripcion": item["descripcion"],
+        }
+        for item in catalog[:5]
+    ]
+
+
+def mapear_recomendacion_desde_db(rt_codigo: str, titulo: str, descripcion: str) -> Dict[str, str]:
+    """
+    Ajusta la recomendación provenientes de la BD añadiendo el icono del catálogo.
+    """
+    base = RECOMMENDATION_LOOKUP.get(rt_codigo, {})
+    return {
+        "icono": base.get("icono", "🍎"),
+        "titulo": titulo,
+        "descripcion": descripcion,
+    }

@@ -225,10 +225,10 @@ def main():
         print("❌ Columna 'label_status' no encontrada")
         return
     
-    # Seleccionar features (SIN BAZ para evitar data leakage)
+    # Seleccionar features (INCLUYENDO BAZ para clasificación precisa según OMS)
     feature_cols_candidates = [
         "age_months", "sex_numeric", "BMI",
-        # "baz",  # ❌ REMOVIDO: BAZ es prácticamente la etiqueta (98% correlación)
+        "baz",  # ✅ INCLUIDO: Necesario para clasificación correcta según OMS
         "bmi_velocity", "weight_velocity", "height_velocity",
         "allergy_count", "adherence_score", "symptom_frequency",
         "dietary_diversity_score", "altitude_m",

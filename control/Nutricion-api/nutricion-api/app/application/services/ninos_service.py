@@ -184,14 +184,14 @@ class NinosService:
                             # Transformar al formato esperado por NutritionalStatusResponse
                             clasificacion = estado_raw.get("en_clasificacion", "")
                             imc = estado_raw.get("imc_calculado", 0)
-                            edad_meses = nino_data.get("nin_edad_meses", 0)
+                            edad_meses = nino_data.get("edad_meses") or nino_data.get("nin_edad_meses", 0)
                             
                             ultimo_estado = {
                                 "imc": imc,
                                 "z_score_imc": estado_raw.get("en_z_score_imc"),
                                 "classification": clasificacion,
                                 "percentile": estado_raw.get("percentil_calculado"),
-                                "recommendations": generar_recomendaciones_nutricionales(clasificacion, imc, edad_meses),
+                                "recommendations": estado_raw.get("recomendaciones") or generar_recomendaciones_nutricionales(clasificacion, imc, edad_meses),
                                 "risk_level": estado_raw.get("en_nivel_riesgo")
                             }
                     except:
@@ -289,14 +289,14 @@ class NinosService:
             if estado_raw:
                 clasificacion = estado_raw.get("en_clasificacion", "")
                 imc = estado_raw.get("imc_calculado", 0)
-                edad_meses = nino.get("nin_edad_meses", 0)
+                edad_meses = nino.get("edad_meses") or nino.get("nin_edad_meses", 0)
                 
                 return {
                     "imc": imc,
                     "z_score_imc": estado_raw.get("en_z_score_imc"),
                     "classification": clasificacion,
                     "percentile": estado_raw.get("percentil_calculado"),
-                    "recommendations": generar_recomendaciones_nutricionales(clasificacion, imc, edad_meses),
+                    "recommendations": estado_raw.get("recomendaciones") or generar_recomendaciones_nutricionales(clasificacion, imc, edad_meses),
                     "risk_level": estado_raw.get("en_nivel_riesgo")
                 }
             return None
@@ -631,14 +631,14 @@ class NinosService:
         if estado_nutricional_raw:
             clasificacion = estado_nutricional_raw.get("en_clasificacion", "")
             imc = estado_nutricional_raw.get("imc_calculado", 0)
-            edad_meses = nino.get("nin_edad_meses", 0)
+            edad_meses = nino.get("edad_meses") or nino.get("nin_edad_meses", 0)
             
             estado_nutricional = {
                 "imc": imc,
                 "z_score_imc": estado_nutricional_raw.get("en_z_score_imc"),
                 "classification": clasificacion,
                 "percentile": estado_nutricional_raw.get("percentil_calculado"),
-                "recommendations": generar_recomendaciones_nutricionales(clasificacion, imc, edad_meses),
+                "recommendations": estado_nutricional_raw.get("recomendaciones") or generar_recomendaciones_nutricionales(clasificacion, imc, edad_meses),
                 "risk_level": estado_nutricional_raw.get("en_nivel_riesgo")
             }
         

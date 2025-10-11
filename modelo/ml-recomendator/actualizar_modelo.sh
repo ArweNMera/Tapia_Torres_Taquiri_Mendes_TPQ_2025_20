@@ -84,13 +84,14 @@ echo ""
 
 # Paso 4: Reentrenar el modelo
 echo "🤖 Paso 4/6: Reentrenando modelo con nuevos datos..."
-python src/pipeline/train_model.py
+python src/pipeline/train_model.py --data data/raw/surveys/datos_completos_oms_reales.csv --model rf --use-cv --cv-folds 5
 if [ $? -ne 0 ]; then
     echo "❌ Error entrenando modelo"
     echo ""
     echo "Restaurando backup..."
     if [ -f "models/backups/rf_model_$FECHA.pkl" ]; then
         cp models/backups/rf_model_$FECHA.pkl models/rf_model.pkl
+        cp models/backups/rf_metrics_$FECHA.json models/rf_metrics.json 2>/dev/null
         echo "✅ Modelo anterior restaurado"
     fi
     exit 1

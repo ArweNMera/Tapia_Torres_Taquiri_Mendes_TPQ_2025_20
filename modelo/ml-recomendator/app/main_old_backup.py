@@ -24,38 +24,25 @@ try:
 except Exception:
     get_llm_client = None
 
-# Importar modelo ML DIRECTO
+# Importar modelo ML
 try:
-    from src.models.direct_classifier import cargar_modelo_directo, DirectNutritionClassifier
+    from src.models import RandomForestNutritionClassifier
     from src.utils import DatabaseConnector
 except Exception as e:
     print(f"⚠️  Error importando modelos ML: {e}")
-    cargar_modelo_directo = None
-    DirectNutritionClassifier = None
+    RandomForestNutritionClassifier = None
     DatabaseConnector = None  
 
 
 app = FastAPI(title="ml-recomendator", version="0.1.0")
 
-allowed_origins_env = os.getenv("ALLOWED_ORIGINS", "")
-if allowed_origins_env:
-    allowed_origins = [o.strip() for o in allowed_origins_env.split(",") if o.strip()]
-else:
-    allowed_origins = [
-        "http://localhost:3000",
-        "http://localhost:5173",
-        "http://localhost:8000",
-        "https://appsaludable.netlify.app",  # Frontend en producción
-        "*"  # Permitir todos temporalmente
-    ]
-
+allowed = os.getenv("ALLOWED_ORIGINS", "*").split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,
+    allow_origins=[o.strip() for o in allowed if o.strip()],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=["*"],
 )
 
 
@@ -190,24 +177,28 @@ try:
 except Exception as e:
     LMS = None
 
-# Cargar modelo ML DIRECTO al iniciar
+# Cargar modelo ML al iniciar
 ML_MODEL = None
+MODEL_PATH = BASE_DIR / "models/rf_model.pkl"
 
 def load_ml_model():
-    """Carga el modelo DIRECTO entrenado."""
+    """Carga el modelo Random Forest entrenado."""
     global ML_MODEL
-    if cargar_modelo_directo is None:
-        print("⚠️  cargar_modelo_directo no disponible")
+    if RandomForestNutritionClassifier is None:
+        print("⚠️  RandomForestNutritionClassifier no disponible")
+        return
+    
+    if not MODEL_PATH.exists():
+        print(f"⚠️  Modelo no encontrado en: {MODEL_PATH}")
         return
     
     try:
-        ML_MODEL = cargar_modelo_directo()
-        print(f"✅ Modelo DIRECTO cargado exitosamente")
-        print(f"   Tipo: DirectNutritionClassifier")
-        print(f"   Categorías: 7 (OMS)")
+        ML_MODEL = RandomForestNutritionClassifier()
+        ML_MODEL.load(MODEL_PATH)
+        print(f"✅ Modelo ML cargado desde: {MODEL_PATH}")
+        print(f"   Features: {ML_MODEL.feature_names}")
     except Exception as e:
-        print(f"⚠️  Modelo no cargado: {e}")
-        print(f"   Entrena primero: ./ENTRENAR_AHORA.sh")
+        print(f"❌ Error cargando modelo: {e}")
         ML_MODEL = None
 
 # Cargar modelo al iniciar
@@ -412,7 +403,7 @@ class PredictMLResponse(BaseModel):
     probability: float
     probabilities: Dict[str, float]
     risk_score: float
-    features_used: Dict[str, Any]  # Permite strings y números
+    features_used: Dict[str, float]
     model_version: str
 
 
@@ -496,83 +487,81 @@ def predict_ml(req: PredictMLRequest) -> PredictMLResponse:
 
 
 class PredictMLDirectRequest(BaseModel):
-    """Request para predicción directa con MODELO DIRECTO (solo datos básicos)."""
-    age_months: int = Field(description="Edad en meses (0-228)")
+    """Request para predicción directa (sin BD)."""
+    age_months: int
     sex: str = Field(description="M o F")
-    weight_kg: float = Field(description="Peso en kilogramos")
-    height_cm: float = Field(description="Talla en centímetros")
+    BMI: float
+    baz: float
+    bmi_velocity: float = 0.0
+    weight_velocity: float = 0.0
+    height_velocity: float = 0.0
+    allergy_count: int = 0
+    adherence_score: float = 75.0
+    symptom_frequency: int = 0
+    dietary_diversity_score: float = 60.0
+    altitude_m: float = 0.0
 
 
 @app.post("/ml/predict_direct", response_model=PredictMLResponse)
 def predict_ml_direct(req: PredictMLDirectRequest) -> PredictMLResponse:
     """
-    Predice el estado nutricional usando MODELO DIRECTO.
+    Predice el estado nutricional directamente con features proporcionados.
     
-    Solo necesita: edad, sexo, peso, talla.
-    NO necesita BAZ ni otros features complejos.
+    No requiere conexión a BD. Útil para testing o integración externa.
     """
     if ML_MODEL is None:
         raise HTTPException(
             status_code=503,
-            detail="Modelo ML no disponible. Entrena: ./ENTRENAR_AHORA.sh"
+            detail="Modelo ML no disponible"
         )
     
     try:
-        # Validar datos
-        if req.age_months < 0 or req.age_months > 228:
-            raise HTTPException(400, "Edad debe estar entre 0 y 228 meses")
+        # Convertir sex a numeric
+        sex_numeric = 1 if req.sex.upper() == 'M' else 0
         
-        if req.sex.upper() not in ['M', 'F']:
-            raise HTTPException(400, "Sexo debe ser M o F")
-        
-        if req.weight_kg <= 0:
-            raise HTTPException(400, "Peso debe ser mayor a 0")
-        
-        if req.height_cm <= 0:
-            raise HTTPException(400, "Talla debe ser mayor a 0")
-        
-        # Predecir con modelo DIRECTO
-        resultado = ML_MODEL.predecir(
-            edad_meses=req.age_months,
-            sexo=req.sex.upper(),
-            peso_kg=req.weight_kg,
-            talla_cm=req.height_cm
-        )
-        
-        # Calcular BMI para features_used
-        bmi = req.weight_kg / (req.height_cm / 100) ** 2
-        
-        # Calcular risk_score basado en la clasificación
-        risk_map = {
-            "DESNUTRICION_SEVERA": 1.0,
-            "DESNUTRICION_MODERADA": 0.8,
-            "RIESGO_DESNUTRICION": 0.6,
-            "NORMAL": 0.0,
-            "RIESGO_SOBREPESO": 0.6,
-            "SOBREPESO": 0.8,
-            "OBESIDAD": 1.0
+        # Crear DataFrame con features
+        data = {
+            'age_months': [req.age_months],
+            'sex_numeric': [sex_numeric],
+            'BMI': [req.BMI],
+            'baz': [req.baz],
+            'bmi_velocity': [req.bmi_velocity],
+            'weight_velocity': [req.weight_velocity],
+            'height_velocity': [req.height_velocity],
+            'allergy_count': [req.allergy_count],
+            'adherence_score': [req.adherence_score],
+            'symptom_frequency': [req.symptom_frequency],
+            'dietary_diversity_score': [req.dietary_diversity_score],
+            'altitude_m': [req.altitude_m]
         }
-        risk_score = risk_map.get(resultado['clasificacion'], 0.5)
+        
+        X = pd.DataFrame(data)
+        
+        # Asegurar que tenemos todos los features del modelo
+        for feature in ML_MODEL.feature_names:
+            if feature not in X.columns:
+                X[feature] = 0.0
+        
+        X = X[ML_MODEL.feature_names]
+        
+        # Hacer predicción
+        result = ML_MODEL.predict_with_metadata(X)
+        pred = result["predictions"][0]
+        
+        # Extraer features usados
+        features_dict = X.iloc[0].to_dict()
         
         return PredictMLResponse(
             nin_id=0,  # No hay nin_id en predicción directa
-            prediction=resultado['label'],
-            label=resultado['clasificacion'],
-            probability=resultado['confianza'],
-            probabilities=resultado['probabilidades'],
-            risk_score=risk_score,
-            features_used={
-                'edad_meses': req.age_months,
-                'sexo': req.sex.upper(),
-                'peso_kg': req.weight_kg,
-                'talla_cm': req.height_cm,
-                'bmi': round(bmi, 2)
-            },
-            model_version="2.0.0-directo"
+            prediction=pred["prediction"],
+            label=pred["label"],
+            probability=pred["probability"],
+            probabilities=pred["probabilities"],
+            risk_score=pred["risk_score"],
+            features_used=features_dict,
+            model_version=ML_MODEL.version
         )
         
-    except HTTPException:
-        raise
     except Exception as e:
         raise HTTPException(
             status_code=500,
@@ -586,17 +575,18 @@ def model_info():
     if ML_MODEL is None:
         return {
             "loaded": False,
-            "message": "Modelo no cargado. Entrena: ./ENTRENAR_AHORA.sh"
+            "message": "Modelo no cargado"
         }
     
     return {
         "loaded": True,
-        "model_name": "DirectNutritionClassifier",
-        "model_type": "Modelo Directo (aprende de edad, peso, talla)",
-        "version": "2.0.0-directo",
-        "categorias": list(ML_MODEL.LABEL_TO_CATEGORY.values()),
-        "features_basicas": ["edad_meses", "sexo", "peso_kg", "talla_cm"],
-        "descripcion": "Modelo que aprende DIRECTAMENTE de datos antropométricos básicos"
+        "model_name": ML_MODEL.model_name,
+        "version": ML_MODEL.version,
+        "is_trained": ML_MODEL.is_trained,
+        "features": ML_MODEL.feature_names,
+        "n_features": len(ML_MODEL.feature_names),
+        "feature_importance": ML_MODEL.get_feature_importance(),
+        "model_path": str(MODEL_PATH)
     }
 
 
@@ -736,48 +726,57 @@ def analisis_nutricional(req: AnalisisNutricionalRequest) -> AnalisisNutricional
                 'altitude_m': [0.0]
             })
         
-        # 5. Usar MODELO DIRECTO para predicción
-        # El modelo directo solo necesita: edad, sexo, peso, talla
-        resultado = ML_MODEL.predecir(
-            edad_meses=age_months,
-            sexo=sex,
-            peso_kg=req.peso_kg,
-            talla_cm=req.talla_cm
-        )
+        # 5. Preparar features para el modelo
+        if 'sex_numeric' not in df_features.columns:
+            df_features['sex_numeric'] = df_features.get('nin_sexo', sex).map({'M': 1, 'F': 0})
         
-        # Convertir resultado del modelo directo al formato esperado
-        pred = {
-            "prediction": resultado['label'],
-            "label": resultado['clasificacion'],
-            "probability": resultado['confianza'],
-            "probabilities": resultado['probabilidades']
-        }
+        # Asegurar que tenemos todos los features (SIN BAZ - removido para evitar overfitting)
+        for feature in ML_MODEL.feature_names:
+            if feature not in df_features.columns:
+                if feature == 'BMI':
+                    df_features[feature] = bmi
+                elif feature == 'age_months':
+                    df_features[feature] = age_months
+                elif feature == 'sex_numeric':
+                    df_features[feature] = 1 if sex == 'M' else 0
+                else:
+                    # Valores por defecto para otros features
+                    df_features[feature] = 0.0
+        
+        X = df_features[ML_MODEL.feature_names].iloc[0:1]
+        
+        # 6. Hacer predicción
+        result = ML_MODEL.predict_with_metadata(X)
+        pred = result["predictions"][0]
         
         # 7. Calcular percentil (aproximado desde BAZ)
         # percentil ≈ CDF de distribución normal estándar
         from scipy.stats import norm
         percentil = norm.cdf(baz) * 100
         
-        # 8. Determinar nivel de riesgo según clasificación
-        clasificacion = pred["label"]
-        if clasificacion in ["DESNUTRICION_SEVERA", "OBESIDAD"]:
+        # 8. ✅ USAR PREDICCIÓN DEL MODELO ML (Random Forest con 90.18% accuracy)
+        # El modelo ya fue entrenado con datos OMS y tiene mejor accuracy que clasificación por BAZ
+        # pred ya contiene la predicción del modelo desde el paso 6
+        
+        # 9. Determinar nivel de riesgo
+        if pred["prediction"] in [0, 6]:  # DESNUTRICION_SEVERA o OBESIDAD
             nivel_riesgo = "ALTO"
-        elif clasificacion in ["DESNUTRICION_MODERADA", "SOBREPESO"]:
+        elif pred["prediction"] in [1, 5]:  # DESNUTRICION_MODERADA o SOBREPESO
             nivel_riesgo = "MEDIO"
-        elif clasificacion in ["RIESGO_DESNUTRICION", "RIESGO_SOBREPESO"]:
+        elif pred["prediction"] in [2, 4]:  # RIESGO_DESNUTRICION o RIESGO_SOBREPESO
             nivel_riesgo = "MEDIO"
         else:  # NORMAL
             nivel_riesgo = "BAJO"
         
-        # 9. Generar recomendaciones personalizadas
+        # 10. Generar recomendaciones personalizadas
         recomendaciones = _generar_recomendaciones(
-            diagnostico=clasificacion,
+            diagnostico=pred["label"],
             baz=baz,
             edad_meses=age_months,
             bmi=bmi
         )
         
-        # 10. Fecha de medición
+        # 11. Fecha de medición
         from datetime import datetime
         fecha = req.fecha_medicion or datetime.now().strftime("%d/%m/%Y")
         if req.fecha_medicion and '-' in req.fecha_medicion:
@@ -794,7 +793,7 @@ def analisis_nutricional(req: AnalisisNutricionalRequest) -> AnalisisNutricional
             imc=round(bmi, 2),
             
             # Estado nutricional
-            diagnostico=clasificacion,
+            diagnostico=pred["label"],
             imc_valor=round(bmi, 2),
             percentil=round(percentil, 1),
             nivel_riesgo=nivel_riesgo,
@@ -809,7 +808,7 @@ def analisis_nutricional(req: AnalisisNutricionalRequest) -> AnalisisNutricional
             
             # Metadata
             modelo_usado=True,
-            modelo_version="2.0.0-directo"
+            modelo_version=ML_MODEL.version
         )
         
     except HTTPException:

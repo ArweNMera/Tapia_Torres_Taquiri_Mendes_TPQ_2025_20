@@ -1,17 +1,29 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { AuthUser, UserLogin, UserRegister, UserResponse } from '../types/api';
 import { apiService } from '../services/api';
+import { firebaseAuth } from '../lib/firebase';
+import {
+  GoogleAuthProvider,
+  GithubAuthProvider,
+  signInWithPopup,
+  signOut,
+  fetchSignInMethodsForEmail,
+  linkWithCredential,
+  UserCredential,
+} from 'firebase/auth';
+import { FirebaseError } from 'firebase/app';
 
 interface AuthContextType {
   user: AuthUser | null;
   isLoading: boolean;
   login: (userData: UserLogin) => Promise<{ success: boolean; error?: string }>;
-  beginGoogleLogin: (redirectTo?: string) => void;
+  beginGoogleLogin: () => Promise<void>;
+  beginGithubLogin: () => Promise<void>;
   register: (userData: UserRegister, roleCode: string) => Promise<{ success: boolean; error?: string }>;
-  logout: () => void;
+  logout: () => Promise<void>;
   isAuthenticated: boolean;
-  googleAuthError: string | null;
-  clearGoogleAuthError: () => void;
+  socialAuthError: string | null;
+  clearSocialAuthError: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -31,7 +43,7 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [googleAuthError, setGoogleAuthError] = useState<string | null>(null);
+  const [socialAuthError, setSocialAuthError] = useState<string | null>(null);
 
   const hydrateUserFromProfile = useCallback(async (): Promise<UserResponse | null> => {
     const token = apiService.getToken();
@@ -96,48 +108,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return null;
   }, []);
 
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-
-    const url = new URL(window.location.href);
-    const tokenFromUrl = url.searchParams.get('google_token');
-    const tokenTypeParam = url.searchParams.get('token_type');
-    const errorFromUrl = url.searchParams.get('google_error');
-    const avatarFromUrl = url.searchParams.get('google_avatar');
-
-    if (errorFromUrl) {
-      setGoogleAuthError(errorFromUrl);
-    }
-
-    if (tokenFromUrl) {
-      apiService.setToken(tokenFromUrl);
-    }
-
-    if (avatarFromUrl && typeof window !== 'undefined') {
-      try {
-        window.localStorage.setItem('auth_avatar_hint', avatarFromUrl);
-      } catch (storageError) {
-        console.warn('No se pudo almacenar el avatar recibido de Google:', storageError);
-      }
-      setUser((prev) => (prev ? { ...prev, avatar_url: avatarFromUrl } : prev));
-    }
-
-    if (tokenFromUrl || tokenTypeParam || errorFromUrl || avatarFromUrl) {
-      url.searchParams.delete('google_token');
-      url.searchParams.delete('token_type');
-      url.searchParams.delete('google_error');
-      url.searchParams.delete('google_avatar');
-      const cleanedPath = `${url.pathname}${url.search}${url.hash}`;
-      window.history.replaceState({}, document.title, cleanedPath);
-    }
-
-    if (tokenFromUrl) {
-      hydrateUserFromProfile();
-    }
-  }, [hydrateUserFromProfile]);
-
   // Verificar token y obtener el perfil real del usuario al cargar
   useEffect(() => {
     const bootstrap = async () => {
@@ -193,14 +163,120 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const beginGoogleLogin = (redirectOverride?: string) => {
-    setGoogleAuthError(null);
-    const target = redirectOverride 
-      || import.meta.env.VITE_GOOGLE_POST_LOGIN_REDIRECT 
-      || window.location.origin;
-    const authorizationUrl = apiService.getGoogleAuthStartUrl(target);
-    window.location.href = authorizationUrl;
-  };
+  const completeFirebaseLogin = useCallback(
+    async (credentialResult: UserCredential): Promise<boolean> => {
+      const firebaseIdToken = await credentialResult.user.getIdToken(true);
+
+      const response = await apiService.loginWithFirebase(firebaseIdToken);
+
+      if (!response.success || !response.data) {
+        const message = response.error || 'No se pudo validar la sesión con el servidor';
+        setSocialAuthError(message);
+        await signOut(firebaseAuth).catch(() => undefined);
+        return false;
+      }
+
+      apiService.setToken(response.data.access_token);
+
+      const avatar = credentialResult.user.photoURL;
+      if (avatar && typeof window !== 'undefined') {
+        try {
+          window.localStorage.setItem('auth_avatar_hint', avatar);
+        } catch (storageError) {
+          console.warn('No se pudo almacenar el avatar recibido de Firebase:', storageError);
+        }
+        setUser((prev) =>
+          prev
+            ? { ...prev, avatar_url: avatar, token: response.data?.access_token ?? prev.token }
+            : prev
+        );
+      }
+
+      await hydrateUserFromProfile();
+      return true;
+    },
+    [hydrateUserFromProfile]
+  );
+
+  const signInWithProvider = useCallback(
+    async (providerName: 'google' | 'github') => {
+      setIsLoading(true);
+      setSocialAuthError(null);
+      try {
+        let provider: GoogleAuthProvider | GithubAuthProvider;
+        if (providerName === 'google') {
+          provider = new GoogleAuthProvider();
+          provider.setCustomParameters({ prompt: 'select_account' });
+        } else {
+          provider = new GithubAuthProvider();
+          provider.addScope('user:email');
+        }
+
+        const result = await signInWithPopup(firebaseAuth, provider);
+        await completeFirebaseLogin(result);
+      } catch (error) {
+        let message = 'No se pudo iniciar sesión con el proveedor seleccionado';
+        if (error instanceof FirebaseError) {
+          switch (error.code) {
+            case 'auth/popup-closed-by-user':
+              message = 'Se cerró la ventana de autenticación antes de completar el proceso.';
+              break;
+            case 'auth/cancelled-popup-request':
+              message = 'Ya hay una ventana de autenticación en curso.';
+              break;
+            case 'auth/network-request-failed':
+              message = 'Hubo problemas de conexión con el servicio de autenticación.';
+              break;
+            case 'auth/account-exists-with-different-credential': {
+              const email = (error.customData?.email as string) || '';
+              const pendingCredential =
+                providerName === 'google'
+                  ? GoogleAuthProvider.credentialFromError(error)
+                  : GithubAuthProvider.credentialFromError(error);
+
+              if (email && pendingCredential) {
+                try {
+                  const methods = await fetchSignInMethodsForEmail(firebaseAuth, email);
+
+                  if (methods.includes('google.com')) {
+                    const googleProvider = new GoogleAuthProvider();
+                    googleProvider.setCustomParameters({ prompt: 'select_account' });
+
+                    const existingUserResult = await signInWithPopup(firebaseAuth, googleProvider);
+                    await linkWithCredential(existingUserResult.user, pendingCredential);
+
+                    const success = await completeFirebaseLogin(existingUserResult);
+                    if (success) {
+                      setSocialAuthError(null);
+                      return;
+                    }
+                  }
+                } catch (linkError) {
+                  console.error('No se pudo vincular las credenciales con la cuenta existente:', linkError);
+                }
+              }
+
+              message =
+                'Ya existe una cuenta asociada a este correo. Inicia sesión con el método original y vincula GitHub desde tu perfil.';
+              break;
+            }
+            default:
+              message = error.message;
+          }
+        } else if (error instanceof Error) {
+          message = error.message;
+        }
+        console.error('Firebase login error:', error);
+        setSocialAuthError(message);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [completeFirebaseLogin]
+  );
+
+  const beginGoogleLogin = useCallback(() => signInWithProvider('google'), [signInWithProvider]);
+  const beginGithubLogin = useCallback(() => signInWithProvider('github'), [signInWithProvider]);
 
   const register = async (userData: UserRegister, roleCode: string): Promise<{ success: boolean; error?: string }> => {
     setIsLoading(true);
@@ -268,6 +344,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       // Intentar hacer logout en el backend
       await apiService.logout();
+      await signOut(firebaseAuth).catch(() => undefined);
     } catch (error) {
       console.error('Error en logout del backend:', error);
       // Continuar con el logout local incluso si falla el backend
@@ -285,8 +362,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const clearGoogleAuthError = useCallback(() => {
-    setGoogleAuthError(null);
+  const clearSocialAuthError = useCallback(() => {
+    setSocialAuthError(null);
   }, []);
 
   const value: AuthContextType = {
@@ -294,11 +371,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isLoading,
     login,
     beginGoogleLogin,
+    beginGithubLogin,
     register,
     logout,
     isAuthenticated: !!user,
-    googleAuthError,
-    clearGoogleAuthError,
+    socialAuthError,
+    clearSocialAuthError,
   };
 
   return (

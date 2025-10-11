@@ -17,6 +17,7 @@ from typing import List
 from app.infrastructure.repositories.ninos_repo import NinosRepository
 from app.infrastructure.repositories.usuarios_repo import UsuariosRepository
 from app.schemas.ninos import NinoCreate
+from app.domain.utils.nutrition_recommendations import generar_recomendaciones_nutricionales
 
 router = APIRouter()
 
@@ -83,8 +84,6 @@ def create_child_profile(
     Crear perfil completo de niño con datos antropométricos iniciales.
     Este endpoint cumple con el PMV 1: permite registrar niños con edad, peso y talla.
     """
-    from app.domain.utils.nutrition_recommendations import generar_recomendaciones_nutricionales
-    
     repo = NinosRepository(db)
     
     # 1. Crear el niño
@@ -115,7 +114,7 @@ def create_child_profile(
         "classification": clasificacion,
         "percentile": estado.get("percentil_calculado"),
         "risk_level": estado.get("en_nivel_riesgo"),
-        "recommendations": generar_recomendaciones_nutricionales(clasificacion, imc, edad_meses)
+        "recommendations": estado.get("recomendaciones") or generar_recomendaciones_nutricionales(clasificacion, imc, edad_meses)
     }
     
     return CreateChildProfileResponse(

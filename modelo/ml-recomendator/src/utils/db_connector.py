@@ -44,7 +44,7 @@ class DatabaseConnector:
         port: int = 3306,
         user: str = "root",
         password: str = "",
-        database: str = "nutricion",
+        database: str = "nutricion_db",
     ):
         if not PYMYSQL_AVAILABLE and not SQLALCHEMY_AVAILABLE:
             raise ImportError(
@@ -349,7 +349,7 @@ class DatabaseConnector:
             port=int(os.getenv("DB_PORT", "3306")),
             user=os.getenv("DB_USER", "root"),
             password=os.getenv("DB_PASSWORD", ""),
-            database=os.getenv("DB_NAME", "nutricion"),
+            database=os.getenv("DB_NAME", "nutricion_db"),
         )
 
 

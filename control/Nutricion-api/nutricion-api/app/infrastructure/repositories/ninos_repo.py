@@ -6,6 +6,10 @@ from sqlalchemy.orm import Session
 
 from app.domain.interfaces.ninos_repository import INinosRepository
 from app.schemas.ninos import NinoCreate, NinoUpdate, AnthropometryCreate
+from app.domain.utils.nutrition_recommendations import (
+    generar_recomendaciones_nutricionales,
+    mapear_recomendacion_desde_db,
+)
 
 
 class NinosRepository(INinosRepository):
@@ -31,11 +35,9 @@ class NinosRepository(INinosRepository):
             "direccion_resp": getattr(row, "direccion_resp", None),
             "genero_resp": getattr(row, "genero_resp", None),
             "idioma_resp": getattr(row, "idioma_resp", None),
-            # Campos requeridos por el schema NinoResponse
             "edad_meses": getattr(row, "edad_meses", 0),
             "creado_en": row.creado_en.isoformat() if getattr(row, "creado_en", None) else None,
             "actualizado_en": row.actualizado_en.isoformat() if getattr(row, "actualizado_en", None) else None,
-            # Campos opcionales de entidad
             "ent_nombre": getattr(row, "ent_nombre", None),
             "ent_codigo": getattr(row, "ent_codigo", None),
             "ent_direccion": getattr(row, "ent_direccion", None),
@@ -99,7 +101,6 @@ class NinosRepository(INinosRepository):
             else:
                 params["usr_id_tutor"] = usr_id_tutor or usr_id_propietario
 
-            # 🔍 DEBUG: Ver qué parámetros se envían al procedimiento almacenado
             logger.warning(f"🔍 REPOSITORIO crear_nino - Parámetros a SP:")
             logger.warning(f"  nin_nombres: {params['nin_nombres']}")
             logger.warning(f"  fecha_nac: {params['fecha_nac']}")
@@ -125,7 +126,6 @@ class NinosRepository(INinosRepository):
             self.db.rollback()
             raise exc
 
-    # Compatibilidad con código legacy
     def create_nino(self, nino_data: NinoCreate, usr_id_tutor: int) -> Optional[Dict[str, Any]]:
         payload = nino_data.model_dump()
         payload["usr_id_tutor"] = usr_id_tutor
@@ -146,7 +146,6 @@ class NinosRepository(INinosRepository):
         if not result:
             return None
 
-        # 🔍 DEBUG: Ver qué devuelve el procedimiento almacenado
         logger.warning(f"🔍 obtener_nino({nin_id}) - Resultado de sp_ninos_get:")
         logger.warning(f"  nin_nombres: {getattr(result, 'nin_nombres', 'N/A')}")
         logger.warning(f"  nin_fecha_nac: {getattr(result, 'nin_fecha_nac', 'N/A')}")
@@ -159,7 +158,6 @@ class NinosRepository(INinosRepository):
         
         return mapped
 
-    # Compatibilidad con métodos legacy
     def get_nino_by_id(self, nin_id: int) -> Optional[Dict[str, Any]]:
         return self.obtener_nino(nin_id)
 
@@ -177,7 +175,6 @@ class NinosRepository(INinosRepository):
 
     def get_ninos_by_tutor(self, usr_id_tutor: int) -> List[Dict[str, Any]]:
         """Obtener todos los niños asociados al usuario usando sp_ninos_obtener_por_tutor."""
-        # Usar procedimiento almacenado sp_ninos_obtener_por_tutor
         results = self.db.execute(text("CALL sp_ninos_obtener_por_tutor(:usr_id_tutor)"), {
             "usr_id_tutor": usr_id_tutor
         }).fetchall()
@@ -189,14 +186,12 @@ class NinosRepository(INinosRepository):
             "nin_nombres": row.nin_nombres,
             "nin_fecha_nac": row.nin_fecha_nac.isoformat() if row.nin_fecha_nac else None,
             "nin_sexo": row.nin_sexo,
-            # Campos de la entidad (LEFT JOIN)
             "ent_nombre": row.ent_nombre if hasattr(row, 'ent_nombre') else None,
             "ent_codigo": row.ent_codigo if hasattr(row, 'ent_codigo') else None,
             "ent_direccion": row.ent_direccion if hasattr(row, 'ent_direccion') else None,
             "ent_departamento": row.ent_departamento if hasattr(row, 'ent_departamento') else None,
             "ent_provincia": row.ent_provincia if hasattr(row, 'ent_provincia') else None,
             "ent_distrito": row.ent_distrito if hasattr(row, 'ent_distrito') else None,
-            # Campos calculados y temporales
             "edad_meses": row.edad_meses,
             "creado_en": row.creado_en.isoformat() if row.creado_en else None,
             "actualizado_en": row.actualizado_en.isoformat() if row.actualizado_en else None,
@@ -357,124 +352,83 @@ class NinosRepository(INinosRepository):
             self.db.rollback()
             raise e
 
-    def evaluar_estado_nutricional(self, nin_id: int) -> Dict[str, Any]:
+    def evaluar_estado_nutricional(self, nin_id: int) -> Optional[Dict[str, Any]]:
         """
-        Evaluar estado nutricional usando modelo ML (Random Forest 93.92% accuracy).
-        
-        Reemplaza el procedimiento almacenado sp_evaluar_estado_nutricional
-        con llamada a la API ML en puerto 8003.
+        Evalúa el estado nutricional usando exclusivamente el procedimiento almacenado.
+        Retorna métricas normalizadas y recomendaciones generadas en base al resultado.
         """
-        import httpx
-        from app.core.config import settings
-        from datetime import datetime
-        import logging
-        
-        logger = logging.getLogger(__name__)
-        
+
         try:
-            # Obtener última antropometría del niño
-            query = text("""
-                SELECT a.ant_id, a.ant_peso_kg, a.ant_talla_cm, a.ant_fecha,
-                       n.nin_id, n.nin_nombres,
-                       TIMESTAMPDIFF(MONTH, n.nin_fecha_nac, a.ant_fecha) as edad_meses
-                FROM antropometrias a
-                JOIN ninos n ON a.nin_id = n.nin_id
-                WHERE a.nin_id = :nin_id
-                ORDER BY a.ant_fecha DESC, a.creado_en DESC
-                LIMIT 1
-            """)
-            
-            ant_result = self.db.execute(query, {"nin_id": nin_id}).fetchone()
-            
-            if not ant_result:
-                logger.warning(f"No se encontró antropometría para nin_id={nin_id}")
+            result = self.db.execute(
+                text("CALL sp_evaluar_estado_nutricional(:nin_id)"),
+                {"nin_id": nin_id}
+            ).fetchone()
+            self.db.commit()
+
+            if not result:
                 return None
-            
-            # Llamar a API ML para análisis nutricional
-            try:
-                with httpx.Client(timeout=10.0) as client:
-                    payload = {
-                        "nin_id": nin_id,
-                        "peso_kg": float(ant_result.ant_peso_kg),
-                        "talla_cm": float(ant_result.ant_talla_cm),
-                        "fecha_medicion": ant_result.ant_fecha.strftime("%Y-%m-%d") if ant_result.ant_fecha else None
-                    }
-                    
-                    logger.info(f"🔍 Llamando API ML para nin_id={nin_id}: {payload}")
-                    
-                    response = client.post(
-                        f"{settings.ML_API_URL}/ml/analisis_nutricional",
-                        json=payload
-                    )
-                    
-                    logger.info(f"📡 API ML response status: {response.status_code}")
-                    
-                    if response.status_code == 200:
-                        ml_result = response.json()
-                        
-                        logger.info(f"✅ API ML result: diagnostico={ml_result.get('diagnostico')}, percentil={ml_result.get('percentil')}")
-                        
-                        # Mapear respuesta de ML al formato esperado
-                        result = {
-                            "en_id": None,  # No se guarda en BD por ahora
-                            "nin_id": nin_id,
-                            "ant_id": ant_result.ant_id,
-                            "en_edad_meses": ant_result.edad_meses,
-                            "imc_calculado": ml_result["imc"],
-                            "en_z_score_imc": ml_result["baz"],
-                            "percentil_calculado": ml_result["percentil"],
-                            "en_clasificacion": ml_result["diagnostico"],
-                            "en_nivel_riesgo": ml_result["nivel_riesgo"],
-                            "oms_usado": True,  # Modelo ML usa tablas OMS
-                            "evaluado_en": datetime.now().isoformat(),
-                            # Campos adicionales del modelo ML
-                            "probabilidad": ml_result.get("probabilidad"),
-                            "probabilidades": ml_result.get("probabilidades"),
-                            "recomendaciones": ml_result.get("recomendaciones"),
-                            "modelo_usado": ml_result.get("modelo_usado", True),
-                            "modelo_version": ml_result.get("modelo_version", "v1.0")
-                        }
-                        
-                        logger.info(f"📊 Returning result with percentil_calculado={result['percentil_calculado']}")
-                        return result
-                    else:
-                        # Fallback a procedimiento almacenado si API ML falla
-                        logger.warning(f"⚠️  API ML falló (status {response.status_code}), usando procedimiento almacenado")
-                        return self._evaluar_con_procedimiento(nin_id)
-                        
-            except (httpx.ConnectError, httpx.TimeoutException) as e:
-                # Fallback a procedimiento almacenado si no se puede conectar
-                logger.warning(f"⚠️  No se puede conectar a API ML: {e}, usando procedimiento almacenado")
-                return self._evaluar_con_procedimiento(nin_id)
-            
-        except Exception as e:
-            logger.error(f"❌ Error en evaluar_estado_nutricional: {e}")
-            raise e
-    
-    def _evaluar_con_procedimiento(self, nin_id: int) -> Dict[str, Any]:
-        """Fallback: evaluar usando procedimiento almacenado."""
-        try:
-            result = self.db.execute(text("CALL sp_evaluar_estado_nutricional(:nin_id)"), {
-                "nin_id": nin_id
-            }).fetchone()
-            
-            if result:
-                return {
-                    "en_id": result.en_id,
-                    "nin_id": result.nin_id,
-                    "ant_id": result.ant_id,
-                    "en_edad_meses": result.en_edad_meses,
-                    "imc_calculado": float(result.imc_calculado),
-                    "en_z_score_imc": float(result.en_z_score_imc),
-                    "percentil_calculado": float(result.percentil_calculado) if result.percentil_calculado else None,
-                    "en_clasificacion": result.en_clasificacion,
-                    "en_nivel_riesgo": result.en_nivel_riesgo,
-                    "oms_usado": bool(result.oms_usado),
-                    "evaluado_en": result.evaluado_en.isoformat() if result.evaluado_en else None
-                }
-            return None
-        except Exception as e:
-            raise e
+
+            en_z_score = float(result.en_z_score_imc) if result.en_z_score_imc is not None else None
+            percentil = float(result.percentil_calculado) if result.percentil_calculado is not None else None
+            imc = float(result.imc_calculado) if result.imc_calculado is not None else None
+            riesgo_pct = float(result.riesgo_porcentaje) if getattr(result, "riesgo_porcentaje", None) is not None else None
+            edad_meses = int(result.en_edad_meses) if result.en_edad_meses is not None else 0
+
+            recomendaciones: List[Dict[str, str]] = []
+            en_id = getattr(result, "en_id", None)
+
+            if en_id:
+                rec_rows = self.db.execute(
+                    text("""
+                        SELECT rt.rt_codigo, rt.rt_titulo, rt.rt_descripcion
+                        FROM evaluaciones_recomendaciones er
+                        JOIN recomendaciones_tipos rt ON rt.rt_id = er.rt_id
+                        WHERE er.en_id = :en_id
+                        ORDER BY rt.rt_prioridad ASC, rt.rt_id ASC
+                        LIMIT 5
+                    """),
+                    {"en_id": en_id},
+                ).fetchall()
+
+                recomendaciones = [
+                    mapear_recomendacion_desde_db(row.rt_codigo, row.rt_titulo, row.rt_descripcion)
+                    for row in rec_rows
+                ]
+
+            if not recomendaciones:
+                recomendaciones = generar_recomendaciones_nutricionales(
+                    result.en_clasificacion,
+                    imc or 0,
+                    edad_meses
+                )
+
+            return {
+                "en_id": en_id,
+                "nin_id": getattr(result, "nin_id", None),
+                "ant_id": getattr(result, "ant_id", None),
+                "ant_fecha": getattr(result, "ant_fecha", None).isoformat() if getattr(result, "ant_fecha", None) else None,
+                "en_edad_meses": edad_meses,
+                "peso_kg": float(result.peso_kg) if getattr(result, "peso_kg", None) is not None else None,
+                "talla_cm": float(result.talla_cm) if getattr(result, "talla_cm", None) is not None else None,
+                "imc_calculado": imc,
+                "en_z_score_imc": en_z_score,
+                "percentil_calculado": percentil,
+                "en_clasificacion": result.en_clasificacion,
+                "en_nivel_riesgo": result.en_nivel_riesgo,
+                "riesgo_porcentaje": riesgo_pct,
+                "oms_usado": bool(result.oms_usado) if getattr(result, "oms_usado", None) is not None else False,
+                "evaluado_en": result.evaluado_en.isoformat() if getattr(result, "evaluado_en", None) else None,
+                "recomendaciones": recomendaciones,
+                "probabilidad": riesgo_pct,
+                "probabilidades": {
+                    result.en_clasificacion: 1.0
+                } if result.en_clasificacion else None,
+                "modelo_usado": False,
+                "modelo_version": "procedimiento_almacenado_v2"
+            }
+        except Exception as exc:
+            self.db.rollback()
+            raise exc
 
     def agregar_alergia(self, nin_id: int, ta_codigo: str, severidad: str = "LEVE") -> Dict[str, Any]:
         """Agregar alergia a un niño usando sp_ninos_agregar_alergia"""
@@ -483,7 +437,7 @@ class NinosRepository(INinosRepository):
                 "nin_id": nin_id,
                 "ta_codigo": ta_codigo,
                 "severidad": severidad
-            }).fetchall()  # Retorna lista de alergias
+            }).fetchall()  
             
             self.db.commit()
             
@@ -615,20 +569,14 @@ class NinosRepository(INinosRepository):
         Obtiene el perfil completo de un niño con antropometrías, alergias y estado nutricional.
         Usa SOLO procedimientos almacenados.
         """
-        from app.domain.utils.nutrition_recommendations import generar_recomendaciones_nutricionales
-        
-        # sp_ninos_get
         nino_data = self.obtener_nino(nin_id)
         if not nino_data:
             return None
         
-        # sp_antropometria_obtener_por_nino
         antropometrias = self.get_antropometrias_by_nino(nin_id, limit=10)
         
-        # sp_ninos_obtener_alergias
         alergias = self.obtener_alergias(nin_id)
         
-        # sp_evaluar_estado_nutricional
         estado = self.evaluar_estado_nutricional(nin_id)
         ultimo_estado = None
         if estado:
@@ -642,7 +590,6 @@ class NinosRepository(INinosRepository):
                 "classification": clasificacion,
                 "percentile": estado.get("percentil_calculado"),
                 "risk_level": estado.get("en_nivel_riesgo"),
-                # Usar recomendaciones del modelo ML si están disponibles, sino generar
                 "recommendations": estado.get("recomendaciones") or generar_recomendaciones_nutricionales(clasificacion, imc, edad_meses)
             }
         
@@ -658,22 +605,16 @@ class NinosRepository(INinosRepository):
         Obtiene todos los niños de un tutor con perfiles completos.
         Usa SOLO procedimientos almacenados.
         """
-        from app.domain.utils.nutrition_recommendations import generar_recomendaciones_nutricionales
-        
-        # sp_ninos_obtener_por_tutor
         ninos = self.get_ninos_by_tutor(usr_id_tutor)
         
         result = []
         for nino_data in ninos:
             nin_id = nino_data['nin_id']
             
-            # sp_antropometria_obtener_por_nino
             antropometrias = self.get_antropometrias_by_nino(nin_id, limit=10)
             
-            # sp_ninos_obtener_alergias
             alergias = self.obtener_alergias(nin_id)
             
-            # sp_evaluar_estado_nutricional
             ultimo_estado = None
             if antropometrias:
                 try:
@@ -689,7 +630,6 @@ class NinosRepository(INinosRepository):
                             "classification": clasificacion,
                             "percentile": estado.get("percentil_calculado"),
                             "risk_level": estado.get("en_nivel_riesgo"),
-                            # Usar recomendaciones del modelo ML si están disponibles, sino generar
                             "recommendations": estado.get("recomendaciones") or generar_recomendaciones_nutricionales(clasificacion, imc, edad_meses)
                         }
                 except:
@@ -704,7 +644,6 @@ class NinosRepository(INinosRepository):
 
         return result
 
-    # Implementaciones requeridas por la interfaz
 
     def listar_ninos_tutor(self, usr_id: int) -> List[Dict[str, Any]]:
         return self.get_ninos_by_tutor(usr_id)

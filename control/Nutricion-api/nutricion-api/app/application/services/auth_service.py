@@ -18,6 +18,8 @@ from app.infrastructure.security.google_oauth_client import GoogleOAuthClient
 from app.infrastructure.db.session import get_db
 from app.schemas.auth import Token, UserLogin, UserResponse
 from app.schemas.usuarios import UserRegister
+from app.core.firebase import verify_firebase_token, FirebaseNotConfigured
+from firebase_admin import exceptions as firebase_exceptions
 
 
 class AuthService:
@@ -110,18 +112,45 @@ class AuthService:
     def login_with_google(self, id_token_value: str) -> Token:
         """
         Caso de uso: Login con Google OAuth.
+        """
+        return self.login_with_firebase(id_token_value)
+    
+    def login_with_firebase(self, id_token_value: str) -> Token:
+        """
+        Caso de uso: Login con un ID token emitido por Firebase Authentication.
         
         Args:
-            id_token_value: Token de Google
+            id_token_value: Token de Firebase generado en el cliente
             
         Returns:
             Token de acceso
             
         Raises:
-            HTTPException: Si hay error en el proceso de Google OAuth
+            HTTPException: Si el token es inválido o la configuración es incorrecta
         """
-        # Verificar token de Google usando el cliente OAuth
-        id_info = self.google_client.verify_id_token(id_token_value)
+        try:
+            id_info = verify_firebase_token(id_token_value)
+        except FirebaseNotConfigured as exc:
+            raise HTTPException(
+                status_code=500,
+                detail="Firebase no está configurado en el backend"
+            ) from exc
+        except (firebase_exceptions.FirebaseError, ValueError) as exc:
+            raise HTTPException(
+                status_code=401,
+                detail="Token de Firebase inválido"
+            ) from exc
+
+        firebase_data = id_info.get("firebase") or {}
+        provider_id = firebase_data.get("sign_in_provider")
+
+        if not id_info.get("email"):
+            raise HTTPException(status_code=400, detail="Token de Firebase sin correo electrónico")
+        
+        # Firebase añade email_verified. Para proveedores como github puede venir en False
+        # aun cuando el flujo sea válido. Solo requerimos verificación estricta para google.
+        if id_info.get("email_verified") is False and provider_id != "github.com":
+            raise HTTPException(status_code=400, detail="El correo de Firebase no está verificado")
         
         # Procesar login/registro
         return self._finalize_google_login(id_info)
@@ -389,7 +418,7 @@ def logout_user(_token: str):
 
 
 def login_google_user(db: Session, id_token_value: str) -> Token:
-    """Función legacy - usar AuthService.login_with_google()"""
+    """Función legacy - usar AuthService.login_with_google() o login_with_firebase()"""
     auth_service = AuthService(
         repository=UsuariosRepository(db),
         password_service=PasswordService(),

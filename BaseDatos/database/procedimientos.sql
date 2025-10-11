@@ -176,26 +176,31 @@ create
     definer = root@`%` procedure sp_evaluar_estado_nutricional(IN p_nin_id bigint unsigned)
 BEGIN
   DECLARE v_ant_id BIGINT UNSIGNED;
-  DECLARE v_fecha_nac DATE;
-  DECLARE v_sexo ENUM('M','F');
   DECLARE v_ant_fecha DATE;
-  DECLARE v_peso_kg DECIMAL(5,2);
-  DECLARE v_talla_cm DECIMAL(5,2);
+  DECLARE v_peso_kg DECIMAL(6,2);
+  DECLARE v_talla_cm DECIMAL(6,2);
   DECLARE v_edad_meses INT;
-  DECLARE v_imc DECIMAL(5,2);
-  DECLARE v_lms_json JSON;
-  DECLARE v_l, v_m, v_s DECIMAL(8,4);
-  DECLARE v_zscore DECIMAL(5,2);
-  DECLARE v_percentil DECIMAL(5,2);
+  DECLARE v_imc DECIMAL(6,2);
+  DECLARE v_zscore DECIMAL(6,3);
+  DECLARE v_zscore_prev DECIMAL(6,3);
+  DECLARE v_percentil DECIMAL(6,2);
   DECLARE v_clasificacion VARCHAR(30);
   DECLARE v_nivel_riesgo VARCHAR(10);
-  DECLARE v_lms_found BOOLEAN;
+  DECLARE v_riesgo_porcentaje DECIMAL(6,2);
+  DECLARE v_lms_json JSON;
+  DECLARE v_l DECIMAL(10,4);
+  DECLARE v_m DECIMAL(10,4);
+  DECLARE v_s DECIMAL(10,4);
+  DECLARE v_lms_found BOOLEAN DEFAULT FALSE;
   DECLARE v_en_id BIGINT UNSIGNED;
+  DECLARE v_fecha_nac DATE;
+  DECLARE v_sexo ENUM('M','F');
   DECLARE v_has_fn INT DEFAULT 0;
   DECLARE v_has_fn_z INT DEFAULT 0;
   DECLARE v_has_fn_pct INT DEFAULT 0;
+  DECLARE v_has_fn_cls INT DEFAULT 0;
 
-  -- Obtener datos del niño: priorizar columnas de ninos; si faltan, intentar desde perfil del responsable
+  -- Obtener datos básicos del niño
   SELECT
     COALESCE(n.nin_fecha_nac, up.usrper_fecha_nac),
     COALESCE(n.nin_sexo, up.usrper_genero)
@@ -209,19 +214,30 @@ BEGIN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Niño no encontrado o sin datos de perfil';
   END IF;
 
-  -- Obtener última antropometría
-  SELECT ant_id, ant_fecha, ant_peso_kg, ant_talla_cm, ant_edad_meses
-  INTO v_ant_id, v_ant_fecha, v_peso_kg, v_talla_cm, v_edad_meses
-  FROM antropometrias
-  WHERE nin_id = p_nin_id
-  ORDER BY ant_fecha DESC, creado_en DESC
+  -- Última antropometría registrada
+  SELECT
+    a.ant_id,
+    a.ant_fecha,
+    a.ant_peso_kg,
+    a.ant_talla_cm,
+    a.ant_edad_meses,
+    a.ant_z_imc
+  INTO
+    v_ant_id,
+    v_ant_fecha,
+    v_peso_kg,
+    v_talla_cm,
+    v_edad_meses,
+    v_zscore_prev
+  FROM antropometrias a
+  WHERE a.nin_id = p_nin_id
+  ORDER BY a.ant_fecha DESC, a.creado_en DESC
   LIMIT 1;
 
   IF v_ant_id IS NULL THEN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'No hay datos antropométricos para este niño';
   END IF;
 
-  -- Usar edad de antropometría si existe, sino calcular
   IF v_edad_meses IS NULL THEN
     SET v_edad_meses = TIMESTAMPDIFF(MONTH, v_fecha_nac, v_ant_fecha);
   END IF;
@@ -229,7 +245,7 @@ BEGIN
   -- Calcular IMC
   SET v_imc = v_peso_kg / POWER((v_talla_cm / 100), 2);
 
-  -- Verificar existencia de funciones LMS; si no existen, usar fallback simple
+  -- Intentar obtener parámetros OMS
   SELECT COUNT(*) INTO v_has_fn
   FROM information_schema.routines
   WHERE routine_schema = DATABASE() AND routine_type = 'FUNCTION' AND routine_name = 'fn_obtener_lms_oms';
@@ -242,38 +258,37 @@ BEGIN
   END IF;
 
   IF v_lms_found THEN
-    -- Verificar funciones auxiliares antes de usarlas
     SELECT COUNT(*) INTO v_has_fn_z
     FROM information_schema.routines
     WHERE routine_schema = DATABASE() AND routine_type = 'FUNCTION' AND routine_name = 'fn_calcular_zscore_lms';
     SELECT COUNT(*) INTO v_has_fn_pct
     FROM information_schema.routines
     WHERE routine_schema = DATABASE() AND routine_type = 'FUNCTION' AND routine_name = 'fn_calcular_percentil';
+    SELECT COUNT(*) INTO v_has_fn_cls
+    FROM information_schema.routines
+    WHERE routine_schema = DATABASE() AND routine_type = 'FUNCTION' AND routine_name = 'fn_clasificar_estado_nutricional';
 
-    IF v_has_fn_z > 0 AND v_has_fn_pct > 0 THEN
-      -- Extraer parámetros LMS
+    IF v_has_fn_z > 0 THEN
       SET v_l = JSON_EXTRACT(v_lms_json, '$.L');
       SET v_m = JSON_EXTRACT(v_lms_json, '$.M');
       SET v_s = JSON_EXTRACT(v_lms_json, '$.S');
-      -- Calcular Z-score y percentil
       SET v_zscore = fn_calcular_zscore_lms(v_imc, v_l, v_m, v_s);
-      SET v_percentil = fn_calcular_percentil(v_zscore);
-    ELSE
-      SET v_lms_found = FALSE;
     END IF;
-  END IF;
 
-  IF NOT v_lms_found THEN
-    -- Sin datos OMS, usar clasificación simple
-    SET v_zscore = NULL;
-    SET v_percentil = NULL;
-  END IF;
-
-  -- Clasificar estado nutricional
-  IF v_zscore IS NOT NULL THEN
-    SET v_clasificacion = fn_clasificar_estado_nutricional(v_zscore);
+    IF v_zscore IS NOT NULL AND v_has_fn_pct > 0 THEN
+      SET v_percentil = fn_calcular_percentil(v_zscore);
+    ELSEIF v_zscore IS NOT NULL THEN
+      SET v_percentil = 50 + (v_zscore * 15);
+      SET v_percentil = GREATEST(0.1, LEAST(99.9, v_percentil));
+    END IF;
   ELSE
-    -- Fallback simple por IMC
+    SET v_zscore = v_zscore_prev;
+  END IF;
+
+  -- Clasificación y percentil cuando no hubo datos OMS
+  IF v_zscore IS NULL THEN
+    SET v_percentil = NULL;
+
     IF v_edad_meses < 24 THEN
       IF v_imc < 14 THEN SET v_clasificacion = 'DESNUTRICION_SEVERA';
       ELSEIF v_imc < 15 THEN SET v_clasificacion = 'DESNUTRICION';
@@ -291,54 +306,119 @@ BEGIN
       ELSE SET v_clasificacion = 'OBESIDAD';
       END IF;
     END IF;
+  ELSE
+    IF v_has_fn_cls > 0 THEN
+      SET v_clasificacion = fn_clasificar_estado_nutricional(v_zscore);
+    ELSE
+      IF v_zscore < -3 THEN SET v_clasificacion = 'DESNUTRICION_SEVERA';
+      ELSEIF v_zscore < -2 THEN SET v_clasificacion = 'DESNUTRICION';
+      ELSEIF v_zscore < -1 THEN SET v_clasificacion = 'RIESGO';
+      ELSEIF v_zscore <= 1 THEN SET v_clasificacion = 'NORMAL';
+      ELSEIF v_zscore <= 2 THEN SET v_clasificacion = 'SOBREPESO';
+      ELSE SET v_clasificacion = 'OBESIDAD';
+      END IF;
+    END IF;
   END IF;
 
-  -- Determinar nivel de riesgo
+  -- Nivel de riesgo y porcentaje
   CASE v_clasificacion
-    WHEN 'DESNUTRICION_SEVERA' THEN SET v_nivel_riesgo = 'CRITICO';
-    WHEN 'DESNUTRICION' THEN SET v_nivel_riesgo = 'ALTO';
-    WHEN 'RIESGO' THEN SET v_nivel_riesgo = 'MODERADO';
-    WHEN 'NORMAL' THEN SET v_nivel_riesgo = 'BAJO';
-    WHEN 'SOBREPESO' THEN SET v_nivel_riesgo = 'MODERADO';
-    WHEN 'OBESIDAD' THEN SET v_nivel_riesgo = 'ALTO';
-    ELSE SET v_nivel_riesgo = 'BAJO';
+    WHEN 'DESNUTRICION_SEVERA' THEN
+      SET v_nivel_riesgo = 'CRITICO';
+      SET v_riesgo_porcentaje = 95;
+    WHEN 'DESNUTRICION' THEN
+      SET v_nivel_riesgo = 'ALTO';
+      SET v_riesgo_porcentaje = 85;
+    WHEN 'RIESGO' THEN
+      SET v_nivel_riesgo = 'MODERADO';
+      SET v_riesgo_porcentaje = 65;
+    WHEN 'SOBREPESO' THEN
+      SET v_nivel_riesgo = 'MODERADO';
+      SET v_riesgo_porcentaje = 70;
+    WHEN 'OBESIDAD' THEN
+      SET v_nivel_riesgo = 'ALTO';
+      SET v_riesgo_porcentaje = 90;
+    ELSE
+      SET v_nivel_riesgo = 'BAJO';
+      SET v_riesgo_porcentaje = 20;
   END CASE;
 
-  -- Insertar o actualizar evaluación nutricional (campos corregidos según tabla real)
+  IF v_zscore IS NOT NULL THEN
+    SET v_riesgo_porcentaje = ROUND(LEAST(1, ABS(v_zscore) / 3) * 100, 1);
+  END IF;
+
+  -- Guardar evaluación
   INSERT INTO evaluaciones_nutricionales(
-    nin_id, ant_id, en_edad_meses, en_z_score_imc,
-    en_clasificacion, en_nivel_riesgo
+    nin_id, ant_id, en_edad_meses, en_imc, en_z_score_imc,
+    en_percentil_imc, en_clasificacion, en_nivel_riesgo
   ) VALUES (
-    p_nin_id, v_ant_id, v_edad_meses, v_zscore,
-    v_clasificacion, v_nivel_riesgo
+    p_nin_id, v_ant_id, v_edad_meses, v_imc, v_zscore,
+    v_percentil, v_clasificacion, v_nivel_riesgo
   )
   ON DUPLICATE KEY UPDATE
-    en_edad_meses = v_edad_meses,
-    en_z_score_imc = v_zscore,
-    en_clasificacion = v_clasificacion,
-    en_nivel_riesgo = v_nivel_riesgo;
+    en_edad_meses = VALUES(en_edad_meses),
+    en_imc = VALUES(en_imc),
+    en_z_score_imc = VALUES(en_z_score_imc),
+    en_percentil_imc = VALUES(en_percentil_imc),
+    en_clasificacion = VALUES(en_clasificacion),
+    en_nivel_riesgo = VALUES(en_nivel_riesgo);
 
   SET v_en_id = LAST_INSERT_ID();
   IF v_en_id = 0 THEN
-    -- Fue un UPDATE, obtener el ID existente
     SELECT en_id INTO v_en_id
     FROM evaluaciones_nutricionales
     WHERE ant_id = v_ant_id;
   END IF;
 
-  -- Retornar resultado de la evaluación
+  IF v_en_id IS NULL THEN
+    SELECT en_id INTO v_en_id
+    FROM evaluaciones_nutricionales
+    WHERE nin_id = p_nin_id
+    ORDER BY creado_en DESC
+    LIMIT 1;
+  END IF;
+
+  IF v_en_id IS NULL THEN
+    SIGNAL SQLSTATE '45000'
+      SET MESSAGE_TEXT = 'No se pudo registrar evaluación nutricional (en_id no disponible)';
+  END IF;
+
+  -- Actualizar antropometría con z-score calculado
+  UPDATE antropometrias
+  SET ant_z_imc = v_zscore,
+      actualizado_en = NOW()
+  WHERE ant_id = v_ant_id;
+
+  -- Actualizar recomendaciones asociadas a la evaluación (máximo 5 según prioridad)
+  DELETE FROM evaluaciones_recomendaciones
+  WHERE en_id = v_en_id;
+
+  IF v_en_id IS NOT NULL AND v_en_id > 0 THEN
+    INSERT INTO evaluaciones_recomendaciones (en_id, rt_id)
+    SELECT en.en_id, rt.rt_id
+    FROM evaluaciones_nutricionales en
+    JOIN recomendaciones_tipos rt ON rt.rt_clasificacion = v_clasificacion AND rt.rt_activo = TRUE
+    WHERE en.en_id = v_en_id
+    ORDER BY rt.rt_prioridad ASC, rt.rt_id ASC
+    LIMIT 5;
+  END IF;
+
+  -- Resultado
   SELECT
-    v_en_id as en_id,
-    p_nin_id as nin_id,
-    v_ant_id as ant_id,
-    v_edad_meses as en_edad_meses,
-    v_imc as imc_calculado,
-    v_zscore as en_z_score_imc,
-    v_percentil as percentil_calculado,
-    v_clasificacion as en_clasificacion,
-    v_nivel_riesgo as en_nivel_riesgo,
-    v_lms_found as oms_usado,
-    NOW() as evaluado_en;
+    v_en_id AS en_id,
+    p_nin_id AS nin_id,
+    v_ant_id AS ant_id,
+    v_ant_fecha AS ant_fecha,
+    v_edad_meses AS en_edad_meses,
+    v_peso_kg AS peso_kg,
+    v_talla_cm AS talla_cm,
+    v_imc AS imc_calculado,
+    v_zscore AS en_z_score_imc,
+    v_percentil AS percentil_calculado,
+    v_clasificacion AS en_clasificacion,
+    v_nivel_riesgo AS en_nivel_riesgo,
+    v_riesgo_porcentaje AS riesgo_porcentaje,
+    v_lms_found AS oms_usado,
+    NOW() AS evaluado_en;
 END;
 
 create
@@ -999,4 +1079,3 @@ BEGIN
   -- resultado
   SELECT v_usr_id AS usr_id, 'OK' AS msg;
 END;
-

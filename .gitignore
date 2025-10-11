@@ -221,5 +221,9 @@ __marimo__/
 # macOS
 .DS_Store
 
+# Firebase service accounts (mantener fuera del repo)
+control/Nutricion-api/nutricion-api/*firebase-adminsdk*.json
+control/Nutricion-api/nutricion-api/firebase-service-account.json
+
 # Node
 node_modules/
