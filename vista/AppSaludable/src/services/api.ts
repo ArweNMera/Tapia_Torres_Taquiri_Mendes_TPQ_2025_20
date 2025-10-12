@@ -141,6 +141,15 @@ class ApiService {
     );
   }
 
+  async deleteAccount(): Promise<ApiResponse<{ detail: string }>> {
+    return this.makeRequest<{ detail: string }>(
+      this.getApiUrl('/usuarios/me'),
+      {
+        method: 'DELETE',
+      }
+    );
+  }
+
   async loginWithFirebase(idToken: string): Promise<ApiResponse<Token>> {
     if (!idToken) {
       return { success: false, error: 'id_token faltante en la solicitud' };

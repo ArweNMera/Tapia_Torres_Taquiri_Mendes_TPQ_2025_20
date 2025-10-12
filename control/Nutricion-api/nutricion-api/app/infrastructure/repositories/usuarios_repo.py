@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from typing import Optional, Dict, Any
 
 from passlib.context import CryptContext
+import secrets
 
 from app.domain.interfaces.usuarios_repository import IUsuariosRepository
 from app.schemas.auth import UserResponse
@@ -225,3 +226,57 @@ class UsuariosRepository(IUsuariosRepository):
             },
         ).fetchone()
         self.db.commit()
+
+    def anonymize_user_account(self, usr_id: int) -> bool:
+        """Anonimizar datos sensibles del usuario y marcar la cuenta como inactiva."""
+        suffix = secrets.token_hex(6)
+        temp_username = f"deleted_{usr_id}_{suffix}"
+        temp_email = f"{temp_username}@deleted.local"
+        random_password = pwd_context.hash(secrets.token_urlsafe(32))
+
+        result = self.db.execute(
+            text(
+                """
+                UPDATE usuarios
+                SET usr_correo = :correo,
+                    usr_contrasena = :contrasena,
+                    usr_nombre = :nombre,
+                    usr_apellido = :apellido,
+                    usr_usuario = :usuario,
+                    usr_activo = 0,
+                    eliminado_en = NOW()
+                WHERE usr_id = :usr_id
+                """
+            ),
+            {
+                "correo": temp_email,
+                "contrasena": random_password,
+                "nombre": "Cuenta eliminada",
+                "apellido": "NutriFamily",
+                "usuario": temp_username,
+                "usr_id": usr_id,
+            },
+        )
+
+        self.db.execute(
+            text(
+                """
+                UPDATE usuarios_perfil
+                SET usrper_avatar_url = NULL,
+                    usrper_telefono = :telefono,
+                    usrper_direccion = NULL,
+                    usrper_genero = NULL,
+                    usrper_fecha_nac = NULL,
+                    usrper_idioma = 'es-PE',
+                    eliminado_en = NOW()
+                WHERE usr_id = :usr_id
+                """
+            ),
+            {
+                "usr_id": usr_id,
+                "telefono": "000000000",
+            },
+        )
+
+        self.db.commit()
+        return result.rowcount > 0

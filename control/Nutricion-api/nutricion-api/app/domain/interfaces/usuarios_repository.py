@@ -64,3 +64,8 @@ class IUsuariosRepository(ABC):
     def insert_rol(self, rol_codigo: str, rol_nombre: str) -> Any:
         """Insertar un nuevo rol"""
         pass
+
+    @abstractmethod
+    def anonymize_user_account(self, usr_id: int) -> bool:
+        """Anonimizar y desactivar la cuenta de un usuario"""
+        pass

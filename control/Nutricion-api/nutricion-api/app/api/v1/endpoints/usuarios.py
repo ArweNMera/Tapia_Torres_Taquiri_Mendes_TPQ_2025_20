@@ -90,3 +90,12 @@ def change_user_role(
         requesting_user_id=current_user.usr_id
     )
     return UserRoleChangeResponse(**result)
+
+
+@router.delete("/me")
+def delete_my_account(
+    current_user: AuthUserResponse = Depends(get_current_user),
+    usuarios_service: UsuariosService = Depends(get_usuarios_service)
+):
+    """Eliminar (anonimizar) la cuenta del usuario autenticado."""
+    return usuarios_service.delete_user_account(current_user.usr_id)

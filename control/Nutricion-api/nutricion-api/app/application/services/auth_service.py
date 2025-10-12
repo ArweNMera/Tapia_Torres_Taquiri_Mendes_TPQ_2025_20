@@ -147,12 +147,9 @@ class AuthService:
         if not id_info.get("email"):
             raise HTTPException(status_code=400, detail="Token de Firebase sin correo electrónico")
         
-        # Firebase añade email_verified. Para proveedores como github puede venir en False
-        # aun cuando el flujo sea válido. Solo requerimos verificación estricta para google.
-        if id_info.get("email_verified") is False and provider_id != "github.com":
+        if id_info.get("email_verified") is False and provider_id not in {"github.com", "facebook.com", "microsoft.com"}:
             raise HTTPException(status_code=400, detail="El correo de Firebase no está verificado")
         
-        # Procesar login/registro
         return self._finalize_google_login(id_info)
     
     def build_google_auth_url(self, redirect_target: str) -> str:
@@ -469,7 +466,7 @@ def build_google_oauth_redirect(
 ) -> str:
     """Función legacy"""
     auth_service = AuthService(
-        repository=UsuariosRepository(Session()),  # Session dummy
+        repository=UsuariosRepository(Session()),
         password_service=PasswordService(),
         jwt_service=JWTService(),
         google_client=GoogleOAuthClient()

@@ -18,9 +18,26 @@ import SelfAnthropometry from './components/SelfAnthropometry';
 import ProfileHubScreen from './components/screens/ProfileHubScreen';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Toaster } from './components/ui/toaster';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import TermsPage from './pages/TermsPage';
+import DeleteDataPage from './pages/DeleteDataPage';
 
 type AppState = 'login' | 'register' | 'onboarding' | 'main';
 type ActiveTab = 'home' | 'meal-plan' | 'scan' | 'risk-prediction' | 'progress' | 'community' | 'gamification' | 'profile' | 'clinical';
+
+const STATIC_PAGES: Record<string, JSX.Element> = {
+  '/privacy': <PrivacyPolicyPage />,
+  '/terms': <TermsPage />,
+  '/delete-data': <DeleteDataPage />,
+};
+
+const normalizePath = (path: string) => {
+  if (!path) {
+    return '/';
+  }
+  const trimmed = path.replace(/\/+$/, '');
+  return trimmed === '' ? '/' : trimmed.toLowerCase();
+};
 
 function AppContent() {
   const { isAuthenticated, isLoading, user } = useAuth();
@@ -155,6 +172,14 @@ function AppContent() {
 }
 
 export default function App() {
+  const pathname =
+    typeof window !== 'undefined' ? normalizePath(window.location.pathname) : '/';
+  const staticPage = STATIC_PAGES[pathname];
+
+  if (staticPage) {
+    return staticPage;
+  }
+
   return (
     <AuthProvider>
       <AppContent />

@@ -5,6 +5,9 @@ import { firebaseAuth } from '../lib/firebase';
 import {
   GoogleAuthProvider,
   GithubAuthProvider,
+  FacebookAuthProvider,
+  OAuthProvider,
+  OAuthCredential,
   signInWithPopup,
   signOut,
   fetchSignInMethodsForEmail,
@@ -19,6 +22,8 @@ interface AuthContextType {
   login: (userData: UserLogin) => Promise<{ success: boolean; error?: string }>;
   beginGoogleLogin: () => Promise<void>;
   beginGithubLogin: () => Promise<void>;
+  beginMicrosoftLogin: () => Promise<void>;
+  beginFacebookLogin: () => Promise<void>;
   register: (userData: UserRegister, roleCode: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
@@ -199,18 +204,37 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   );
 
   const signInWithProvider = useCallback(
-    async (providerName: 'google' | 'github') => {
+    async (providerName: 'google' | 'github' | 'facebook' | 'microsoft') => {
       setIsLoading(true);
       setSocialAuthError(null);
       try {
-        let provider: GoogleAuthProvider | GithubAuthProvider;
-        if (providerName === 'google') {
-          provider = new GoogleAuthProvider();
-          provider.setCustomParameters({ prompt: 'select_account' });
-        } else {
-          provider = new GithubAuthProvider();
-          provider.addScope('user:email');
-        }
+        const provider = (() => {
+          switch (providerName) {
+            case 'google': {
+              const googleProvider = new GoogleAuthProvider();
+              googleProvider.setCustomParameters({ prompt: 'select_account' });
+              return googleProvider;
+            }
+            case 'github': {
+              const githubProvider = new GithubAuthProvider();
+              githubProvider.addScope('user:email');
+              return githubProvider;
+            }
+            case 'facebook': {
+              const facebookProvider = new FacebookAuthProvider();
+              facebookProvider.addScope('email');
+              return facebookProvider;
+            }
+            case 'microsoft': {
+              const microsoftProvider = new OAuthProvider('microsoft.com');
+              microsoftProvider.setCustomParameters({ prompt: 'select_account' });
+              microsoftProvider.addScope('User.Read');
+              return microsoftProvider;
+            }
+            default:
+              throw new Error('Proveedor no soportado');
+          }
+        })();
 
         const result = await signInWithPopup(firebaseAuth, provider);
         await completeFirebaseLogin(result);
@@ -229,25 +253,71 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               break;
             case 'auth/account-exists-with-different-credential': {
               const email = (error.customData?.email as string) || '';
-              const pendingCredential =
-                providerName === 'google'
-                  ? GoogleAuthProvider.credentialFromError(error)
-                  : GithubAuthProvider.credentialFromError(error);
+              const pendingCredential: OAuthCredential | null = (() => {
+                switch (providerName) {
+                  case 'google':
+                    return GoogleAuthProvider.credentialFromError(error);
+                  case 'github':
+                    return GithubAuthProvider.credentialFromError(error);
+                  case 'facebook':
+                    return FacebookAuthProvider.credentialFromError(error);
+                  case 'microsoft':
+                    return OAuthProvider.credentialFromError(error);
+                  default:
+                    return null;
+                }
+              })();
 
               if (email && pendingCredential) {
                 try {
                   const methods = await fetchSignInMethodsForEmail(firebaseAuth, email);
 
-                  if (methods.includes('google.com')) {
-                    const googleProvider = new GoogleAuthProvider();
-                    googleProvider.setCustomParameters({ prompt: 'select_account' });
+                  const tryLinkingWithKnownProvider = async (method: string) => {
+                    const providerForMethod = (() => {
+                      switch (method) {
+                        case 'google.com': {
+                          const googleProvider = new GoogleAuthProvider();
+                          googleProvider.setCustomParameters({ prompt: 'select_account' });
+                          return googleProvider;
+                        }
+                        case 'github.com': {
+                          const githubProvider = new GithubAuthProvider();
+                          githubProvider.addScope('user:email');
+                          return githubProvider;
+                        }
+                        case 'facebook.com': {
+                          const facebookProvider = new FacebookAuthProvider();
+                          facebookProvider.addScope('email');
+                          return facebookProvider;
+                        }
+                        case 'microsoft.com': {
+                          const microsoftProvider = new OAuthProvider('microsoft.com');
+                          microsoftProvider.setCustomParameters({ prompt: 'select_account' });
+                          microsoftProvider.addScope('User.Read');
+                          return microsoftProvider;
+                        }
+                        default:
+                          return null;
+                      }
+                    })();
 
-                    const existingUserResult = await signInWithPopup(firebaseAuth, googleProvider);
+                    if (!providerForMethod) {
+                      return false;
+                    }
+
+                    const existingUserResult = await signInWithPopup(firebaseAuth, providerForMethod);
                     await linkWithCredential(existingUserResult.user, pendingCredential);
 
                     const success = await completeFirebaseLogin(existingUserResult);
                     if (success) {
                       setSocialAuthError(null);
+                      return true;
+                    }
+                    return false;
+                  };
+
+                  for (const method of methods) {
+                    if (await tryLinkingWithKnownProvider(method)) {
                       return;
                     }
                   }
@@ -257,7 +327,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               }
 
               message =
-                'Ya existe una cuenta asociada a este correo. Inicia sesión con el método original y vincula GitHub desde tu perfil.';
+                'Ya existe una cuenta asociada a este correo. Inicia sesión con el método original y realiza la vinculación desde tu perfil.';
               break;
             }
             default:
@@ -277,6 +347,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const beginGoogleLogin = useCallback(() => signInWithProvider('google'), [signInWithProvider]);
   const beginGithubLogin = useCallback(() => signInWithProvider('github'), [signInWithProvider]);
+  const beginFacebookLogin = useCallback(() => signInWithProvider('facebook'), [signInWithProvider]);
+  const beginMicrosoftLogin = useCallback(() => signInWithProvider('microsoft'), [signInWithProvider]);
 
   const register = async (userData: UserRegister, roleCode: string): Promise<{ success: boolean; error?: string }> => {
     setIsLoading(true);
@@ -372,6 +444,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     login,
     beginGoogleLogin,
     beginGithubLogin,
+    beginFacebookLogin,
+    beginMicrosoftLogin,
     register,
     logout,
     isAuthenticated: !!user,

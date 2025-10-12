@@ -239,3 +239,24 @@ class UsuariosService:
                 status_code=500, 
                 detail=f"Error al crear rol: {str(e)}"
             )
+
+    def delete_user_account(self, usr_id: int) -> Dict[str, Any]:
+        """
+        Caso de uso: Anonimizar y desactivar la cuenta de un usuario.
+        """
+        user = self.repository.get_user_by_id(usr_id)
+        if not user:
+            raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+        try:
+            success = self.repository.anonymize_user_account(usr_id)
+        except Exception as exc:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error al eliminar la cuenta: {str(exc)}"
+            ) from exc
+
+        if not success:
+            raise HTTPException(status_code=500, detail="No se pudo eliminar la cuenta")
+
+        return {"detail": "Cuenta eliminada y datos personales anonimizados"}
