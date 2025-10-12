@@ -1,11 +1,7 @@
-from typing import Optional
-
 from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
-from app.infrastructure.db.session import get_db
-from app.schemas.auth import Token, UserLogin, GoogleLogin
 from app.application.services.auth_service import (
     build_google_authorize_url,
     build_google_oauth_redirect,
@@ -16,12 +12,16 @@ from app.application.services.auth_service import (
     resolve_google_redirect_from_state,
 )
 from app.core.config import settings
+from app.infrastructure.db.session import get_db
+from app.schemas.auth import GoogleLogin, Token, UserLogin
 
 router = APIRouter()
+
 
 @router.post("/login", response_model=Token)
 def login(user_login: UserLogin, db: Session = Depends(get_db)):
     return login_user(db, user_login)
+
 
 @router.post("/logout")
 def logout(authorization: str = Header(None)):
@@ -38,7 +38,7 @@ def login_with_google(google_login: GoogleLogin, db: Session = Depends(get_db)):
 
 
 @router.get("/google/start")
-def start_google_login(redirect_to: Optional[str] = Query(None)):
+def start_google_login(redirect_to: str | None = Query(None)):
     target = redirect_to or settings.GOOGLE_POST_LOGIN_REDIRECT
     if not target:
         raise HTTPException(status_code=500, detail="No se configuró GOOGLE_POST_LOGIN_REDIRECT")
@@ -49,15 +49,17 @@ def start_google_login(redirect_to: Optional[str] = Query(None)):
 
 @router.get("/google/callback")
 def google_callback(
-    code: Optional[str] = None,
-    state: Optional[str] = None,
-    error: Optional[str] = None,
+    code: str | None = None,
+    state: str | None = None,
+    error: str | None = None,
     db: Session = Depends(get_db),
 ):
     fallback_target = settings.GOOGLE_POST_LOGIN_REDIRECT or "http://localhost:5173"
 
     if not state:
-        redirect_url = build_google_oauth_redirect(fallback_target, error="Estado de Google faltante")
+        redirect_url = build_google_oauth_redirect(
+            fallback_target, error="Estado de Google faltante"
+        )
         return RedirectResponse(redirect_url, status_code=302)
 
     try:
@@ -71,7 +73,9 @@ def google_callback(
         return RedirectResponse(redirect_url, status_code=302)
 
     if not code:
-        redirect_url = build_google_oauth_redirect(redirect_target, error="Google no entregó código de autorización")
+        redirect_url = build_google_oauth_redirect(
+            redirect_target, error="Google no entregó código de autorización"
+        )
         return RedirectResponse(redirect_url, status_code=302)
 
     try:

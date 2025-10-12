@@ -5,9 +5,10 @@ Script para verificar el cálculo de BAZ en adolescentes.
 
 import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from app.main import _load_lms, _nearest_lms, _baz_from_bmi, WHO_DIR
+from app.main import WHO_DIR, _baz_from_bmi, _load_lms, _nearest_lms
 
 # Casos de prueba
 casos = [
@@ -17,7 +18,7 @@ casos = [
         "sexo": "M",
         "peso_kg": 55,
         "talla_cm": 160,
-        "clasificacion_esperada": "NORMAL o RIESGO_SOBREPESO"
+        "clasificacion_esperada": "NORMAL o RIESGO_SOBREPESO",
     },
     {
         "nombre": "Jhon Quispe Torres",
@@ -25,7 +26,7 @@ casos = [
         "sexo": "M",
         "peso_kg": 40,
         "talla_cm": 150,
-        "clasificacion_esperada": "NORMAL"
+        "clasificacion_esperada": "NORMAL",
     },
     {
         "nombre": "Luis Quispe Lopeze",
@@ -33,7 +34,7 @@ casos = [
         "sexo": "M",
         "peso_kg": 25,
         "talla_cm": 130,
-        "clasificacion_esperada": "NORMAL"
+        "clasificacion_esperada": "NORMAL",
     },
     {
         "nombre": "Kevin Mendez Roca",
@@ -41,8 +42,8 @@ casos = [
         "sexo": "M",
         "peso_kg": 30,
         "talla_cm": 135,
-        "clasificacion_esperada": "NORMAL"
-    }
+        "clasificacion_esperada": "NORMAL",
+    },
 ]
 
 print("=" * 80)
@@ -64,29 +65,31 @@ except Exception as e:
 for caso in casos:
     print("-" * 80)
     print(f"👤 {caso['nombre']}")
-    print(f"   Edad: {caso['edad_meses']} meses ({caso['edad_meses']//12} años {caso['edad_meses']%12} meses)")
+    print(
+        f"   Edad: {caso['edad_meses']} meses ({caso['edad_meses']//12} años {caso['edad_meses']%12} meses)"
+    )
     print(f"   Sexo: {caso['sexo']}")
     print(f"   Peso: {caso['peso_kg']} kg")
     print(f"   Talla: {caso['talla_cm']} cm")
     print()
-    
+
     # Calcular IMC
-    altura_m = caso['talla_cm'] / 100.0
-    imc = caso['peso_kg'] / (altura_m ** 2)
+    altura_m = caso["talla_cm"] / 100.0
+    imc = caso["peso_kg"] / (altura_m**2)
     print(f"   📊 IMC calculado: {imc:.2f}")
-    
+
     # Obtener LMS
     try:
-        L, M, S = _nearest_lms(LMS, caso['sexo'], caso['edad_meses'])
+        L, M, S = _nearest_lms(LMS, caso["sexo"], caso["edad_meses"])
         print(f"   📈 Valores LMS (edad {caso['edad_meses']} meses, sexo {caso['sexo']}):")
         print(f"      L = {L:.4f}")
         print(f"      M = {M:.4f}")
         print(f"      S = {S:.4f}")
-        
+
         # Calcular BAZ
         baz = _baz_from_bmi(imc, L, M, S)
         print(f"   🎯 BAZ calculado: {baz:.2f}")
-        
+
         # Clasificar según BAZ
         if baz < -3:
             clasificacion = "DESNUTRICION_SEVERA"
@@ -102,19 +105,19 @@ for caso in casos:
             clasificacion = "SOBREPESO"
         else:
             clasificacion = "OBESIDAD"
-        
+
         print(f"   ✅ Clasificación: {clasificacion}")
         print(f"   📝 Esperado: {caso['clasificacion_esperada']}")
-        
+
         # Verificar si coincide
-        if clasificacion in caso['clasificacion_esperada']:
-            print(f"   ✅ CORRECTO")
+        if clasificacion in caso["clasificacion_esperada"]:
+            print("   ✅ CORRECTO")
         else:
-            print(f"   ⚠️  POSIBLE ERROR")
-        
+            print("   ⚠️  POSIBLE ERROR")
+
     except Exception as e:
         print(f"   ❌ Error: {e}")
-    
+
     print()
 
 print("=" * 80)
@@ -129,13 +132,13 @@ for sexo in ["M", "F"]:
     print(f"  Registros: {len(datos_sexo)}")
     print(f"  Rango edad: {datos_sexo['month'].min()} - {datos_sexo['month'].max()} meses")
     print(f"  Rango edad: {datos_sexo['month'].min()//12} - {datos_sexo['month'].max()//12} años")
-    
+
     # Verificar si tenemos datos para 14-15 años
     edad_14 = 14 * 12
     edad_15 = 15 * 12
-    tiene_14 = len(datos_sexo[datos_sexo['month'] == edad_14]) > 0
-    tiene_15 = len(datos_sexo[datos_sexo['month'] == edad_15]) > 0
-    
+    tiene_14 = len(datos_sexo[datos_sexo["month"] == edad_14]) > 0
+    tiene_15 = len(datos_sexo[datos_sexo["month"] == edad_15]) > 0
+
     print(f"  ¿Tiene datos para 14 años ({edad_14} meses)? {tiene_14}")
     print(f"  ¿Tiene datos para 15 años ({edad_15} meses)? {tiene_15}")
     print()

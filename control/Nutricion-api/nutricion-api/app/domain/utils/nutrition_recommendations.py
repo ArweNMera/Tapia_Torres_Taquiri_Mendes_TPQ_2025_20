@@ -3,10 +3,11 @@ Utilidades para generar recomendaciones nutricionales personalizadas.
 Este módulo contiene la lógica de negocio para generar recomendaciones
 basadas en el estado nutricional del niño.
 """
-from typing import List, Dict, Any
+
+from typing import Any
 
 # Catálogo base usado tanto para sugerencias dinámicas como para poblar la tabla recomendaciones_tipos
-RECOMMENDATION_CATALOG: Dict[str, List[Dict[str, Any]]] = {
+RECOMMENDATION_CATALOG: dict[str, list[dict[str, Any]]] = {
     "DESNUTRICION_SEVERA": [
         {
             "codigo": "DES_SEVERA_ATENCION",
@@ -231,7 +232,7 @@ RECOMMENDATION_CATALOG: Dict[str, List[Dict[str, Any]]] = {
     ],
 }
 
-DEFAULT_RECOMMENDATIONS: List[Dict[str, Any]] = [
+DEFAULT_RECOMMENDATIONS: list[dict[str, Any]] = [
     {
         "codigo": "GENERAL_EVALUACION",
         "icono": "🍎",
@@ -269,7 +270,7 @@ DEFAULT_RECOMMENDATIONS: List[Dict[str, Any]] = [
     },
 ]
 
-RECOMMENDATION_LOOKUP: Dict[str, Dict[str, Any]] = {
+RECOMMENDATION_LOOKUP: dict[str, dict[str, Any]] = {
     item["codigo"]: item
     for items in list(RECOMMENDATION_CATALOG.values()) + [DEFAULT_RECOMMENDATIONS]
     for item in items
@@ -277,10 +278,8 @@ RECOMMENDATION_LOOKUP: Dict[str, Dict[str, Any]] = {
 
 
 def generar_recomendaciones_nutricionales(
-    clasificacion: str,
-    imc: float,
-    edad_meses: int
-) -> List[Dict[str, str]]:
+    clasificacion: str, imc: float, edad_meses: int
+) -> list[dict[str, str]]:
     """
     Genera recomendaciones personalizadas basadas en el estado nutricional.
     Usa el catálogo base y limita la salida a cinco recomendaciones.
@@ -296,7 +295,7 @@ def generar_recomendaciones_nutricionales(
     ]
 
 
-def mapear_recomendacion_desde_db(rt_codigo: str, titulo: str, descripcion: str) -> Dict[str, str]:
+def mapear_recomendacion_desde_db(rt_codigo: str, titulo: str, descripcion: str) -> dict[str, str]:
     """
     Ajusta la recomendación provenientes de la BD añadiendo el icono del catálogo.
     """

@@ -5,11 +5,11 @@ import { toast } from 'sonner';
 
 export default function AnthropometryManagement() {
   const { getSelfChild, addSelfAnthropometry, getSelfAnthropometryHistory, getSelfNutritionalStatus } = useSelfAnthropometryApi();
-  
-  const [form, setForm] = useState<AnthropometryCreate>({ 
-    ant_peso_kg: 0, 
-    ant_talla_cm: 0, 
-    ant_fecha: new Date().toISOString().slice(0,10) 
+
+  const [form, setForm] = useState<AnthropometryCreate>({
+    ant_peso_kg: 0,
+    ant_talla_cm: 0,
+    ant_fecha: new Date().toISOString().slice(0,10)
   });
   const [history, setHistory] = useState<AnthropometryResponse[]>([]);
   const [status, setStatus] = useState<NutritionalStatusResponse | null>(null);
@@ -24,16 +24,16 @@ export default function AnthropometryManagement() {
         setError(getSelfChild.error || 'Error al cargar perfil personal');
         return;
       }
-      
+
       // Cargar datos en paralelo
       const [hist, stat] = await Promise.all([
         getSelfAnthropometryHistory.execute(),
         getSelfNutritionalStatus.execute()
       ]);
-      
+
       setHistory(hist || []);
       setStatus(stat || null);
-      
+
     } catch (err) {
       setError('Error al cargar datos');
     } finally {
@@ -47,26 +47,26 @@ export default function AnthropometryManagement() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setForm(prev => ({ 
-      ...prev, 
-      [name]: name === 'ant_peso_kg' || name === 'ant_talla_cm' ? Number(value) : value 
+    setForm(prev => ({
+      ...prev,
+      [name]: name === 'ant_peso_kg' || name === 'ant_talla_cm' ? Number(value) : value
     }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    
+
     if (form.ant_peso_kg <= 0 || form.ant_talla_cm <= 0) {
       setError('Peso y talla deben ser mayores a 0');
       return;
     }
-    
+
     const normalized = {
       ...form,
       ant_talla_cm: form.ant_talla_cm <= 3 ? Number((form.ant_talla_cm * 100).toFixed(1)) : form.ant_talla_cm,
     };
-    
+
     const saved = await addSelfAnthropometry.execute(normalized);
     if (!saved) {
       setError(addSelfAnthropometry.error || 'Error al guardar medida');
@@ -75,14 +75,14 @@ export default function AnthropometryManagement() {
       });
       return;
     }
-    
+
     toast.success('Medida guardada', {
       description: 'La medida ha sido registrada correctamente.',
     });
-    
+
     // Recargar datos
     await loadData();
-    
+
     // Reset form
     setForm(prev => ({ ...prev, ant_peso_kg: 0, ant_talla_cm: 0 }));
   };
@@ -110,48 +110,48 @@ export default function AnthropometryManagement() {
               <p className="text-sm text-gray-600">Registra tu peso y talla actual</p>
             </div>
           </div>
-          
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
-              <input 
-                type="date" 
-                name="ant_fecha" 
-                value={form.ant_fecha || ''} 
+              <input
+                type="date"
+                name="ant_fecha"
+                value={form.ant_fecha || ''}
                 onChange={handleChange}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none" 
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
               />
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Peso (kg)</label>
-                <input 
-                  type="number" 
-                  step="0.1" 
-                  name="ant_peso_kg" 
-                  value={form.ant_peso_kg || ''} 
+                <input
+                  type="number"
+                  step="0.1"
+                  name="ant_peso_kg"
+                  value={form.ant_peso_kg || ''}
                   onChange={handleChange}
                   placeholder="Ej: 65.5"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none" 
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Talla (cm)</label>
-                <input 
-                  type="number" 
-                  step="0.1" 
-                  name="ant_talla_cm" 
-                  value={form.ant_talla_cm || ''} 
+                <input
+                  type="number"
+                  step="0.1"
+                  name="ant_talla_cm"
+                  value={form.ant_talla_cm || ''}
                   onChange={handleChange}
                   placeholder="Ej: 170"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none" 
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
                 />
               </div>
             </div>
-            
-            <button 
-              type="submit" 
+
+            <button
+              type="submit"
               className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 font-medium transition-colors"
             >
               Guardar medida
@@ -176,7 +176,7 @@ export default function AnthropometryManagement() {
               <p className="text-sm text-gray-600">Estado nutricional actual</p>
             </div>
           </div>
-          
+
           {status ? (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -189,7 +189,7 @@ export default function AnthropometryManagement() {
                   <div className="text-lg font-semibold text-gray-900">{status.classification}</div>
                 </div>
               </div>
-              
+
               <div className="bg-gray-50 rounded-lg p-3">
                 <div className="text-sm text-gray-600 mb-1">Nivel de riesgo</div>
                 <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
@@ -201,7 +201,7 @@ export default function AnthropometryManagement() {
                   {status.risk_level}
                 </span>
               </div>
-              
+
               {status.recommendations && status.recommendations.length > 0 && (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <div className="text-sm font-medium text-blue-900 mb-3">Recomendaciones:</div>
@@ -240,7 +240,7 @@ export default function AnthropometryManagement() {
             <p className="text-sm text-gray-600">Seguimiento de tu evolución antropométrica</p>
           </div>
         </div>
-        
+
         {history.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-6xl mb-4 opacity-50">📈</div>

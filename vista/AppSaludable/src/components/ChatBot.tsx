@@ -108,19 +108,19 @@ export function ChatBot({ className = '' }: ChatBotProps) {
 
   const generateBotResponse = (message: string): string => {
     const lowerMessage = message.toLowerCase();
-    
+
     if (lowerMessage.includes('receta') || lowerMessage.includes('cocinar')) {
       return '¡Perfecto! Te recomiendo revisar nuestra sección de recetas. ¿Buscas algo específico? Puedo sugerir recetas según las alergias de tu pequeño/a y sus preferencias 👶🍽️';
     }
-    
+
     if (lowerMessage.includes('peso') || lowerMessage.includes('crecimiento')) {
       return 'El seguimiento del peso es muy importante. He notado que Sofía ha ganado 200g esta semana, ¡excelente progreso! ¿Te gustaría ver sus gráficos de crecimiento detallados? 📈';
     }
-    
+
     if (lowerMessage.includes('alergia') || lowerMessage.includes('intolerancia')) {
       return 'Las alergias alimentarias requieren mucha atención. Tengo registro de las alergias de tu hijo/a. ¿Necesitas ayuda para encontrar recetas que eviten alérgenos específicos? 🚫🥜';
     }
-    
+
     if (lowerMessage.includes('nutrición') || lowerMessage.includes('vitaminas')) {
       return 'La nutrición balanceada es clave en esta etapa. Según los datos, Sofía ha consumido el 85% de proteínas hoy. ¿Te gustaría consejos para completar los macronutrientes del día? 🥗';
     }
@@ -128,7 +128,7 @@ export function ChatBot({ className = '' }: ChatBotProps) {
     if (lowerMessage.includes('hola') || lowerMessage.includes('hi')) {
       return '¡Hola! Me alegra verte por aquí. ¿En qué aspecto de la alimentación de tu pequeño/a puedo ayudarte hoy? 😊';
     }
-    
+
     return 'Entiendo tu pregunta. Como especialista en nutrición infantil, puedo ayudarte con recetas saludables, seguimiento nutricional, alergias alimentarias y consejos personalizados. ¿Podrías ser más específico/a sobre qué necesitas? 🤔💭';
   };
 
@@ -136,19 +136,19 @@ export function ChatBot({ className = '' }: ChatBotProps) {
     if (file.type.startsWith('image/')) {
       return '📸 He analizado la imagen. Si es una foto de comida, puedo ayudarte a identificar ingredientes y calcular valores nutricionales aproximados. También puedo sugerir modificaciones para hacerla más saludable para tu pequeño/a.';
     }
-    
+
     if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
       return '📄 He recibido tu documento PDF. Si contiene informes médicos o análisis nutricionales, puedo ayudarte a interpretarlos y crear un plan alimentario personalizado basado en esta información.';
     }
-    
+
     return '📎 Archivo recibido correctamente. Puedo analizar imágenes de comida, documentos médicos, y listas de ingredientes. ¿Podrías contarme qué tipo de información contiene para darte la mejor ayuda posible?';
   };
 
   const formatTime = (date: Date) => {
-    return date.toLocaleTimeString('es-ES', { 
-      hour: '2-digit', 
+    return date.toLocaleTimeString('es-ES', {
+      hour: '2-digit',
       minute: '2-digit',
-      hour12: false 
+      hour12: false
     });
   };
 
@@ -172,8 +172,8 @@ export function ChatBot({ className = '' }: ChatBotProps) {
           onClick={toggleChat}
           size="lg"
           className={`h-14 w-14 rounded-full shadow-lg transition-all duration-300 ${
-            isOpen 
-              ? 'bg-red-500 hover:bg-red-600' 
+            isOpen
+              ? 'bg-red-500 hover:bg-red-600'
               : 'bg-green-600 hover:bg-green-700'
           }`}
         >

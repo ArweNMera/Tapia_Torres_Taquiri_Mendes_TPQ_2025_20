@@ -132,39 +132,39 @@ CREATE TABLE features_ml (
   fml_id              BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
   nin_id              BIGINT UNSIGNED NOT NULL,
   ant_id              BIGINT UNSIGNED NULL,
-  
+
   -- Features temporales
   fml_bmi_velocity    DECIMAL(6,3) NULL COMMENT 'Cambio IMC últimos 3 meses',
   fml_weight_velocity DECIMAL(6,3) NULL COMMENT 'Cambio peso últimos 3 meses (kg)',
   fml_height_velocity DECIMAL(6,3) NULL COMMENT 'Cambio talla últimos 3 meses (cm)',
   fml_baz_trend       DECIMAL(6,3) NULL COMMENT 'Tendencia z-score',
   fml_measurements_count SMALLINT UNSIGNED NULL COMMENT 'Número de mediciones',
-  
+
   -- Features de adherencia
   fml_adherence_score DECIMAL(5,2) NULL COMMENT 'Score adherencia 0-100',
   fml_adherence_consistency DECIMAL(5,2) NULL COMMENT 'Consistencia adherencia',
   fml_menu_completion_rate DECIMAL(5,2) NULL COMMENT '% menús completados',
-  
+
   -- Features de alergias
   fml_allergy_count   SMALLINT UNSIGNED NULL COMMENT 'Total alergias',
   fml_allergy_severity_max TINYINT UNSIGNED NULL COMMENT '1=LEVE, 2=MODERADA, 3=SEVERA',
   fml_food_allergy_count SMALLINT UNSIGNED NULL COMMENT 'Alergias alimentarias',
   fml_has_severe_allergy BOOLEAN NULL COMMENT 'Tiene alergia severa',
-  
+
   -- Features de síntomas
   fml_symptom_frequency SMALLINT UNSIGNED NULL COMMENT 'Síntomas últimos 30 días',
   fml_symptom_severity_avg DECIMAL(4,2) NULL COMMENT 'Severidad promedio síntomas',
   fml_has_recent_symptoms BOOLEAN NULL COMMENT 'Síntomas últimos 7 días',
-  
+
   -- Features nutricionales
   fml_dietary_diversity_score DECIMAL(5,2) NULL COMMENT 'Score diversidad dietética',
   fml_menu_kcal_avg INT NULL COMMENT 'Promedio kcal menús',
   fml_protein_intake_score DECIMAL(5,2) NULL COMMENT 'Score ingesta proteica',
-  
+
   -- Metadata
   fml_calculated_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   fml_version         VARCHAR(20) NOT NULL DEFAULT 'v1.0' COMMENT 'Versión del cálculo',
-  
+
   CONSTRAINT fk_fml_nino FOREIGN KEY (nin_id) REFERENCES ninos(nin_id) ON DELETE CASCADE,
   CONSTRAINT fk_fml_antropometria FOREIGN KEY (ant_id) REFERENCES antropometrias(ant_id) ON DELETE SET NULL,
   INDEX idx_fml_nino_fecha (nin_id, fml_calculated_at),
@@ -219,27 +219,27 @@ Para calcular scores nutricionales de los menús.
 CREATE TABLE menus_nutrientes (
   mn_id       BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
   men_id      BIGINT UNSIGNED NOT NULL,
-  
+
   -- Macronutrientes
   mn_kcal_total      INT NULL COMMENT 'Calorías totales',
   mn_proteina_g      DECIMAL(8,2) NULL COMMENT 'Proteína en gramos',
   mn_carbohidratos_g DECIMAL(8,2) NULL COMMENT 'Carbohidratos en gramos',
   mn_grasas_g        DECIMAL(8,2) NULL COMMENT 'Grasas en gramos',
   mn_fibra_g         DECIMAL(8,2) NULL COMMENT 'Fibra en gramos',
-  
+
   -- Micronutrientes clave
   mn_hierro_mg       DECIMAL(8,2) NULL COMMENT 'Hierro en mg',
   mn_calcio_mg       DECIMAL(8,2) NULL COMMENT 'Calcio en mg',
   mn_vitamina_a_ug   DECIMAL(8,2) NULL COMMENT 'Vitamina A en µg',
   mn_vitamina_c_mg   DECIMAL(8,2) NULL COMMENT 'Vitamina C en mg',
   mn_zinc_mg         DECIMAL(8,2) NULL COMMENT 'Zinc en mg',
-  
+
   -- Scores calculados
   mn_diversity_score DECIMAL(5,2) NULL COMMENT 'Score de diversidad 0-100',
   mn_quality_score   DECIMAL(5,2) NULL COMMENT 'Score de calidad nutricional 0-100',
-  
+
   calculado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  
+
   CONSTRAINT fk_mn_menu FOREIGN KEY (men_id) REFERENCES menus(men_id) ON DELETE CASCADE,
   UNIQUE KEY uk_menu_nutrientes (men_id)
 ) ENGINE=InnoDB COMMENT='Información nutricional calculada de menús';
@@ -255,37 +255,37 @@ CREATE TABLE predicciones_ml (
   nin_id              BIGINT UNSIGNED NOT NULL,
   ant_id              BIGINT UNSIGNED NULL,
   fml_id              BIGINT UNSIGNED NULL,
-  
+
   -- Predicción
   pml_clasificacion   ENUM('NORMAL','RIESGO','MODERADO','SEVERO') NOT NULL,
   pml_probabilidad    DECIMAL(5,4) NOT NULL COMMENT 'Probabilidad de la clase predicha',
   pml_score_riesgo    DECIMAL(6,4) NOT NULL COMMENT 'Score de riesgo 0-1',
-  
+
   -- Probabilidades por clase
   pml_prob_normal     DECIMAL(5,4) NULL,
   pml_prob_riesgo     DECIMAL(5,4) NULL,
   pml_prob_moderado   DECIMAL(5,4) NULL,
   pml_prob_severo     DECIMAL(5,4) NULL,
-  
+
   -- Metadata del modelo
   pml_modelo_tipo     VARCHAR(50) NOT NULL COMMENT 'rf, nn, ensemble',
   pml_modelo_version  VARCHAR(20) NOT NULL COMMENT 'Versión del modelo',
   pml_features_json   JSON NULL COMMENT 'Features usados en la predicción',
   pml_explicacion_json JSON NULL COMMENT 'SHAP values o feature importance',
-  
+
   -- Validación
   pml_validado        BOOLEAN NULL COMMENT 'Validado por nutricionista',
   pml_validado_por    BIGINT UNSIGNED NULL COMMENT 'usr_id del nutricionista',
   pml_validado_en     DATETIME NULL,
   pml_feedback        TEXT NULL COMMENT 'Feedback del nutricionista',
-  
+
   creado_en           DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  
+
   CONSTRAINT fk_pml_nino FOREIGN KEY (nin_id) REFERENCES ninos(nin_id) ON DELETE CASCADE,
   CONSTRAINT fk_pml_antropometria FOREIGN KEY (ant_id) REFERENCES antropometrias(ant_id) ON DELETE SET NULL,
   CONSTRAINT fk_pml_features FOREIGN KEY (fml_id) REFERENCES features_ml(fml_id) ON DELETE SET NULL,
   CONSTRAINT fk_pml_validador FOREIGN KEY (pml_validado_por) REFERENCES usuarios(usr_id) ON DELETE SET NULL,
-  
+
   INDEX idx_pml_nino_fecha (nin_id, creado_en),
   INDEX idx_pml_clasificacion (pml_clasificacion),
   INDEX idx_pml_modelo (pml_modelo_tipo, pml_modelo_version)
@@ -311,17 +311,17 @@ BEGIN
   DECLARE v_adherence_score DECIMAL(5,2);
   DECLARE v_allergy_count SMALLINT;
   DECLARE v_symptom_frequency SMALLINT;
-  
+
   -- Calcular velocidad de IMC (últimos 3 meses)
-  SELECT 
-    (a1.ant_peso_kg / POWER(a1.ant_talla_cm/100, 2)) - 
+  SELECT
+    (a1.ant_peso_kg / POWER(a1.ant_talla_cm/100, 2)) -
     (a2.ant_peso_kg / POWER(a2.ant_talla_cm/100, 2))
   INTO v_bmi_velocity
   FROM antropometrias a1
-  LEFT JOIN antropometrias a2 ON a2.nin_id = a1.nin_id 
+  LEFT JOIN antropometrias a2 ON a2.nin_id = a1.nin_id
     AND a2.ant_fecha = DATE_SUB(a1.ant_fecha, INTERVAL 3 MONTH)
   WHERE a1.ant_id = p_ant_id;
-  
+
   -- Calcular score de adherencia (últimos 30 días)
   SELECT AVG(
     CASE adh_estado
@@ -333,18 +333,18 @@ BEGIN
   FROM adherencias
   WHERE nin_id = p_nin_id
     AND adh_registrado_en >= DATE_SUB(NOW(), INTERVAL 30 DAY);
-  
+
   -- Contar alergias activas
   SELECT COUNT(*) INTO v_allergy_count
   FROM ninos_alergias
   WHERE nin_id = p_nin_id AND na_activo = 1;
-  
+
   -- Frecuencia de síntomas (últimos 30 días)
   SELECT COUNT(*) INTO v_symptom_frequency
   FROM sintomas
   WHERE nin_id = p_nin_id
     AND sin_fecha >= DATE_SUB(CURDATE(), INTERVAL 30 DAY);
-  
+
   -- Insertar o actualizar features
   INSERT INTO features_ml (
     nin_id, ant_id,
@@ -367,9 +367,9 @@ BEGIN
     fml_allergy_count = v_allergy_count,
     fml_symptom_frequency = v_symptom_frequency,
     fml_calculated_at = NOW();
-    
+
   -- Retornar features calculados
-  SELECT * FROM features_ml 
+  SELECT * FROM features_ml
   WHERE nin_id = p_nin_id AND ant_id = p_ant_id
   ORDER BY fml_calculated_at DESC LIMIT 1;
 END;

@@ -53,10 +53,10 @@ python3 src/utils/db_connector.py --output data/raw/surveys/datos_historicos.csv
 **Cambio importante**: Ahora la query filtra por última antropometría:
 ```sql
 AND a.ant_id = (
-    SELECT ant_id 
-    FROM antropometrias 
-    WHERE nin_id = n.nin_id 
-    ORDER BY ant_fecha DESC, creado_en DESC 
+    SELECT ant_id
+    FROM antropometrias
+    WHERE nin_id = n.nin_id
+    ORDER BY ant_fecha DESC, creado_en DESC
     LIMIT 1
 )
 ```

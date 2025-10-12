@@ -56,7 +56,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
     <div className="h-screen bg-gradient-to-br from-green-50 to-orange-50 flex flex-col max-w-md mx-auto lg:max-w-lg">
       {/* Skip Button */}
       <div className="flex justify-end p-4">
-        <button 
+        <button
           onClick={skipToEnd}
           className="text-gray-500 hover:text-gray-700 transition-colors"
         >
@@ -115,7 +115,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
         </div>
 
         {/* Next Button */}
-        <Button 
+        <Button
           onClick={nextSlide}
           className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl flex items-center justify-center"
         >

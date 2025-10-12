@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
 import { apiService } from '../services/api';
-import type { 
+import type {
   ApiResponse,
   NinoResponse,
   NinoCreate,
@@ -42,10 +42,10 @@ export function useApi<T>(
   const execute = useCallback(
     async (...args: any[]): Promise<T | null> => {
       setState(prev => ({ ...prev, loading: true, error: null }));
-      
+
       try {
         const response = await apiFunction(...args);
-        
+
         if (response.success && response.data) {
           setState({
             data: response.data,

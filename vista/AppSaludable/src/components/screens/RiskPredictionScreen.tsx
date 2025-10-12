@@ -150,7 +150,7 @@ export function RiskPredictionScreen() {
                        assessment.type === 'obesity' ? 'Obesidad' : 'Deficiencias Nutricionales'}
                     </h4>
                     <Badge className={`mt-1 ${getRiskColor(assessment.level)}`}>
-                      Riesgo {assessment.level === 'low' ? 'Bajo' : 
+                      Riesgo {assessment.level === 'low' ? 'Bajo' :
                                assessment.level === 'medium' ? 'Moderado' : 'Alto'}: {assessment.percentage}%
                     </Badge>
                   </div>
@@ -181,7 +181,7 @@ export function RiskPredictionScreen() {
       {/* Métricas Nutricionales Clave */}
       <Card className="p-6">
         <h3 className="text-lg font-semibold mb-6">Estado Nutricional Actual</h3>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {nutritionalMetrics.map((metric, index) => (
             <motion.div
@@ -195,7 +195,7 @@ export function RiskPredictionScreen() {
                 <h4 className="font-medium">{metric.name}</h4>
                 <span className="text-lg">{getTrendIcon(metric.trend)}</span>
               </div>
-              
+
               <div className="flex items-baseline space-x-2 mb-2">
                 <span className={`text-lg font-bold ${getStatusColor(metric.status)}`}>
                   {metric.current}
@@ -203,11 +203,11 @@ export function RiskPredictionScreen() {
                 <span className="text-sm text-muted-foreground">/ {metric.recommended} {metric.unit}</span>
               </div>
 
-              <Progress 
-                value={(metric.current / metric.recommended) * 100} 
+              <Progress
+                value={(metric.current / metric.recommended) * 100}
                 className="h-2"
               />
-              
+
               <div className="flex justify-between text-xs text-muted-foreground mt-1">
                 <span>0</span>
                 <span>{metric.recommended}</span>
@@ -222,7 +222,7 @@ export function RiskPredictionScreen() {
         <Alert>
           <AlertTriangle size={16} />
           <AlertDescription>
-            <strong>Atención:</strong> Los niveles de hierro están por debajo del rango recomendado. 
+            <strong>Atención:</strong> Los niveles de hierro están por debajo del rango recomendado.
             Se sugiere incluir más alimentos ricos en hierro en la dieta diaria.
           </AlertDescription>
         </Alert>
@@ -230,7 +230,7 @@ export function RiskPredictionScreen() {
         <Alert>
           <Heart size={16} />
           <AlertDescription>
-            <strong>Buen progreso:</strong> Los niveles de calcio y vitamina C están en rangos óptimos. 
+            <strong>Buen progreso:</strong> Los niveles de calcio y vitamina C están en rangos óptimos.
             ¡Continúa con la alimentación actual!
           </AlertDescription>
         </Alert>
@@ -243,7 +243,7 @@ export function RiskPredictionScreen() {
       {/* Gráfico de Crecimiento */}
       <Card className="p-6">
         <h3 className="text-lg font-semibold mb-6">Tendencia de Crecimiento vs. Recomendaciones OMS</h3>
-        
+
         <div className="h-80">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={growthData}>
@@ -251,17 +251,17 @@ export function RiskPredictionScreen() {
               <XAxis dataKey="month" />
               <YAxis />
               <Tooltip />
-              <Line 
-                type="monotone" 
-                dataKey="weight" 
-                stroke="#16a34a" 
+              <Line
+                type="monotone"
+                dataKey="weight"
+                stroke="#16a34a"
                 strokeWidth={3}
                 name="Peso Actual (kg)"
               />
-              <Line 
-                type="monotone" 
-                dataKey="recommended_weight" 
-                stroke="#f97316" 
+              <Line
+                type="monotone"
+                dataKey="recommended_weight"
+                stroke="#f97316"
                 strokeDasharray="5 5"
                 name="Peso Recomendado (kg)"
               />
@@ -284,7 +284,7 @@ export function RiskPredictionScreen() {
       {/* Análisis Predictivo */}
       <Card className="p-6">
         <h3 className="text-lg font-semibold mb-6">Predicciones a 6 Meses</h3>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-4">
             <h4 className="font-medium">Escenario Actual</h4>
@@ -319,7 +319,7 @@ export function RiskPredictionScreen() {
   const renderComparison = () => (
     <Card className="p-6">
       <h3 className="text-lg font-semibold mb-6">Comparación con Estándares MINSA/OMS</h3>
-      
+
       <div className="h-80">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={comparisonData}>
@@ -375,7 +375,7 @@ export function RiskPredictionScreen() {
             Análisis predictivo basado en inteligencia artificial
           </p>
         </div>
-        
+
         <div className="flex items-center space-x-2">
           <Button
             variant={selectedPeriod === '1m' ? 'default' : 'outline'}

@@ -79,7 +79,7 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
   ];
 
   // Tabs principales para navegación inferior móvil
-  const mainMobileTabs = tabs.filter(tab => 
+  const mainMobileTabs = tabs.filter(tab =>
     ['home', 'meal-plan', 'progress', 'profile'].includes(tab.id)
   );
 
@@ -129,8 +129,8 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
           <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
             <SheetTrigger asChild>
               <div className="relative">
-                <Button 
-                  size="icon" 
+                <Button
+                  size="icon"
                   className="bg-primary hover:bg-primary-dark text-white shadow-lg rounded-full w-12 h-12 transition-all duration-200 hover:scale-105"
                 >
                   <Menu size={20} />
@@ -141,12 +141,12 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
                 </div>
               </div>
             </SheetTrigger>
-        
+
         {/* Fixed User Avatar - Mobile */}
         <div className="fixed top-4 right-4 z-50">
           <div className="relative">
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               className="relative h-12 w-12 rounded-full p-0 bg-white shadow-lg hover:bg-gray-50"
               onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
             >
@@ -161,7 +161,7 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
                 </AvatarFallback>
               </Avatar>
             </Button>
-            
+
             {/* Mobile Dropdown Menu */}
             {isUserMenuOpen && (
               <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
@@ -173,7 +173,7 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
                     {user?.usr_correo}
                   </p>
                 </div>
-                
+
                 <div className="py-1">
                   <button
                     onClick={() => handleUserMenuClick('profile')}
@@ -182,7 +182,7 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
                     <User className="mr-2 h-4 w-4" />
                     Ver Perfil
                   </button>
-                  
+
                   <button
                     onClick={() => handleUserMenuClick('settings')}
                     className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -190,9 +190,9 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
                     <Settings className="mr-2 h-4 w-4" />
                     Configuración
                   </button>
-                  
+
                   <div className="border-t border-gray-100 my-1"></div>
-                  
+
                   <button
                     onClick={() => handleUserMenuClick('logout')}
                     className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
@@ -205,9 +205,9 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
             )}
           </div>
         </div>
-            
-            <SheetContent 
-              side="left" 
+
+            <SheetContent
+              side="left"
               className="w-[75%] p-0 bg-white border-r-2 border-primary/10"
             >
               <div className="flex flex-col h-full">
@@ -255,8 +255,8 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
                 {/* Navegación por categorías */}
                 <div className="flex-1 overflow-y-auto py-2">
                   {Object.entries(groupedTabs).map(([category, categoryTabs], categoryIndex) => (
-                    <motion.div 
-                      key={category} 
+                    <motion.div
+                      key={category}
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: categoryIndex * 0.1 }}
@@ -267,13 +267,13 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
                           {getCategoryLabel(category)}
                         </Badge>
                       </div>
-                      
+
                       <div className="space-y-1 px-2">
                         {categoryTabs.map((tab, tabIndex) => {
                           const Icon = tab.icon;
                           const isActive = activeTab === tab.id;
                           const hasNotification = ['community', 'gamification', 'risk-prediction'].includes(tab.id);
-                          
+
                           return (
                             <motion.button
                               key={tab.id}
@@ -283,8 +283,8 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
                               whileTap={{ scale: 0.95 }}
                               onClick={() => handleMobileMenuItemClick(tab.id)}
                               className={`w-full flex items-center space-x-3 px-3 py-3 rounded-lg text-left transition-all relative ${
-                                isActive 
-                                  ? 'bg-primary text-white shadow-md' 
+                                isActive
+                                  ? 'bg-primary text-white shadow-md'
                                   : 'text-gray-600 hover:bg-gray-100 active:bg-gray-200'
                               }`}
                             >
@@ -310,23 +310,23 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
                       </div>
                     </motion.div>
                   ))}
-                  
+
                   {/* Acciones rápidas al final del menú */}
                   <div className="px-4 py-3 border-t mt-4">
                     <p className="text-xs text-muted-foreground mb-3 font-medium">Acciones Rápidas</p>
                     <div className="space-y-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
+                      <Button
+                        variant="outline"
+                        size="sm"
                         className="w-full justify-start h-8 text-xs"
                         onClick={() => handleMobileMenuItemClick('scan')}
                       >
                         <Scan size={14} className="mr-2" />
                         Escanear Producto
                       </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
+                      <Button
+                        variant="outline"
+                        size="sm"
                         className="w-full justify-start h-8 text-xs"
                         onClick={() => handleMobileMenuItemClick('meal-plan')}
                       >
@@ -365,8 +365,8 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
                   key={tab.id}
                   onClick={() => onTabChange(tab.id)}
                   className={`flex flex-col items-center py-2 px-2 rounded-lg transition-colors ${
-                    isActive 
-                      ? 'text-primary bg-primary/10' 
+                    isActive
+                      ? 'text-primary bg-primary/10'
                       : 'text-gray-500 hover:text-primary'
                   }`}
                 >
@@ -466,19 +466,19 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
                   {activeTab === 'profile' && 'Configuración y perfil'}
                 </p>
               </div>
-              
+
               {/* User Avatar with Dropdown */}
               <div className="relative">
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
                   className="relative h-10 w-10 rounded-full p-0 hover:bg-gray-100"
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                 >
                   <Avatar className="h-10 w-10 border-2 border-primary/20">
-                    <AvatarImage 
+                    <AvatarImage
                       key={`${avatarKey}-bottom`}
                       src={resolvedAvatar}
-                      alt={user?.usr_usuario || 'Usuario'} 
+                      alt={user?.usr_usuario || 'Usuario'}
                     />
                     <AvatarFallback className="bg-primary text-white font-semibold">
                       {getUserInitials()}
@@ -486,7 +486,7 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
                   </Avatar>
                   <ChevronDown className="absolute -bottom-1 -right-1 h-4 w-4 bg-white rounded-full p-0.5 text-gray-500" />
                 </Button>
-                
+
                 {/* Dropdown Menu */}
                 {isUserMenuOpen && (
                   <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
@@ -498,7 +498,7 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
                         {user?.usr_correo}
                       </p>
                     </div>
-                    
+
                     <div className="py-1">
                       <button
                         onClick={() => handleUserMenuClick('profile')}
@@ -507,7 +507,7 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
                         <User className="mr-2 h-4 w-4" />
                         Ver Perfil
                       </button>
-                      
+
                       <button
                         onClick={() => handleUserMenuClick('settings')}
                         className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -515,9 +515,9 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
                         <Settings className="mr-2 h-4 w-4" />
                         Configuración
                       </button>
-                      
+
                       <div className="border-t border-gray-100 my-1"></div>
-                      
+
                       <button
                         onClick={() => handleUserMenuClick('logout')}
                         className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"

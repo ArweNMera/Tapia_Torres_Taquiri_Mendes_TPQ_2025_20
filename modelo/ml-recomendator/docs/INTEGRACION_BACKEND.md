@@ -36,14 +36,14 @@ Este endpoint reemplaza completamente los procedimientos almacenados y retorna e
 // Ruta anterior que usaba procedimientos almacenados
 router.post('/antropometria', async (req, res) => {
   const { nin_id, peso_kg, talla_cm, fecha } = req.body;
-  
+
   try {
     // Llamar procedimiento almacenado
     const [result] = await db.query(
       'CALL sp_analisis_nutricional(?, ?, ?, ?)',
       [nin_id, peso_kg, talla_cm, fecha]
     );
-    
+
     res.json(result[0]);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -60,7 +60,7 @@ const ML_API_URL = 'http://localhost:8003';
 
 router.post('/antropometria', async (req, res) => {
   const { nin_id, peso_kg, talla_cm, fecha } = req.body;
-  
+
   try {
     // Llamar API ML
     const response = await axios.post(`${ML_API_URL}/ml/analisis_nutricional`, {
@@ -69,10 +69,10 @@ router.post('/antropometria', async (req, res) => {
       talla_cm: talla_cm,
       fecha_medicion: fecha
     });
-    
+
     // El response ya tiene el formato correcto para el frontend
     res.json(response.data);
-    
+
   } catch (error) {
     if (error.response) {
       // Error de la API ML
@@ -112,13 +112,13 @@ router.post('/antropometria', async (req, res) => {
   "peso_kg": 45.0,
   "talla_cm": 150.0,
   "imc": 20.0,
-  
+
   "diagnostico": "NORMAL",
   "imc_valor": 20.0,
   "percentil": 60.4,
   "nivel_riesgo": "BAJO",
   "baz": 0.26,
-  
+
   "probabilidad": 0.98,
   "probabilidades": {
     "NORMAL": 0.98,
@@ -126,7 +126,7 @@ router.post('/antropometria', async (req, res) => {
     "MODERADO": 0.01,
     "SEVERO": 0.00
   },
-  
+
   "recomendaciones": [
     {
       "icono": "✅",
@@ -154,7 +154,7 @@ router.post('/antropometria', async (req, res) => {
       "descripcion": "Educación nutricional para autonomía alimentaria"
     }
   ],
-  
+
   "modelo_usado": true,
   "modelo_version": "v1.0"
 }
@@ -209,7 +209,7 @@ const registrarAntropometria = async (ninId, peso, talla) => {
       fecha: new Date().toISOString().split('T')[0]
     })
   });
-  
+
   const analisis = await response.json();
   mostrarAnalisis(analisis);
 };
@@ -221,13 +221,13 @@ const registrarAntropometria = async (ninId, peso, talla) => {
 // Backend (Node.js/Express)
 router.post('/antropometria', async (req, res) => {
   const { nin_id, peso_kg, talla_cm, fecha } = req.body;
-  
+
   // 1. Guardar antropometría en BD (opcional)
   await db.query(
     'INSERT INTO antropometrias (nin_id, ant_peso_kg, ant_talla_cm, ant_fecha) VALUES (?, ?, ?, ?)',
     [nin_id, peso_kg, talla_cm, fecha]
   );
-  
+
   // 2. Llamar API ML para análisis
   const mlResponse = await axios.post('http://localhost:8003/ml/analisis_nutricional', {
     nin_id,
@@ -235,7 +235,7 @@ router.post('/antropometria', async (req, res) => {
     talla_cm,
     fecha_medicion: fecha
   });
-  
+
   // 3. Retornar análisis al frontend
   res.json(mlResponse.data);
 });
@@ -251,7 +251,7 @@ const mostrarAnalisis = (analisis) => {
   document.getElementById('imc').textContent = analisis.imc;
   document.getElementById('percentil').textContent = `${analisis.percentil}%`;
   document.getElementById('nivel-riesgo').textContent = analisis.nivel_riesgo;
-  
+
   // Mostrar recomendaciones
   const recomendacionesHTML = analisis.recomendaciones.map(rec => `
     <div class="recomendacion">
@@ -262,7 +262,7 @@ const mostrarAnalisis = (analisis) => {
       </div>
     </div>
   `).join('');
-  
+
   document.getElementById('recomendaciones').innerHTML = recomendacionesHTML;
 };
 ```
@@ -313,24 +313,24 @@ Si quieres mantener los procedimientos como fallback:
 ```javascript
 router.post('/antropometria', async (req, res) => {
   const { nin_id, peso_kg, talla_cm, fecha } = req.body;
-  
+
   try {
     // Intentar con API ML primero
     const mlResponse = await axios.post('http://localhost:8003/ml/analisis_nutricional', {
       nin_id, peso_kg, talla_cm, fecha_medicion: fecha
     }, { timeout: 3000 });
-    
+
     res.json(mlResponse.data);
-    
+
   } catch (mlError) {
     console.warn('API ML falló, usando procedimientos almacenados:', mlError.message);
-    
+
     // Fallback a procedimientos almacenados
     const [result] = await db.query(
       'CALL sp_analisis_nutricional(?, ?, ?, ?)',
       [nin_id, peso_kg, talla_cm, fecha]
     );
-    
+
     res.json(result[0]);
   }
 });

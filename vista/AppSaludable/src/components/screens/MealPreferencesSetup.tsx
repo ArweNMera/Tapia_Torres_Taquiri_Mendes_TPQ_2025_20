@@ -71,7 +71,7 @@ const commonFoods = {
 };
 
 const allergies = [
-  'Gluten', 'Lácteos', 'Huevos', 'Frutos secos', 'Mariscos', 
+  'Gluten', 'Lácteos', 'Huevos', 'Frutos secos', 'Mariscos',
   'Soja', 'Pescado', 'Ajonjolí', 'Ninguna'
 ];
 
@@ -190,7 +190,7 @@ export function MealPreferencesSetup({ onComplete, onSkip }: MealPreferencesSetu
       {/* Comidas seleccionadas para el tipo actual */}
       <Card className="p-4 min-h-[120px]">
         <h3 className="font-semibold mb-3">{getMealTypeLabel(currentMealType)} actual:</h3>
-        
+
         <div className="flex flex-wrap gap-2 mb-4">
           <AnimatePresence>
             {preferences.currentMeals[currentMealType].map((item) => (
@@ -280,7 +280,7 @@ export function MealPreferencesSetup({ onComplete, onSkip }: MealPreferencesSetu
           <AlertCircle size={20} className="mr-2 text-warning" />
           Alergias Alimentarias
         </h3>
-        
+
         <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
           {allergies.map((allergy) => (
             <Button
@@ -306,7 +306,7 @@ export function MealPreferencesSetup({ onComplete, onSkip }: MealPreferencesSetu
 
       <Card className="p-6">
         <h3 className="font-semibold mb-4">Preferencias Dietéticas</h3>
-        
+
         <div className="space-y-3">
           <Textarea
             placeholder="Ej: vegetariano, bajo en sodio, sin azúcar añadida, etc."
@@ -340,8 +340,8 @@ export function MealPreferencesSetup({ onComplete, onSkip }: MealPreferencesSetu
             <Users size={20} className="mr-2 text-primary" />
             Tamaño de Familia
           </h3>
-          <Select 
-            value={preferences.familySize.toString()} 
+          <Select
+            value={preferences.familySize.toString()}
             onValueChange={(value) => setPreferences(prev => ({ ...prev, familySize: parseInt(value) }))}
           >
             <SelectTrigger>
@@ -362,8 +362,8 @@ export function MealPreferencesSetup({ onComplete, onSkip }: MealPreferencesSetu
             <Clock size={20} className="mr-2 text-secondary" />
             Tiempo para Cocinar
           </h3>
-          <Select 
-            value={preferences.cookingTime} 
+          <Select
+            value={preferences.cookingTime}
             onValueChange={(value) => setPreferences(prev => ({ ...prev, cookingTime: value }))}
           >
             <SelectTrigger>
@@ -436,7 +436,7 @@ export function MealPreferencesSetup({ onComplete, onSkip }: MealPreferencesSetu
       <Alert>
         <AlertCircle size={16} />
         <AlertDescription>
-          Basándonos en tu información, generaremos un plan personalizado con recetas 
+          Basándonos en tu información, generaremos un plan personalizado con recetas
           adaptadas a tus necesidades y preferencias.
         </AlertDescription>
       </Alert>
@@ -453,7 +453,7 @@ export function MealPreferencesSetup({ onComplete, onSkip }: MealPreferencesSetu
             <span>{Math.round((currentStep / totalSteps) * 100)}%</span>
           </div>
           <div className="w-full bg-muted rounded-full h-2">
-            <div 
+            <div
               className="bg-primary h-2 rounded-full transition-all duration-300"
               style={{ width: `${(currentStep / totalSteps) * 100}%` }}
             />
@@ -491,7 +491,7 @@ export function MealPreferencesSetup({ onComplete, onSkip }: MealPreferencesSetu
             </Button>
           </div>
 
-          <Button 
+          <Button
             onClick={handleNext}
             className="bg-primary hover:bg-primary-dark"
           >

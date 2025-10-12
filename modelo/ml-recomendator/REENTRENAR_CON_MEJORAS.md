@@ -8,7 +8,7 @@
 
 ### 2. Sesgo hacia SOBREPESO
 **Problema**: Con solo 201 datos, el modelo clasificaba todo como SOBREPESO
-**Causa**: 
+**Causa**:
 - Pocos datos de entrenamiento (201 registros)
 - Modelo muy complejo (500 árboles, profundidad 20)
 - Overfitting hacia la clase más común

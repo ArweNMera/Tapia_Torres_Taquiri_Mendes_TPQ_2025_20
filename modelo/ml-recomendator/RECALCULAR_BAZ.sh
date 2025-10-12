@@ -34,7 +34,7 @@ db.connect()
 
 # Obtener todas las antropometrías
 query = '''
-SELECT 
+SELECT
     a.ant_id,
     n.nin_sexo as sexo,
     TIMESTAMPDIFF(MONTH, n.nin_fecha_nac, a.ant_fecha) as edad_meses,
@@ -42,7 +42,7 @@ SELECT
     a.ant_talla_cm as talla_cm
 FROM antropometrias a
 INNER JOIN ninos n ON a.nin_id = n.nin_id
-WHERE a.ant_peso_kg > 0 
+WHERE a.ant_peso_kg > 0
   AND a.ant_talla_cm > 0
   AND TIMESTAMPDIFF(MONTH, n.nin_fecha_nac, a.ant_fecha) BETWEEN 0 AND 228
 '''
@@ -58,16 +58,16 @@ for idx, row in df.iterrows():
     try:
         bmi = row['peso_kg'] / (row['talla_cm'] / 100) ** 2
         baz = who_calc.calculate_baz(bmi, int(row['edad_meses']), row['sexo'])
-        
+
         # Actualizar en BD
         update_query = f'''
-        UPDATE antropometrias 
+        UPDATE antropometrias
         SET ant_z_imc = {baz}
         WHERE ant_id = {row['ant_id']}
         '''
         db.execute_query(update_query)
         actualizados += 1
-        
+
         if actualizados % 10 == 0:
             print(f'  Actualizados: {actualizados}/{len(df)}')
     except Exception as e:

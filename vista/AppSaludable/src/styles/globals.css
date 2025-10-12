@@ -2,7 +2,7 @@
 
 :root {
   --font-size: 16px;
-  
+
   /* Nutrition Health Color System */
   --background: #ffffff;
   --foreground: #1a2e1a;
@@ -10,25 +10,25 @@
   --card-foreground: #1a2e1a;
   --popover: #ffffff;
   --popover-foreground: #1a2e1a;
-  
+
   /* Primary: Fresh Green (salud, frescura) */
   --primary: #16a34a;
   --primary-foreground: #ffffff;
   --primary-light: #22c55e;
   --primary-dark: #15803d;
-  
+
   /* Secondary: Energy Orange (energía, nutrición) */
   --secondary: #f97316;
   --secondary-foreground: #ffffff;
   --secondary-light: #fb923c;
   --secondary-dark: #ea580c;
-  
+
   /* Accent: Warm Yellow (vitaminas, nutrición) */
   --accent: #facc15;
   --accent-foreground: #1a2e1a;
   --accent-light: #fde047;
   --accent-dark: #eab308;
-  
+
   /* Nutrition Specific Colors */
   --success: #10b981;
   --success-foreground: #ffffff;
@@ -36,7 +36,7 @@
   --warning-foreground: #ffffff;
   --info: #3b82f6;
   --info-foreground: #ffffff;
-  
+
   /* Neutrals */
   --muted: #f1f5f9;
   --muted-foreground: #64748b;
@@ -44,27 +44,27 @@
   --input: transparent;
   --input-background: #f8fafc;
   --switch-background: #cbd5e1;
-  
+
   /* Destructive */
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
-  
+
   /* Typography */
   --font-weight-medium: 500;
   --font-weight-normal: 400;
   --font-weight-semibold: 600;
-  
+
   /* Design System */
   --ring: #16a34a;
   --radius: 0.75rem;
-  
+
   /* Charts for nutrition data */
   --chart-1: #16a34a; /* Proteínas - Verde */
   --chart-2: #f97316; /* Carbohidratos - Naranja */
   --chart-3: #facc15; /* Grasas - Amarillo */
   --chart-4: #8b5cf6; /* Fibra - Morado */
   --chart-5: #06b6d4; /* Agua - Azul */
-  
+
   /* Sidebar */
   --sidebar: #f8fafc;
   --sidebar-foreground: #1a2e1a;
@@ -84,25 +84,25 @@
   --card-foreground: #f1f5f9;
   --popover: #1e293b;
   --popover-foreground: #f1f5f9;
-  
+
   /* Primary: Green adapted for dark */
   --primary: #22c55e;
   --primary-foreground: #0f172a;
   --primary-light: #4ade80;
   --primary-dark: #16a34a;
-  
+
   /* Secondary: Orange adapted for dark */
   --secondary: #fb923c;
   --secondary-foreground: #0f172a;
   --secondary-light: #fdba74;
   --secondary-dark: #f97316;
-  
+
   /* Accent: Yellow adapted for dark */
   --accent: #fbbf24;
   --accent-foreground: #0f172a;
   --accent-light: #fcd34d;
   --accent-dark: #f59e0b;
-  
+
   /* Nutrition specific dark colors */
   --success: #22c55e;
   --success-foreground: #ffffff;
@@ -110,7 +110,7 @@
   --warning-foreground: #ffffff;
   --info: #3b82f6;
   --info-foreground: #ffffff;
-  
+
   /* Neutrals for dark */
   --muted: #334155;
   --muted-foreground: #94a3b8;
@@ -118,21 +118,21 @@
   --input: transparent;
   --input-background: #334155;
   --switch-background: #475569;
-  
+
   /* Destructive */
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
-  
+
   /* Design System */
   --ring: #22c55e;
-  
+
   /* Charts for nutrition data (dark adapted) */
   --chart-1: #22c55e; /* Proteínas - Verde */
   --chart-2: #fb923c; /* Carbohidratos - Naranja */
   --chart-3: #fbbf24; /* Grasas - Amarillo */
   --chart-4: #a855f7; /* Fibra - Morado */
   --chart-5: #06b6d4; /* Agua - Azul */
-  
+
   /* Sidebar dark */
   --sidebar: #1e293b;
   --sidebar-foreground: #f1f5f9;

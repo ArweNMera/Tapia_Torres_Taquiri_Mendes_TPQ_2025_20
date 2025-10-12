@@ -116,13 +116,13 @@ const sampleRecipe: Recipe = {
   tags: ['Saludable', 'Niños', 'Alto en proteína', 'Sin gluten', 'Familiar']
 };
 
-export function RecipeDetailModal({ 
-  recipe = sampleRecipe, 
-  isOpen, 
-  onClose, 
-  onSave, 
-  onShare, 
-  onAddToPlan 
+export function RecipeDetailModal({
+  recipe = sampleRecipe,
+  isOpen,
+  onClose,
+  onSave,
+  onShare,
+  onAddToPlan
 }: RecipeDetailModalProps) {
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
@@ -152,13 +152,13 @@ export function RecipeDetailModal({
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
         {/* Header con imagen */}
         <div className="relative h-64 overflow-hidden">
-          <img 
-            src={recipe.image} 
+          <img
+            src={recipe.image}
             alt={recipe.name}
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-          
+
           {/* Información superpuesta */}
           <div className="absolute bottom-4 left-6 right-6 text-white">
             <div className="flex items-start justify-between">
@@ -178,7 +178,7 @@ export function RecipeDetailModal({
                   </Badge>
                 </div>
               </div>
-              
+
               <Button
                 variant="ghost"
                 size="icon"

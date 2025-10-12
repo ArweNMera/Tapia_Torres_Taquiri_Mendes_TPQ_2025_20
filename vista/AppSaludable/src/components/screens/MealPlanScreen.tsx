@@ -144,13 +144,13 @@ export function MealPlanScreen({ onRecipeClick }: MealPlanScreenProps) {
     <Card className="p-4 hover:shadow-md transition-all duration-200 border-l-4 border-l-primary">
       <div className="flex items-start space-x-4">
         <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-          <img 
-            src={meal.image} 
+          <img
+            src={meal.image}
             alt={meal.name}
             className="w-full h-full object-cover"
           />
         </div>
-        
+
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center space-x-2">
@@ -161,9 +161,9 @@ export function MealPlanScreen({ onRecipeClick }: MealPlanScreenProps) {
             </div>
             <span className="text-sm text-muted-foreground">{meal.time}</span>
           </div>
-          
+
           <h3 className="font-semibold text-gray-900 mb-2 truncate">{meal.name}</h3>
-          
+
           <div className="flex items-center space-x-3 mb-3">
             <Badge className={`text-xs px-2 py-1 ${getDifficultyColor(meal.difficulty)}`}>
               {meal.difficulty}
@@ -176,7 +176,7 @@ export function MealPlanScreen({ onRecipeClick }: MealPlanScreenProps) {
               {meal.ingredients} ingredientes
             </span>
           </div>
-          
+
           <div className="grid grid-cols-4 gap-2 text-center mb-3">
             <div>
               <p className="text-xs text-muted-foreground">Calorías</p>
@@ -197,9 +197,9 @@ export function MealPlanScreen({ onRecipeClick }: MealPlanScreenProps) {
           </div>
 
           {/* Botón para ver receta */}
-          <Button 
-            variant="outline" 
-            size="sm" 
+          <Button
+            variant="outline"
+            size="sm"
             className="w-full"
             onClick={() => handleRecipeDetailClick(meal.id)}
           >
@@ -215,7 +215,7 @@ export function MealPlanScreen({ onRecipeClick }: MealPlanScreenProps) {
     const dayPlan = weeklyPlan[selectedDay as keyof typeof weeklyPlan] || weeklyPlan.Monday;
     const totalCalories = Object.values(dayPlan).reduce((sum, meal) => sum + meal.calories, 0);
     const totalProtein = Object.values(dayPlan).reduce((sum, meal) => sum + meal.protein, 0);
-    
+
     return (
       <div className="space-y-6">
         {/* Resumen del día */}
@@ -228,7 +228,7 @@ export function MealPlanScreen({ onRecipeClick }: MealPlanScreenProps) {
               {totalCalories} kcal totales
             </Badge>
           </div>
-          
+
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
             <div className="p-3 bg-white rounded-lg">
               <p className="text-sm text-muted-foreground">Meta calórica</p>
@@ -259,8 +259,8 @@ export function MealPlanScreen({ onRecipeClick }: MealPlanScreenProps) {
 
         {/* Botón para agregar comida */}
         <Card className="p-6 border-dashed border-2 border-muted-foreground/30 hover:border-primary/50 transition-colors">
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             className="w-full h-16 text-muted-foreground hover:text-primary"
             onClick={() => console.log('Agregar comida personalizada')}
           >
@@ -293,9 +293,9 @@ export function MealPlanScreen({ onRecipeClick }: MealPlanScreenProps) {
               {userPreferences ? 'Plan personalizado basado en tus preferencias' : 'Planificación personalizada para toda la semana'}
             </p>
           </div>
-          
+
           <div className="flex items-center space-x-3">
-            <Button 
+            <Button
               variant="outline"
               size="sm"
               onClick={() => setShowSetup(true)}
@@ -303,14 +303,14 @@ export function MealPlanScreen({ onRecipeClick }: MealPlanScreenProps) {
               <Settings size={16} className="mr-2" />
               Ajustar
             </Button>
-            <Button 
+            <Button
               variant={viewMode === 'day' ? 'default' : 'outline'}
               onClick={() => setViewMode('day')}
               size="sm"
             >
               Día
             </Button>
-            <Button 
+            <Button
               variant={viewMode === 'week' ? 'default' : 'outline'}
               onClick={() => setViewMode('week')}
               size="sm"
@@ -325,7 +325,7 @@ export function MealPlanScreen({ onRecipeClick }: MealPlanScreenProps) {
           <Alert>
             <RefreshCw size={16} />
             <AlertDescription>
-              ¡Plan actualizado! Hemos generado recomendaciones basadas en tus preferencias: 
+              ¡Plan actualizado! Hemos generado recomendaciones basadas en tus preferencias:
               <strong> {userPreferences.goals?.slice(0, 2).join(', ')}</strong>
               {userPreferences.goals?.length > 2 && ` y ${userPreferences.goals.length - 2} objetivos más`}.
             </AlertDescription>

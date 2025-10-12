@@ -218,7 +218,7 @@ async def clasificar_directo(
         peso_kg=peso_kg,
         talla_cm=talla_cm
     )
-    
+
     return {
         "clasificacion": resultado['clasificacion'],
         "confianza": resultado['confianza'],

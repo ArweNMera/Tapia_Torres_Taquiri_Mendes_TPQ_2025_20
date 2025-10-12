@@ -1,6 +1,8 @@
 from __future__ import annotations
+
 import argparse
 from pathlib import Path
+
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
@@ -20,6 +22,7 @@ def main():
     a.train.parent.mkdir(parents=True, exist_ok=True)
     tr.to_csv(a.train, index=False)
     te.to_csv(a.test, index=False)
+
 
 if __name__ == "__main__":
     main()

@@ -32,16 +32,16 @@ export function RegisterScreen({ onRegister, onBackToLogin }: RegisterScreenProp
   const [selectedRole, setSelectedRole] = useState<typeof ROLE_OPTIONS[number]['code']>('PADRES');
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [error, setError] = useState('');
-  
-  const { 
-    register: registerUser, 
-    beginGoogleLogin, 
+
+  const {
+    register: registerUser,
+    beginGoogleLogin,
     beginGithubLogin,
     beginFacebookLogin,
     beginMicrosoftLogin,
-    isLoading, 
-    socialAuthError, 
-    clearSocialAuthError 
+    isLoading,
+    socialAuthError,
+    clearSocialAuthError
   } = useAuth();
 
   const handleInputChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -54,25 +54,25 @@ export function RegisterScreen({ onRegister, onBackToLogin }: RegisterScreenProp
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    
+
     // Validaciones
-    if (!formData.firstName.trim() || !formData.lastName.trim() || 
-        !formData.username.trim() || !formData.email.trim() || 
+    if (!formData.firstName.trim() || !formData.lastName.trim() ||
+        !formData.username.trim() || !formData.email.trim() ||
         !formData.password.trim()) {
       setError('Por favor, completa todos los campos');
       return;
     }
-    
+
     if (formData.password !== formData.confirmPassword) {
       setError('Las contraseñas no coinciden');
       return;
     }
-    
+
     if (formData.password.length < 6) {
       setError('La contraseña debe tener al menos 6 caracteres');
       return;
     }
-    
+
     if (!acceptTerms) {
       setError('Debes aceptar los términos y condiciones');
       return;
@@ -207,7 +207,7 @@ export function RegisterScreen({ onRegister, onBackToLogin }: RegisterScreenProp
                   <p className="text-sm text-destructive">{error}</p>
                 </div>
               )}
-              
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-1">
@@ -381,8 +381,8 @@ export function RegisterScreen({ onRegister, onBackToLogin }: RegisterScreenProp
                 </label>
               </div>
 
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 className="w-full h-10 bg-primary hover:bg-primary-dark text-primary-foreground font-semibold mt-4"
                 disabled={!acceptTerms || isLoading}
               >
@@ -432,7 +432,7 @@ export function RegisterScreen({ onRegister, onBackToLogin }: RegisterScreenProp
 
         {/* Right Side - Image & Content */}
         <div className="w-1/2 relative overflow-hidden">
-          <div 
+          <div
             className="absolute inset-0 bg-gradient-to-br from-primary/20 via-secondary/20 to-accent/20"
             style={{
               backgroundImage: `url('https://images.unsplash.com/photo-1601049455794-76a4d978639d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmcmVzaCUyMGZydWl0cyUyMHZlZ2V0YWJsZXMlMjBjb2xvcmZ1bCUyMGhlYWx0aHklMjBudXRyaXRpb258ZW58MXx8fHwxNzU3MzYyNDg1fDA&ixlib=rb-4.1.0&q=80&w=1080')`,
@@ -462,7 +462,7 @@ export function RegisterScreen({ onRegister, onBackToLogin }: RegisterScreenProp
 
               <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-5 border border-white/20">
                 <blockquote className="text-lg font-medium mb-3">
-                  "Gracias a NutriFamily, nuestros hijos ahora disfrutan comiendo frutas y vegetales frescos. 
+                  "Gracias a NutriFamily, nuestros hijos ahora disfrutan comiendo frutas y vegetales frescos.
                   Las recetas coloridas los motivaron a probar nuevos sabores y texturas saludables."
                 </blockquote>
                 <div className="flex items-center space-x-3">
@@ -483,7 +483,7 @@ export function RegisterScreen({ onRegister, onBackToLogin }: RegisterScreenProp
       {/* Mobile Layout */}
       <div className="lg:hidden w-full flex flex-col">
         {/* Top Image Section */}
-        <div 
+        <div
           className="h-1/4 relative"
           style={{
             backgroundImage: `url('https://images.unsplash.com/photo-1601049455794-76a4d978639d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmcmVzaCUyMGZydWl0cyUyMHZlZ2V0YWJsZXMlMjBjb2xvcmZ1bCUyMGhlYWx0aHklMjBudXRyaXRpb258ZW58MXx8fHwxNzU3MzYyNDg1fDA&ixlib=rb-4.1.0&q=80&w=1080')`,
@@ -629,8 +629,8 @@ export function RegisterScreen({ onRegister, onBackToLogin }: RegisterScreenProp
                 </label>
               </div>
 
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 className="w-full h-9 bg-primary hover:bg-primary-dark text-primary-foreground text-sm mt-3"
                 disabled={!acceptTerms}
               >

@@ -31,7 +31,7 @@ export function RecipeCard({
   };
 
   return (
-    <Card 
+    <Card
       className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
       onClick={onClick}
     >
@@ -41,16 +41,16 @@ export function RecipeCard({
           alt={title}
           className="w-full h-32 object-cover"
         />
-        <Badge 
+        <Badge
           className={`absolute top-2 right-2 ${difficultyColors[difficulty]}`}
         >
           {difficulty}
         </Badge>
       </div>
-      
+
       <div className="p-3">
         <h3 className="font-semibold text-gray-800 mb-2 line-clamp-2">{title}</h3>
-        
+
         <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
           <div className="flex items-center">
             <Clock size={14} className="mr-1" />
@@ -65,7 +65,7 @@ export function RecipeCard({
             <span>{rating}</span>
           </div>
         </div>
-        
+
         <div className="flex justify-between items-center">
           <span className="text-sm font-medium text-green-600">{calories} cal</span>
           <button className="text-xs bg-green-600 text-white px-3 py-1 rounded-full hover:bg-green-700 transition-colors">

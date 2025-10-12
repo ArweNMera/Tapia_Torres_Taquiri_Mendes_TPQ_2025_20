@@ -4,7 +4,7 @@ import { AuthProvider } from './contexts/AuthContext';
 
 /**
  * Ejemplo de integración del Dashboard de Seguimiento Nutricional
- * 
+ *
  * Este componente muestra cómo integrar el sistema completo de seguimiento
  * nutricional que incluye:
  * - Gestión de niños

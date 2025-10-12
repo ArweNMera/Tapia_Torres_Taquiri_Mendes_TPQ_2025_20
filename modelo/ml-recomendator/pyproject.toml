@@ -1,0 +1,147 @@
+# pyproject.toml - ML Recomendator
+
+[project]
+name = "ml-recomendator"
+version = "2.0.0"
+description = "Sistema de ML para clasificación nutricional infantil"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.24.0",
+    "pandas>=2.0.0",
+    "scikit-learn>=1.3.0",
+    "scipy>=1.11.0",
+    "imbalanced-learn>=0.11.0",
+    "fastapi>=0.104.0",
+    "uvicorn>=0.24.0",
+    "pydantic>=2.0.0",
+    "pymysql>=1.1.0",
+    "sqlalchemy>=2.0.0",
+    "python-dotenv>=1.0.0",
+    "joblib>=1.3.0",
+]
+
+[tool.ruff]
+# Longitud de línea
+line-length = 100
+target-version = "py310"
+
+# Excluir directorios
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+    "data",
+    "models",
+    "reports",
+]
+
+[tool.ruff.format]
+# Configuración del formateador
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[tool.ruff.lint.isort]
+# Configuración para ordenar imports
+known-first-party = ["src", "app"]
+section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
+
+[tool.ruff.lint]
+# Reglas de linter
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+]
+
+ignore = [
+    "E501",  # line too long (manejado por formatter)
+    "E722",  # bare except (común en código legacy)
+    "E402",  # module level import not at top (común en scripts ML)
+    "B008",  # do not perform function calls in argument defaults
+    "B904",  # raise from (ok para HTTPException)
+    "B007",  # unused loop variable
+    "W191",  # indentation contains tabs
+    "ARG001", # unused arguments
+    "ARG002", # unused method arguments
+    "F841",  # unused variables
+    "F601",  # dictionary key repeated (ya corregido)
+    "C401",  # unnecessary generator
+    "C414",  # unnecessary list call
+    "SIM102", # nested if
+    "SIM108", # ternary operator
+    "PD901", # avoid using 'df' as variable name (común en ML)
+    "PD008", # .at vs .loc (ok para scripts)
+    "PD101", # nunique for constant check
+    "NPY002", # numpy random legacy (ok para scripts)
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Permitir imports no usados en __init__.py
+"__init__.py" = ["F401"]
+# Permitir prints en scripts
+"scripts/*" = ["T201"]
+"examples/*" = ["T201"]
+# Permitir variables de una letra en notebooks/scripts de ML
+"*.ipynb" = ["E741"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false  # ML code suele tener muchos tipos dinámicos
+ignore_missing_imports = true
+no_implicit_optional = true
+show_error_codes = true
+
+# Configuración por módulo
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
+
+[[tool.mypy.overrides]]
+module = "scripts.*"
+disallow_untyped_defs = false
+
+[[tool.mypy.overrides]]
+module = "examples.*"
+disallow_untyped_defs = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
+
+[tool.coverage.run]
+source = ["src", "app"]
+omit = ["*/tests/*", "*/test_*.py"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]

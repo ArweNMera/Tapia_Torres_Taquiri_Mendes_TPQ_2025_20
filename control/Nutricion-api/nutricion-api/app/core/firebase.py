@@ -1,6 +1,5 @@
-import os
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Any
 
 import firebase_admin
 from firebase_admin import auth as firebase_auth
@@ -14,7 +13,7 @@ class FirebaseNotConfigured(RuntimeError):
     """Se lanza cuando Firebase no está configurado correctamente."""
 
 
-_firebase_app: Optional[firebase_admin.App] = None
+_firebase_app: firebase_admin.App | None = None
 
 
 def _resolve_credentials_path(path: str) -> Path:
@@ -37,11 +36,13 @@ def _initialize_firebase_app() -> firebase_admin.App:
 
     resolved_path = _resolve_credentials_path(cred_path)
     if not resolved_path.exists():
-        raise FirebaseNotConfigured(f"Archivo de credenciales Firebase no encontrado: {resolved_path}")
+        raise FirebaseNotConfigured(
+            f"Archivo de credenciales Firebase no encontrado: {resolved_path}"
+        )
 
     cred = credentials.Certificate(str(resolved_path))
 
-    options: Dict[str, Any] = {}
+    options: dict[str, Any] = {}
     if settings.FIREBASE_PROJECT_ID:
         options["projectId"] = settings.FIREBASE_PROJECT_ID
 
@@ -53,7 +54,7 @@ def _initialize_firebase_app() -> firebase_admin.App:
     return _firebase_app
 
 
-def verify_firebase_token(id_token: str) -> Dict[str, Any]:
+def verify_firebase_token(id_token: str) -> dict[str, Any]:
     """
     Verifica un ID token emitido por Firebase Authentication.
 

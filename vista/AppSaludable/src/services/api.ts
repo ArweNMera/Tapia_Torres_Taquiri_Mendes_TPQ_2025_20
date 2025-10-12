@@ -1,12 +1,12 @@
 /// <reference types="vite/client" />
 
-import { 
-  UserLogin, 
+import {
+  UserLogin,
   GoogleLogin,
-  UserRegister, 
+  UserRegister,
   UserProfile,
   UserRegisterResponse,
-  Token, 
+  Token,
   UserResponse,
   NinoCreate,
   NinoUpdate,
@@ -54,7 +54,7 @@ class ApiService {
   ): Promise<ApiResponse<T>> {
     try {
       const token = localStorage.getItem(this.tokenKey);
-      
+
       const config: RequestInit = {
         headers: {
           'Content-Type': 'application/json',
@@ -65,19 +65,19 @@ class ApiService {
       };
 
       const response = await fetch(url, config);
-      
+
       if (!response.ok) {
         // Si el token expiró o es inválido (401), disparar evento de logout
         if (response.status === 401) {
           this.handleUnauthorized();
         }
-        
+
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
-      
+
       return {
         success: true,
         data,
@@ -100,10 +100,10 @@ class ApiService {
       } catch (e) {
         console.warn('Error limpiando localStorage:', e);
       }
-      
+
       // Disparar evento personalizado para que AuthContext lo maneje
       window.dispatchEvent(new CustomEvent('auth:unauthorized'));
-      
+
       // Redirigir al login después de un pequeño delay
       setTimeout(() => {
         window.location.href = '/login';

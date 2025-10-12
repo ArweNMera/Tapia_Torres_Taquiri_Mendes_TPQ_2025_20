@@ -18,13 +18,13 @@ const [actionConfirmModal, setActionConfirmModal] = useState<{
 // Modificar handleSubmit para mostrar confirmación primero:
 const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
-  
+
   // Validaciones...
   if (!formData.nin_nombres || !formData.nin_apellidos...) {
     // ... validaciones existentes
     return;
   }
-  
+
   // Mostrar modal de confirmación
   setActionConfirmModal({ isOpen: true, action: 'save' });
 };
@@ -32,7 +32,7 @@ const handleSubmit = async (e: React.FormEvent) => {
 // Crear función para confirmar guardado:
 const confirmSave = async () => {
   setActionConfirmModal({ isOpen: false, action: null });
-  
+
   // Código existente de guardado...
   const fullName = `${formData.nin_nombres.trim()} ${formData.nin_apellidos.trim()}`;
   // ... resto del código de guardado
@@ -78,7 +78,7 @@ const handleEditChild = () => {
 const confirmEditChild = async () => {
   const { data } = actionConfirmModal;
   setActionConfirmModal({ isOpen: false, action: null });
-  
+
   // Código existente de actualización...
   const result = await updateNino.execute(childId, data);
   if (result) {
@@ -94,7 +94,7 @@ const confirmEditChild = async () => {
 // Para AGREGAR MEDICIÓN ANTROPOMÉTRICA:
 const handleAddMeasurement = (e: React.FormEvent) => {
   e.preventDefault();
-  
+
   if (!newMeasurement.ant_peso_kg || !newMeasurement.ant_talla_cm) {
     setConfirmModal({
       isOpen: true,
@@ -104,7 +104,7 @@ const handleAddMeasurement = (e: React.FormEvent) => {
     });
     return;
   }
-  
+
   setActionConfirmModal({
     isOpen: true,
     action: 'addMeasurement',
@@ -115,26 +115,26 @@ const handleAddMeasurement = (e: React.FormEvent) => {
 const confirmAddMeasurement = async () => {
   const { data } = actionConfirmModal;
   setActionConfirmModal({ isOpen: false, action: null });
-  
+
   const measurementData: AnthropometryCreate = {
     ant_peso_kg: parseFloat(data.ant_peso_kg),
     ant_talla_cm: parseFloat(data.ant_talla_cm),
     ant_fecha: data.ant_fecha,
   };
-  
+
   const result = await addAnthropometry.execute(childId, measurementData);
-  
+
   if (result) {
     await evaluateNutritionalStatus.execute(childId);
     await getChildWithData.execute(childId);
-    
+
     setNewMeasurement({
       ant_peso_kg: '',
       ant_talla_cm: '',
       ant_fecha: new Date().toISOString().split('T')[0],
     });
     setShowAddMeasurement(false);
-    
+
     setConfirmModal({
       isOpen: true,
       type: 'success',
@@ -156,12 +156,12 @@ const handleAddAllergy = (allergyCode: string, allergyName: string) => {
 const confirmAddAllergy = async () => {
   const { data } = actionConfirmModal;
   setActionConfirmModal({ isOpen: false, action: null });
-  
+
   const result = await addAllergy.execute(childId, {
     ta_codigo: data.code,
     severidad: 'LEVE'
   });
-  
+
   if (result) {
     await getChildWithData.execute(childId);
     setConfirmModal({
@@ -185,9 +185,9 @@ const handleRemoveAllergy = (allergyId: number, allergyName: string) => {
 const confirmRemoveAllergy = async () => {
   const { data } = actionConfirmModal;
   setActionConfirmModal({ isOpen: false, action: null });
-  
+
   const result = await removeAllergy.execute(childId, data.id);
-  
+
   if (result) {
     await getChildWithData.execute(childId);
     setConfirmModal({
@@ -211,9 +211,9 @@ const handleAssignEntity = (entityId: number, entityName: string) => {
 const confirmAssignEntity = async () => {
   const { data } = actionConfirmModal;
   setActionConfirmModal({ isOpen: false, action: null });
-  
+
   const result = await updateNino.execute(childId, { ent_id: data.id });
-  
+
   if (result) {
     await getChildWithData.execute(childId);
     setConfirmModal({
@@ -296,11 +296,11 @@ const handleDeleteChild = (childId: number, childName: string) => {
 const confirmDeleteChild = async () => {
   const { childId, childName } = deleteConfirmModal;
   setDeleteConfirmModal({ isOpen: false, childId: null, childName: '' });
-  
+
   if (!childId) return;
-  
+
   const result = await deleteNino.execute(childId);
-  
+
   if (result) {
     await getNinos.execute();
     setConfirmModal({
@@ -343,9 +343,9 @@ const [actionConfirmModal, setActionConfirmModal] = useState<{
 // Para AGREGAR:
 const handleAddAnthropometry = (e: React.FormEvent) => {
   e.preventDefault();
-  
+
   // Validaciones...
-  
+
   setActionConfirmModal({
     isOpen: true,
     action: 'add',
@@ -356,10 +356,10 @@ const handleAddAnthropometry = (e: React.FormEvent) => {
 const confirmAddAnthropometry = async () => {
   const { data } = actionConfirmModal;
   setActionConfirmModal({ isOpen: false, action: null });
-  
+
   // Código existente de guardado...
   const result = await addAnthropometry.execute(childId, data);
-  
+
   if (result) {
     setConfirmModal({
       isOpen: true,
@@ -382,10 +382,10 @@ const handleEditAnthropometry = (measurementId: number, data: any) => {
 const confirmEditAnthropometry = async () => {
   const { data } = actionConfirmModal;
   setActionConfirmModal({ isOpen: false, action: null });
-  
+
   // Código de actualización...
   const result = await updateAnthropometry.execute(data.id, data);
-  
+
   if (result) {
     setConfirmModal({
       isOpen: true,
@@ -451,9 +451,9 @@ const handleSave = () => {
 // 2. Usuario confirma en el modal
 const confirmSave = async () => {
   setActionConfirmModal({ isOpen: false, action: null });
-  
+
   const result = await saveData.execute(formData);
-  
+
   // 3. Mostrar resultado
   if (result) {
     setConfirmModal({

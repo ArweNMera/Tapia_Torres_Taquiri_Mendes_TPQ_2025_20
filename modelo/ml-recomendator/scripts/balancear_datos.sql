@@ -2,7 +2,7 @@
 -- Script para balancear datos antropométricos
 -- ============================================================================
 -- Objetivo: Crear una distribución balanceada de estados nutricionales
--- 
+--
 -- Distribución objetivo (200 niños únicos de 206 disponibles):
 -- Distribución balanceada para >90% accuracy:
 -- - NORMAL: 70 niños (35%) - Mayoría pero no dominante
@@ -18,7 +18,7 @@
 USE nutricion;
 
 -- Backup de datos originales
-CREATE TABLE IF NOT EXISTS antropometrias_backup_original AS 
+CREATE TABLE IF NOT EXISTS antropometrias_backup_original AS
 SELECT * FROM antropometrias;
 
 -- ============================================================================
@@ -41,83 +41,83 @@ CREATE TEMPORARY TABLE temp_asignaciones (
 -- NORMAL (70 niños) - BAZ entre -1 y +1
 INSERT INTO temp_asignaciones (nin_id, categoria, target_baz)
 SELECT nin_id, 'NORMAL', ROUND(-0.8 + (RAND() * 1.6), 2) as target_baz
-FROM ninos 
+FROM ninos
 WHERE nin_id IN (
-    SELECT nin_id FROM antropometrias 
-    GROUP BY nin_id 
-    ORDER BY RAND() 
+    SELECT nin_id FROM antropometrias
+    GROUP BY nin_id
+    ORDER BY RAND()
     LIMIT 70
 );
 
 -- RIESGO_DESNUTRICIÓN (30 niños) - BAZ entre -2 y -1
 INSERT INTO temp_asignaciones (nin_id, categoria, target_baz)
 SELECT nin_id, 'RIESGO_DESNUTRICION', ROUND(-1.9 + (RAND() * 0.9), 2) as target_baz
-FROM ninos 
+FROM ninos
 WHERE nin_id NOT IN (SELECT nin_id FROM temp_asignaciones)
 AND nin_id IN (
-    SELECT nin_id FROM antropometrias 
-    GROUP BY nin_id 
-    ORDER BY RAND() 
+    SELECT nin_id FROM antropometrias
+    GROUP BY nin_id
+    ORDER BY RAND()
     LIMIT 30
 );
 
 -- DESNUTRICIÓN_MODERADA (25 niños) - BAZ entre -3 y -2
 INSERT INTO temp_asignaciones (nin_id, categoria, target_baz)
 SELECT nin_id, 'DESNUTRICION_MODERADA', ROUND(-2.9 + (RAND() * 0.9), 2) as target_baz
-FROM ninos 
+FROM ninos
 WHERE nin_id NOT IN (SELECT nin_id FROM temp_asignaciones)
 AND nin_id IN (
-    SELECT nin_id FROM antropometrias 
-    GROUP BY nin_id 
-    ORDER BY RAND() 
+    SELECT nin_id FROM antropometrias
+    GROUP BY nin_id
+    ORDER BY RAND()
     LIMIT 25
 );
 
 -- DESNUTRICIÓN_SEVERA (25 niños) - BAZ < -3
 INSERT INTO temp_asignaciones (nin_id, categoria, target_baz)
 SELECT nin_id, 'DESNUTRICION_SEVERA', ROUND(-4.5 + (RAND() * 1.2), 2) as target_baz
-FROM ninos 
+FROM ninos
 WHERE nin_id NOT IN (SELECT nin_id FROM temp_asignaciones)
 AND nin_id IN (
-    SELECT nin_id FROM antropometrias 
-    GROUP BY nin_id 
-    ORDER BY RAND() 
+    SELECT nin_id FROM antropometrias
+    GROUP BY nin_id
+    ORDER BY RAND()
     LIMIT 25
 );
 
 -- RIESGO_SOBREPESO (20 niños) - BAZ entre +1 y +2
 INSERT INTO temp_asignaciones (nin_id, categoria, target_baz)
 SELECT nin_id, 'RIESGO_SOBREPESO', ROUND(1.1 + (RAND() * 0.8), 2) as target_baz
-FROM ninos 
+FROM ninos
 WHERE nin_id NOT IN (SELECT nin_id FROM temp_asignaciones)
 AND nin_id IN (
-    SELECT nin_id FROM antropometrias 
-    GROUP BY nin_id 
-    ORDER BY RAND() 
+    SELECT nin_id FROM antropometrias
+    GROUP BY nin_id
+    ORDER BY RAND()
     LIMIT 20
 );
 
 -- SOBREPESO (15 niños) - BAZ entre +2 y +3
 INSERT INTO temp_asignaciones (nin_id, categoria, target_baz)
 SELECT nin_id, 'SOBREPESO', ROUND(2.1 + (RAND() * 0.8), 2) as target_baz
-FROM ninos 
+FROM ninos
 WHERE nin_id NOT IN (SELECT nin_id FROM temp_asignaciones)
 AND nin_id IN (
-    SELECT nin_id FROM antropometrias 
-    GROUP BY nin_id 
-    ORDER BY RAND() 
+    SELECT nin_id FROM antropometrias
+    GROUP BY nin_id
+    ORDER BY RAND()
     LIMIT 15
 );
 
 -- OBESIDAD (15 niños) - BAZ > +3
 INSERT INTO temp_asignaciones (nin_id, categoria, target_baz)
 SELECT nin_id, 'OBESIDAD', ROUND(3.2 + (RAND() * 1.5), 2) as target_baz
-FROM ninos 
+FROM ninos
 WHERE nin_id NOT IN (SELECT nin_id FROM temp_asignaciones)
 AND nin_id IN (
-    SELECT nin_id FROM antropometrias 
-    GROUP BY nin_id 
-    ORDER BY RAND() 
+    SELECT nin_id FROM antropometrias
+    GROUP BY nin_id
+    ORDER BY RAND()
     LIMIT 15
 );
 
@@ -128,7 +128,7 @@ AND nin_id IN (
 -- Para cada niño, calcular el peso que corresponde al BAZ objetivo
 UPDATE temp_asignaciones ta
 JOIN (
-    SELECT 
+    SELECT
         a.nin_id,
         a.ant_talla_cm,
         n.nin_sexo,
@@ -138,8 +138,8 @@ JOIN (
         lms.S
     FROM antropometrias a
     JOIN ninos n ON a.nin_id = n.nin_id
-    LEFT JOIN oms_bmi_lms lms ON 
-        lms.sexo = n.nin_sexo 
+    LEFT JOIN oms_bmi_lms lms ON
+        lms.sexo = n.nin_sexo
         AND lms.edad_meses = TIMESTAMPDIFF(MONTH, n.nin_fecha_nac, a.ant_fecha)
     WHERE a.ant_id IN (
         SELECT MAX(ant_id) FROM antropometrias GROUP BY nin_id
@@ -148,15 +148,15 @@ JOIN (
 SET ta.target_peso_kg = CASE
     -- Fórmula inversa de BAZ: BMI = M * (1 + L*S*Z)^(1/L)
     -- Peso = BMI * (talla_m)^2
-    WHEN datos.L != 0 THEN 
+    WHEN datos.L != 0 THEN
         ROUND(
-            datos.M * POWER(1 + datos.L * datos.S * ta.target_baz, 1/datos.L) 
+            datos.M * POWER(1 + datos.L * datos.S * ta.target_baz, 1/datos.L)
             * POWER(datos.ant_talla_cm / 100, 2),
             2
         )
-    ELSE 
+    ELSE
         ROUND(
-            datos.M * EXP(datos.S * ta.target_baz) 
+            datos.M * EXP(datos.S * ta.target_baz)
             * POWER(datos.ant_talla_cm / 100, 2),
             2
         )
@@ -173,7 +173,7 @@ SET a.ant_peso_kg = ta.target_peso_kg,
     a.ant_z_imc = ta.target_baz,
     a.actualizado_en = NOW()
 WHERE a.ant_id IN (
-    SELECT MAX(ant_id) FROM (SELECT * FROM antropometrias) a2 
+    SELECT MAX(ant_id) FROM (SELECT * FROM antropometrias) a2
     WHERE a2.nin_id = ta.nin_id
 )
 AND ta.target_peso_kg IS NOT NULL
@@ -183,7 +183,7 @@ AND ta.target_peso_kg > 0;
 -- PASO 5: Verificar resultados
 -- ============================================================================
 
-SELECT 
+SELECT
     ta.categoria,
     COUNT(*) as cantidad,
     ROUND(AVG(ta.target_baz), 2) as baz_promedio,
@@ -193,7 +193,7 @@ SELECT
 FROM temp_asignaciones ta
 WHERE ta.target_peso_kg IS NOT NULL
 GROUP BY ta.categoria
-ORDER BY 
+ORDER BY
     CASE ta.categoria
         WHEN 'DESNUTRICION_SEVERA' THEN 1
         WHEN 'DESNUTRICION_MODERADA' THEN 2
@@ -205,7 +205,7 @@ ORDER BY
     END;
 
 -- Mostrar algunos ejemplos
-SELECT 
+SELECT
     n.nin_id,
     n.nin_nombres,
     TIMESTAMPDIFF(YEAR, n.nin_fecha_nac, CURDATE()) as edad_anos,

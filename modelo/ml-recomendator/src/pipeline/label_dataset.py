@@ -1,10 +1,13 @@
 from __future__ import annotations
+
 import argparse
-from pathlib import Path
 import math
+from pathlib import Path
+
 import pandas as pd
 
 # WHO LMS loader (boys + girls) from data/raw/who
+
 
 def _load_table(path: Path) -> pd.DataFrame:
     df = pd.read_csv(path)
@@ -49,7 +52,11 @@ def _lms_cat(who_dir: Path, sex: str) -> pd.DataFrame:
         raise FileNotFoundError(f"No WHO LMS tables found for sex={sex} under {who_dir}")
     out = pd.concat(parts, ignore_index=True)
     out["month"] = out["month"].astype(int)
-    return out.drop_duplicates(subset=["sex", "month"]).sort_values(["sex", "month"]).reset_index(drop=True)
+    return (
+        out.drop_duplicates(subset=["sex", "month"])
+        .sort_values(["sex", "month"])
+        .reset_index(drop=True)
+    )
 
 
 def _load_lms(who_dir: Path) -> pd.DataFrame:
@@ -86,7 +93,7 @@ def _ensure_children_cols(df: pd.DataFrame) -> pd.DataFrame:
         if "weight_kg" in cols and "height_cm" in cols:
             w = df[cols["weight_kg"]].astype(float)
             h_m = df[cols["height_cm"]].astype(float) / 100.0
-            df["BMI"] = w / (h_m ** 2)
+            df["BMI"] = w / (h_m**2)
         else:
             raise ValueError("Se requiere BMI o (weight_kg y height_cm)")
     df["age_months"] = df[cols["age_months"]].astype(int)
@@ -114,7 +121,7 @@ def run(input_dir: Path, who_dir: Path, out_csv: Path) -> None:
     # Compute BAZ per row
     z_list = []
     for _, row in df.iterrows():
-        L, M, S = _nearest_lms(who, row["sex"], int(round(row["age_months"])) )
+        L, M, S = _nearest_lms(who, row["sex"], int(round(row["age_months"])))
         z = _baz_from_bmi(float(row["BMI"]), L, M, S)
         z_list.append(z)
     df["baz"] = z_list
@@ -124,12 +131,15 @@ def run(input_dir: Path, who_dir: Path, out_csv: Path) -> None:
 
 def main():
     ap = argparse.ArgumentParser(description="Label dataset with BAZ using WHO tables")
-    ap.add_argument("--in", dest="inp", required=True, type=Path, help="Input folder with surveys CSVs")
+    ap.add_argument(
+        "--in", dest="inp", required=True, type=Path, help="Input folder with surveys CSVs"
+    )
     ap.add_argument("--who", dest="who", required=True, type=Path, help="WHO tables folder")
     ap.add_argument("--out", dest="out", required=True, type=Path, help="Output labeled CSV")
     args = ap.parse_args()
     args.out.parent.mkdir(parents=True, exist_ok=True)
     run(args.inp, args.who, args.out)
+
 
 if __name__ == "__main__":
     main()

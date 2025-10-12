@@ -1,0 +1,46 @@
+# .pre-commit-config.yaml - Raíz del Proyecto
+# Configuración para todo el monorepo
+
+repos:
+  # Hooks básicos
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+      - id: end-of-file-fixer
+      - id: check-yaml
+        args: [--unsafe]
+      - id: check-json
+      - id: check-toml
+      - id: check-added-large-files
+        args: [--maxkb=5000]
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: mixed-line-ending
+        args: [--fix=lf]
+      - id: detect-private-key
+
+  # Ruff para Python (API y ML)
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.9
+    hooks:
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+        files: \.(py)$
+      - id: ruff-format
+        files: \.(py)$
+
+  # Mypy para type checking (DESACTIVADO TEMPORALMENTE - muchos errores)
+  # - repo: https://github.com/pre-commit/mirrors-mypy
+  #   rev: v1.11.2
+  #   hooks:
+  #     - id: mypy
+  #       files: ^(control/Nutricion-api/nutricion-api/app|modelo/ml-recomendator/src)/.*\.py$
+  #       exclude: ^(.*/(scripts|tests|examples|migrations)/.*|.*test_.*\.py)$
+  #       additional_dependencies:
+  #         - pydantic>=2.0.0
+  #         - types-PyYAML
+  #         - types-requests
+  #         - sqlalchemy[mypy]
+  #       args: [--ignore-missing-imports, --show-error-codes]

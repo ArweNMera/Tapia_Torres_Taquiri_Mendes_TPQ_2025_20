@@ -27,7 +27,7 @@ export function NutritionalProgressCard({
   color = 'bg-primary'
 }: NutritionalProgressCardProps) {
   const percentage = Math.min((current / target) * 100, 100);
-  
+
   const getStatusColor = () => {
     switch (status) {
       case 'optimal': return 'bg-success text-white';
@@ -65,7 +65,7 @@ export function NutritionalProgressCard({
             <span className="text-sm text-muted-foreground">/ {target} {unit}</span>
           </div>
         </div>
-        
+
         <Badge className={`text-xs ${getStatusColor()}`}>
           {getStatusLabel()}
         </Badge>

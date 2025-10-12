@@ -8,3 +8,4 @@ Genera datos realistas para todas las clasificaciones:
 - SEVERO (BAZ < -3 o > +3)
 
 Usa las tablas OMS para calcular peso/talla realistas.
+"""

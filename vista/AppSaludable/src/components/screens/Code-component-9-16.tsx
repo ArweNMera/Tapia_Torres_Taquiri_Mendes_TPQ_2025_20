@@ -211,8 +211,8 @@ export function RegisterScreen({ onRegister, onBackToLogin }: RegisterScreenProp
                 </label>
               </div>
 
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 className="w-full h-12 bg-primary hover:bg-primary-dark text-primary-foreground font-semibold"
                 disabled={!acceptTerms}
               >
@@ -234,8 +234,8 @@ export function RegisterScreen({ onRegister, onBackToLogin }: RegisterScreenProp
 
             {/* Social Register */}
             <div className="space-y-3">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="w-full h-12 border-border hover:bg-muted"
                 type="button"
               >
@@ -247,9 +247,9 @@ export function RegisterScreen({ onRegister, onBackToLogin }: RegisterScreenProp
                 </svg>
                 Continuar con Google
               </Button>
-              
-              <Button 
-                variant="outline" 
+
+              <Button
+                variant="outline"
                 className="w-full h-12 border-border hover:bg-muted"
                 type="button"
               >
@@ -264,7 +264,7 @@ export function RegisterScreen({ onRegister, onBackToLogin }: RegisterScreenProp
 
         {/* Right Side - Image & Content */}
         <div className="w-1/2 relative overflow-hidden">
-          <div 
+          <div
             className="absolute inset-0 bg-gradient-to-br from-primary/20 via-secondary/20 to-accent/20"
             style={{
               backgroundImage: `url('https://images.unsplash.com/photo-1628191079582-f982c2fe327b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxoZWFsdGh5JTIwZmFtaWx5JTIwY29va2luZyUyMG51dHJpdGlvbiUyMGNoaWxkcmVufGVufDF8fHx8MTc1NzM2MTYxOXww&ixlib=rb-4.1.0&q=80&w=1080')`,
@@ -294,7 +294,7 @@ export function RegisterScreen({ onRegister, onBackToLogin }: RegisterScreenProp
 
               <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
                 <blockquote className="text-xl font-medium mb-4">
-                  "Con NutriFamily descubrimos que alimentar sanamente a nuestros hijos puede ser 
+                  "Con NutriFamily descubrimos que alimentar sanamente a nuestros hijos puede ser
                   fácil y divertido. Los planes personalizados nos ahorraron tiempo y mejoraron nuestra salud."
                 </blockquote>
                 <div className="flex items-center space-x-3">
@@ -315,7 +315,7 @@ export function RegisterScreen({ onRegister, onBackToLogin }: RegisterScreenProp
       {/* Mobile Layout */}
       <div className="lg:hidden w-full flex flex-col">
         {/* Top Image Section */}
-        <div 
+        <div
           className="h-1/4 relative"
           style={{
             backgroundImage: `url('https://images.unsplash.com/photo-1628191079582-f982c2fe327b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxoZWFsdGh5JTIwZmFtaWx5JTIwY29va2luZyUyMG51dHJpdGlvbiUyMGNoaWxkcmVufGVufDF8fHx8MTc1NzM2MTYxOXww&ixlib=rb-4.1.0&q=80&w=1080')`,
@@ -461,8 +461,8 @@ export function RegisterScreen({ onRegister, onBackToLogin }: RegisterScreenProp
                 </label>
               </div>
 
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 className="w-full h-11 bg-primary hover:bg-primary-dark text-primary-foreground"
                 disabled={!acceptTerms}
               >
@@ -489,12 +489,12 @@ export function RegisterScreen({ onRegister, onBackToLogin }: RegisterScreenProp
                 </svg>
                 Google
               </Button>
-              
+
               <Button variant="outline" className="w-full h-11">
                 <svg className="w-4 h-4 mr-2" fill="#1877F2" viewBox="0 0 24 24">
                   <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
                 </svg>
-                Facebook  
+                Facebook
               </Button>
             </div>
           </motion.div>

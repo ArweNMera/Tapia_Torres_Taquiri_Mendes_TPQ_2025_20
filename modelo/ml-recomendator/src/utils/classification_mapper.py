@@ -11,7 +11,7 @@ LABEL_TO_CATEGORY = {
     3: "NORMAL",
     4: "RIESGO_SOBREPESO",
     5: "SOBREPESO",
-    6: "OBESIDAD"
+    6: "OBESIDAD",
 }
 
 # Mapeo inverso
@@ -25,7 +25,7 @@ CATEGORY_DISPLAY_NAMES = {
     "NORMAL": "Normal",
     "RIESGO_SOBREPESO": "Riesgo de Sobrepeso",
     "SOBREPESO": "Sobrepeso",
-    "OBESIDAD": "Obesidad"
+    "OBESIDAD": "Obesidad",
 }
 
 # Nombres cortos para gráficas
@@ -36,7 +36,7 @@ CATEGORY_SHORT_NAMES = {
     "NORMAL": "NORMAL",
     "RIESGO_SOBREPESO": "RIESGO_SOB",
     "SOBREPESO": "SOBREPESO",
-    "OBESIDAD": "OBESIDAD"
+    "OBESIDAD": "OBESIDAD",
 }
 
 # Colores para cada categoría (para gráficas)
@@ -47,7 +47,7 @@ CATEGORY_COLORS = {
     "NORMAL": "#2ecc71",
     "RIESGO_SOBREPESO": "#f39c12",
     "SOBREPESO": "#d35400",
-    "OBESIDAD": "#8e44ad"
+    "OBESIDAD": "#8e44ad",
 }
 
 # Niveles de severidad (para ordenamiento)
@@ -58,7 +58,7 @@ CATEGORY_SEVERITY = {
     "NORMAL": 0,
     "RIESGO_SOBREPESO": 1,
     "SOBREPESO": 2,
-    "OBESIDAD": 3
+    "OBESIDAD": 3,
 }
 
 
@@ -96,7 +96,7 @@ def get_all_categories() -> list:
         "NORMAL",
         "RIESGO_SOBREPESO",
         "SOBREPESO",
-        "OBESIDAD"
+        "OBESIDAD",
     ]
 
 

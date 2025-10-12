@@ -1,6 +1,7 @@
-from pydantic import BaseModel, EmailStr
 from datetime import date
-from typing import Optional
+
+from pydantic import BaseModel, EmailStr
+
 
 class UserRegister(BaseModel):
     nombres: str
@@ -10,23 +11,27 @@ class UserRegister(BaseModel):
     contrasena: str
     rol_nombre: str = "TUTOR"  # Por defecto tutor
 
+
 class UserProfile(BaseModel):
-    dni: Optional[str] = None
-    nombres: Optional[str] = None
-    apellidos: Optional[str] = None
-    avatar_url: Optional[str] = None
-    telefono: Optional[str] = None
-    direccion: Optional[str] = None
-    genero: Optional[str] = None  # 'M', 'F', 'X'
-    fecha_nac: Optional[date] = None
-    idioma: Optional[str] = "es"
+    dni: str | None = None
+    nombres: str | None = None
+    apellidos: str | None = None
+    avatar_url: str | None = None
+    telefono: str | None = None
+    direccion: str | None = None
+    genero: str | None = None  # 'M', 'F', 'X'
+    fecha_nac: date | None = None
+    idioma: str | None = "es"
+
 
 class UserRegisterResponse(BaseModel):
     usr_id: int
     msg: str
 
+
 class UserRoleChangeRequest(BaseModel):
     rol_codigo: str
+
 
 class UserRoleChangeResponse(BaseModel):
     usr_id: int

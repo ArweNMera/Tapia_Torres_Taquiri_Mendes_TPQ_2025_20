@@ -60,8 +60,8 @@ const ConfirmationModal: React.FC<Props> = ({
         </div>
 
         <AlertDialogFooter className="sm:justify-center pt-1">
-          <AlertDialogAction 
-            className="rounded-xl px-10 py-3 text-base" 
+          <AlertDialogAction
+            className="rounded-xl px-10 py-3 text-base"
             onClick={onClose}
             style={{ backgroundColor: '#10b981', color: '#000000' }}
           >

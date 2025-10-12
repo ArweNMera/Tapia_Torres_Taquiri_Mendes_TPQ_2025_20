@@ -8,7 +8,7 @@ export default function AllergiesAndEntities() {
   const { getAllergyTypes, addAllergy, getAllergies, removeAllergy } = useAllergiesApi();
   const { searchEntities } = useEntitiesApi();
   const { updateNino } = useNinosApi();
-  
+
   const [allergyTypes, setAllergyTypes] = useState<TipoAlergiaResponse[]>([]);
   const [allergies, setAllergies] = useState<AlergiaResponse[]>([]);
   const [newAllergy, setNewAllergy] = useState<{ ta_codigo: string; severidad: 'LEVE'|'MODERADA'|'SEVERA' }>({ ta_codigo: '', severidad: 'LEVE' });
@@ -28,7 +28,7 @@ export default function AllergiesAndEntities() {
         console.error('No se pudo cargar el perfil personal');
         return;
       }
-      
+
       setCurrentNinoId(self.nin_id);
 
       // Cargar alergias
@@ -64,7 +64,7 @@ export default function AllergiesAndEntities() {
       } else {
         setCurrentEntity(null);
       }
-      
+
     } catch (err) {
       console.error('Error al cargar datos:', err);
     } finally {
@@ -98,7 +98,7 @@ export default function AllergiesAndEntities() {
 
   const handleAddAllergy = async () => {
     if (!currentNinoId || !newAllergy.ta_codigo) return;
-    
+
     const added = await addAllergy.execute(currentNinoId, newAllergy);
     if (added) {
       const als = await getAllergies.execute(currentNinoId);
@@ -117,10 +117,10 @@ export default function AllergiesAndEntities() {
 
   const handleRemoveAllergy = async (allergyId: number) => {
     if (!currentNinoId) return;
-    
+
     const confirmed = window.confirm('¿Estás seguro de que deseas eliminar esta alergia?');
     if (!confirmed) return;
-    
+
     const ok = await removeAllergy.execute(currentNinoId, allergyId);
     if (ok) {
       const als = await getAllergies.execute(currentNinoId);
@@ -137,7 +137,7 @@ export default function AllergiesAndEntities() {
 
   const handleAssociateEntity = async () => {
     if (!currentNinoId || !selectedEntity) return;
-    
+
     const updated = await updateNino.execute(currentNinoId, { ent_id: selectedEntity.ent_id });
     if (updated) {
       // Actualizar la entidad actual y limpiar selección
@@ -145,7 +145,7 @@ export default function AllergiesAndEntities() {
       setSelectedEntity(null);
       setEntityQuery('');
       setEntityResults([]);
-      
+
       // Refrescar datos del niño
       const refreshedChild = await getSelfChild.execute();
       if (refreshedChild) {
@@ -161,7 +161,7 @@ export default function AllergiesAndEntities() {
           });
         }
       }
-      
+
       toast.success('Entidad asociada', {
         description: `Se asoció correctamente con ${selectedEntity.ent_nombre}.`,
       });
@@ -174,10 +174,10 @@ export default function AllergiesAndEntities() {
 
   const handleRemoveEntity = async () => {
     if (!currentNinoId) return;
-    
+
     const confirmed = window.confirm('¿Estás seguro de que deseas desasociar esta entidad?');
     if (!confirmed) return;
-    
+
     const updated = await updateNino.execute(currentNinoId, { ent_id: null });
     if (updated) {
       setCurrentEntity(null);
@@ -212,7 +212,7 @@ export default function AllergiesAndEntities() {
             <p className="text-sm text-gray-600">Registra y gestiona tus alergias alimentarias, medicamentos y ambientales</p>
           </div>
         </div>
-        
+
         {/* Add Allergy Form */}
         <div className="mb-6 p-4 bg-gray-50 rounded-lg">
           <h4 className="font-medium text-gray-900 mb-3">Agregar nueva alergia</h4>
@@ -243,7 +243,7 @@ export default function AllergiesAndEntities() {
                 </div>
               )}
             </div>
-            
+
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Severidad</label>
@@ -257,7 +257,7 @@ export default function AllergiesAndEntities() {
                   <option value="SEVERA">Severa</option>
                 </select>
               </div>
-              
+
               <div className="flex items-end">
                 <button
                   disabled={!newAllergy.ta_codigo}
@@ -322,7 +322,7 @@ export default function AllergiesAndEntities() {
             <p className="text-sm text-gray-600">Asocia tu perfil con un hospital, clínica u otra entidad de salud</p>
           </div>
         </div>
-        
+
         {/* Current Associated Entity */}
         {currentEntity && (
           <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
@@ -381,7 +381,7 @@ export default function AllergiesAndEntities() {
               </div>
             )}
           </div>
-          
+
           <button
             disabled={!selectedEntity}
             onClick={handleAssociateEntity}
@@ -390,7 +390,7 @@ export default function AllergiesAndEntities() {
             {currentEntity ? 'Cambiar entidad' : 'Asociar entidad'}
           </button>
         </div>
-        
+
         {selectedEntity && (
           <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
             <div className="text-sm font-medium text-blue-900">Entidad seleccionada:</div>

@@ -6,12 +6,12 @@
 -- DELETE FROM estados_nutricionales;
 
 -- OPCIÓN 2: Marcar como obsoletos los estados con clasificaciones antiguas
--- UPDATE estados_nutricionales 
+-- UPDATE estados_nutricionales
 -- SET en_clasificacion = 'PENDIENTE_REEVALUACION'
 -- WHERE en_clasificacion IN ('NORMAL', 'RIESGO', 'MODERADO', 'SEVERO');
 
 -- OPCIÓN 3: Ver cuántos registros tienen clasificaciones antiguas
-SELECT 
+SELECT
     en_clasificacion,
     COUNT(*) as cantidad
 FROM estados_nutricionales

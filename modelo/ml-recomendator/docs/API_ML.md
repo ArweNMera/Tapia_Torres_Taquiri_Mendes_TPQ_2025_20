@@ -219,12 +219,12 @@ async function predecirEstadoNutricional(ninId) {
     const response = await axios.post(`${ML_API_URL}/ml/predict`, {
       nin_id: ninId
     });
-    
+
     const { label, probability, probabilities, risk_score } = response.data;
-    
+
     console.log(`Predicción: ${label} (${(probability * 100).toFixed(1)}%)`);
     console.log(`Risk Score: ${risk_score.toFixed(3)}`);
-    
+
     return response.data;
   } catch (error) {
     console.error('Error en predicción ML:', error.message);

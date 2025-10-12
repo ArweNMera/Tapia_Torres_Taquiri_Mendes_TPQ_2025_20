@@ -24,7 +24,7 @@ export function ProfileScreen() {
     const birth = new Date(birthDate);
     const age = today.getFullYear() - birth.getFullYear();
     const monthDiff = today.getMonth() - birth.getMonth();
-    
+
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
       return age - 1;
     }
@@ -52,14 +52,14 @@ export function ProfileScreen() {
               <AvatarImage src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150" />
               <AvatarFallback className="bg-pink-100 text-pink-600">SG</AvatarFallback>
             </Avatar>
-            <Button 
-              size="icon" 
+            <Button
+              size="icon"
               className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-green-600 hover:bg-green-700"
             >
               <Camera size={16} />
             </Button>
           </div>
-          
+
           {isEditing ? (
             <div className="w-full space-y-3">
               <Input
@@ -91,8 +91,8 @@ export function ProfileScreen() {
             <Scale size={20} className="mr-2 text-green-600" />
             Datos Físicos
           </h3>
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             size="sm"
             onClick={() => setIsEditing(!isEditing)}
           >
@@ -115,7 +115,7 @@ export function ProfileScreen() {
               <p className="text-lg font-semibold text-gray-800">{childData.weight} kg</p>
             )}
           </div>
-          
+
           <div className="text-center p-3 bg-green-50 rounded-lg">
             <Ruler size={24} className="mx-auto text-green-600 mb-2" />
             <p className="text-sm text-gray-600">Altura</p>
@@ -157,7 +157,7 @@ export function ProfileScreen() {
                 <Badge key={index} className="bg-red-100 text-red-800">
                   {allergy}
                   {isEditing && (
-                    <button 
+                    <button
                       className="ml-1 text-red-600 hover:text-red-800"
                       onClick={() => {
                         const newAllergies = childData.allergies.filter((_, i) => i !== index);
@@ -186,7 +186,7 @@ export function ProfileScreen() {
                 <Badge key={index} className="bg-orange-100 text-orange-800">
                   {restriction}
                   {isEditing && (
-                    <button 
+                    <button
                       className="ml-1 text-orange-600 hover:text-orange-800"
                       onClick={() => {
                         const newRestrictions = childData.restrictions.filter((_, i) => i !== index);
@@ -247,13 +247,13 @@ export function ProfileScreen() {
       {/* Save/Cancel Buttons */}
       {isEditing && (
         <div className="flex gap-3">
-          <Button 
+          <Button
             onClick={handleSave}
             className="flex-1 bg-green-600 hover:bg-green-700 text-white"
           >
             Guardar Cambios
           </Button>
-          <Button 
+          <Button
             onClick={() => setIsEditing(false)}
             variant="outline"
             className="flex-1"

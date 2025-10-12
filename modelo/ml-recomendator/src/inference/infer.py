@@ -1,16 +1,19 @@
 from __future__ import annotations
+
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
+
 import joblib
 import pandas as pd
-from typing import Dict, Any, Optional
 
 try:
     # Optional: LLM-backed explanations
-    from ..llm.assist import summarize_with_llm, format_recommender_prompt
+    from ..llm.assist import format_recommender_prompt, summarize_with_llm
 except Exception:  # pragma: no cover
     summarize_with_llm = None  # type: ignore
     format_recommender_prompt = None  # type: ignore
+
 
 @dataclass
 class ModelBundle:
@@ -29,13 +32,15 @@ def predict_proba(bundle: ModelBundle, X: pd.DataFrame):
     return bundle.model.predict_proba(Xp)
 
 
-def summarize_prediction(features: Dict[str, Any], scores: Dict[str, float], prefer_llm: bool = True) -> str:
+def summarize_prediction(
+    features: dict[str, Any], scores: dict[str, float], prefer_llm: bool = True
+) -> str:
     """Return a human-friendly summary of model scores.
 
     If LLM env is configured and prefer_llm=True, uses it; otherwise
     returns a deterministic offline text based on the features/scores.
     """
-    text: Optional[str] = None
+    text: str | None = None
     if prefer_llm and summarize_with_llm is not None:
         try:
             text = summarize_with_llm(features, scores)

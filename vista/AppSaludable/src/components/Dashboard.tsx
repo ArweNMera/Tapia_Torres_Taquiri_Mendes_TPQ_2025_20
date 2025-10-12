@@ -50,7 +50,7 @@ const Dashboard: React.FC = () => {
               <h1 className="text-xl font-bold text-gray-900">App Saludable</h1>
               <span className="ml-2 text-sm text-gray-500">Sistema de Seguimiento Nutricional</span>
             </div>
-            
+
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600">👋 Bienvenido</span>
               <button className="text-gray-400 hover:text-gray-600">

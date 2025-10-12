@@ -115,15 +115,15 @@ function AppContent() {
   if (!isAuthenticated) {
     if (appState === 'register') {
       return (
-        <RegisterScreen 
+        <RegisterScreen
           onRegister={handleRegisterSuccess}
           onBackToLogin={handleBackToLogin}
         />
       );
     }
-    
+
     return (
-      <LoginScreen 
+      <LoginScreen
         onLogin={handleLoginSuccess}
         onSignUp={handleShowRegister}
       />
@@ -165,7 +165,7 @@ function AppContent() {
           <ProfileHubScreen />
         )}
       </Layout>
-      
+
       <ChatBot />
     </>
   );

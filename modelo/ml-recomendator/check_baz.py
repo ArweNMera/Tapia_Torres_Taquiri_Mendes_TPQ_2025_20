@@ -1,6 +1,8 @@
 """Verificar BAZ en BD"""
+
 import sys
 from pathlib import Path
+
 BASE_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(BASE_DIR))
 
@@ -11,7 +13,7 @@ db.connect()
 
 # Ver algunos casos de la BD
 query = """
-SELECT 
+SELECT
     TIMESTAMPDIFF(MONTH, n.nin_fecha_nac, a.ant_fecha) as edad_meses,
     n.nin_sexo as sexo,
     a.ant_peso_kg as peso,
@@ -20,7 +22,7 @@ SELECT
     a.ant_z_imc as baz
 FROM antropometrias a
 INNER JOIN ninos n ON a.nin_id = n.nin_id
-WHERE a.ant_peso_kg > 0 
+WHERE a.ant_peso_kg > 0
   AND a.ant_talla_cm > 0
   AND a.ant_z_imc IS NOT NULL
   AND TIMESTAMPDIFF(MONTH, n.nin_fecha_nac, a.ant_fecha) BETWEEN 110 AND 125
@@ -30,6 +32,7 @@ LIMIT 10
 df = db.execute_query(query)
 print("Casos de niños de 110-125 meses en la BD:")
 print(df.to_string())
+
 
 # Clasificar según BAZ
 def clasificar(baz):
@@ -48,8 +51,9 @@ def clasificar(baz):
     else:
         return "OBESIDAD"
 
-df['clasificacion'] = df['baz'].apply(clasificar)
+
+df["clasificacion"] = df["baz"].apply(clasificar)
 print("\n\nCon clasificación:")
-print(df[['edad_meses', 'sexo', 'peso', 'talla', 'bmi', 'baz', 'clasificacion']].to_string())
+print(df[["edad_meses", "sexo", "peso", "talla", "bmi", "baz", "clasificacion"]].to_string())
 
 db.disconnect()

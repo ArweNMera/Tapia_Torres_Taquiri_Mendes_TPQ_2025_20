@@ -1,9 +1,9 @@
-from sqlalchemy import text
-from sqlalchemy.orm import Session
-from typing import Optional, Dict, Any
+import secrets
+from typing import Any
 
 from passlib.context import CryptContext
-import secrets
+from sqlalchemy import text
+from sqlalchemy.orm import Session
 
 from app.domain.interfaces.usuarios_repository import IUsuariosRepository
 from app.schemas.auth import UserResponse
@@ -22,7 +22,7 @@ class UsuariosRepository(IUsuariosRepository):
     def __init__(self, db: Session):
         self.db = db
 
-    def insert_user(self, user_data: UserRegister) -> Optional[Any]:
+    def insert_user(self, user_data: UserRegister) -> Any | None:
         """Registrar un usuario usando procedimiento almacenado."""
         password_value = user_data.contrasena or ""
         if not password_value.startswith("pbkdf2_sha256$"):
@@ -45,7 +45,9 @@ class UsuariosRepository(IUsuariosRepository):
         self.db.commit()
         return result
 
-    def update_user_profile(self, usr_id: int, profile_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    def update_user_profile(
+        self, usr_id: int, profile_data: dict[str, Any]
+    ) -> dict[str, Any] | None:
         """Actualizar perfil del usuario con sp_usuarios_perfil_guardar"""
         result = self.db.execute(
             text(
@@ -64,7 +66,7 @@ class UsuariosRepository(IUsuariosRepository):
                 "idioma": profile_data.get("idioma", "es"),
             },
         ).fetchone()
-        
+
         self.db.commit()
         if not result:
             return None
@@ -84,8 +86,10 @@ class UsuariosRepository(IUsuariosRepository):
         }
         return mapped
 
-    def get_user_by_username(self, username: str) -> Optional[UserResponse]:
-        result = self.db.execute(text("CALL sp_login_get_hash(:usuario)"), {"usuario": username}).fetchone()
+    def get_user_by_username(self, username: str) -> UserResponse | None:
+        result = self.db.execute(
+            text("CALL sp_login_get_hash(:usuario)"), {"usuario": username}
+        ).fetchone()
         if not result:
             return None
 
@@ -97,10 +101,10 @@ class UsuariosRepository(IUsuariosRepository):
             usr_apellido=result.usr_apellido,
             rol_id=result.rol_id,
             usr_activo=bool(result.usr_activo),
-            password_hash=result.password_hash
+            password_hash=result.password_hash,
         )
 
-    def get_user_by_id(self, usr_id: int) -> Optional[UserResponse]:
+    def get_user_by_id(self, usr_id: int) -> UserResponse | None:
         row = self.db.execute(
             text("CALL sp_usuarios_obtener_por_id(:usr_id)"),
             {"usr_id": usr_id},
@@ -120,7 +124,7 @@ class UsuariosRepository(IUsuariosRepository):
             password_hash=row.password_hash,
         )
 
-    def get_user_by_email(self, email: str) -> Optional[UserResponse]:
+    def get_user_by_email(self, email: str) -> UserResponse | None:
         row = self.db.execute(
             text("CALL sp_usuarios_obtener_por_email(:correo)"),
             {"correo": email},
@@ -144,14 +148,13 @@ class UsuariosRepository(IUsuariosRepository):
         """Verificar si username existe usando sp_usuarios_existe_username"""
         try:
             result = self.db.execute(
-                text("CALL sp_usuarios_existe_username(:username)"),
-                {"username": username}
+                text("CALL sp_usuarios_existe_username(:username)"), {"username": username}
             ).fetchone()
             return bool(result.existe) if result else False
         except Exception as e:
             raise e
 
-    def insert_rol(self, rol_codigo: str, rol_nombre: str) -> Optional[Any]:
+    def insert_rol(self, rol_codigo: str, rol_nombre: str) -> Any | None:
         result = self.db.execute(
             text("CALL sp_roles_insertar(:rol_codigo, :rol_nombre)"),
             {
@@ -163,7 +166,7 @@ class UsuariosRepository(IUsuariosRepository):
         self.db.commit()
         return result
 
-    def change_user_role(self, usr_id: int, rol_codigo: str) -> Optional[Dict[str, Any]]:
+    def change_user_role(self, usr_id: int, rol_codigo: str) -> dict[str, Any] | None:
         row = self.db.execute(
             text("CALL sp_usuarios_cambiar_rol(:usr_id, :rol_codigo)"),
             {
@@ -179,19 +182,21 @@ class UsuariosRepository(IUsuariosRepository):
             "rol_id": row.rol_id,
             "rol_codigo": getattr(row, "rol_codigo", None),
             "rol_nombre": getattr(row, "rol_nombre", None),
-            "msg": getattr(row, "msg", None)
+            "msg": getattr(row, "msg", None),
         }
 
-    def get_role_code_by_id(self, rol_id: int) -> Optional[str]:
+    def get_role_code_by_id(self, rol_id: int) -> str | None:
         """Obtener código de rol usando sp_roles_get_codigo_by_id"""
-        row = self.db.execute(text("CALL sp_roles_get_codigo_by_id(:rol_id)"), {
-            "rol_id": rol_id
-        }).fetchone()
+        row = self.db.execute(
+            text("CALL sp_roles_get_codigo_by_id(:rol_id)"), {"rol_id": rol_id}
+        ).fetchone()
         return row.rol_codigo if row else None
 
-    def get_user_profile(self, usr_id: int) -> Optional[Dict[str, Any]]:
+    def get_user_profile(self, usr_id: int) -> dict[str, Any] | None:
         """Obtener perfil completo del usuario con sp_usuarios_perfil_get"""
-        row = self.db.execute(text("CALL sp_usuarios_perfil_get(:usr_id)"), {"usr_id": usr_id}).fetchone()
+        row = self.db.execute(
+            text("CALL sp_usuarios_perfil_get(:usr_id)"), {"usr_id": usr_id}
+        ).fetchone()
         if not row:
             return None
         return {
@@ -212,12 +217,14 @@ class UsuariosRepository(IUsuariosRepository):
         self,
         usr_id: int,
         avatar_url: str,
-        telefono: Optional[str] = None,
-        idioma: Optional[str] = None,
+        telefono: str | None = None,
+        idioma: str | None = None,
     ) -> None:
         """Actualizar o crear perfil con avatar usando procedimiento almacenado."""
         self.db.execute(
-            text("CALL sp_usuarios_perfil_actualizar_avatar(:usr_id, :avatar_url, :telefono, :idioma)"),
+            text(
+                "CALL sp_usuarios_perfil_actualizar_avatar(:usr_id, :avatar_url, :telefono, :idioma)"
+            ),
             {
                 "usr_id": usr_id,
                 "avatar_url": avatar_url,

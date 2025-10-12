@@ -10,13 +10,13 @@ interface NutritionCardProps {
   className?: string;
 }
 
-export function NutritionCard({ 
-  title, 
-  value, 
-  subtitle, 
-  icon, 
+export function NutritionCard({
+  title,
+  value,
+  subtitle,
+  icon,
   color = 'green',
-  className = '' 
+  className = ''
 }: NutritionCardProps) {
   const colorClasses = {
     green: 'bg-gradient-to-br from-green-100 to-green-50 border-green-200',

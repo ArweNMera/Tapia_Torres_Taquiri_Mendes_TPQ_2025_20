@@ -4,10 +4,12 @@ By default works offline with deterministic text. If environment
 variables for an LLM provider are set, it can call an external
 LLM via an OpenAI-compatible API to improve phrasing.
 """
+
 from __future__ import annotations
-from dataclasses import dataclass
-from typing import Dict, Any, List, Optional
+
 import os
+from dataclasses import dataclass
+from typing import Any
 
 try:
     # Lazy import; only used if env is configured
@@ -20,10 +22,12 @@ except Exception:  # pragma: no cover - keep assist working without client
 class Explanation:
     title: str
     summary: str
-    bullet_points: List[str]
+    bullet_points: list[str]
 
 
-def explain_baz_prediction(age_months: int, sex: str, bmi: float, baz: float, status_label: int) -> Explanation:
+def explain_baz_prediction(
+    age_months: int, sex: str, bmi: float, baz: float, status_label: int
+) -> Explanation:
     # Map status to readable words
     label_map = {0: "dentro del rango esperado", 1: "riesgo/moderado", 2: "alto/desviado"}
     title = "Resumen de estimación del estado nutricional"
@@ -38,7 +42,7 @@ def explain_baz_prediction(age_months: int, sex: str, bmi: float, baz: float, st
     return Explanation(title=title, summary=summary, bullet_points=bullets)
 
 
-def explain_classifier_scores(scores: Dict[str, float]) -> Explanation:
+def explain_classifier_scores(scores: dict[str, float]) -> Explanation:
     # scores: e.g., {"normal": 0.82, "moderado": 0.12, "severo": 0.06}
     ordered = sorted(scores.items(), key=lambda kv: kv[1], reverse=True)
     top = ordered[0][0] if ordered else "desconocido"
@@ -51,7 +55,7 @@ def explain_classifier_scores(scores: Dict[str, float]) -> Explanation:
     return Explanation(title=title, summary=summary, bullet_points=bullets)
 
 
-def format_recommender_prompt(features: Dict[str, Any], scores: Dict[str, float]) -> str:
+def format_recommender_prompt(features: dict[str, Any], scores: dict[str, float]) -> str:
     """Format a structured prompt or message to feed a recommender system.
     This intentionally avoids any medical advice; summarizes signals only.
     """
@@ -61,13 +65,11 @@ def format_recommender_prompt(features: Dict[str, Any], scores: Dict[str, float]
     parts.append("\nSeñales del modelo:")
     for k, v in sorted(scores.items(), key=lambda kv: kv[1], reverse=True):
         parts.append(f"- {k}: {v:.2%}")
-    parts.append(
-        "\nNota: Este resumen es informativo y no constituye consejo médico."
-    )
+    parts.append("\nNota: Este resumen es informativo y no constituye consejo médico.")
     return "\n".join(parts)
 
 
-def summarize_with_llm(features: Dict[str, Any], scores: Dict[str, float]) -> Optional[str]:
+def summarize_with_llm(features: dict[str, Any], scores: dict[str, float]) -> str | None:
     """Optional LLM summary if env is configured; otherwise returns None.
 
     Required env vars for OpenAI-compatible endpoints:

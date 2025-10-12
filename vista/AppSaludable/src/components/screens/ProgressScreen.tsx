@@ -144,10 +144,10 @@ export function ProgressScreen() {
                   <XAxis dataKey="date" />
                   <YAxis domain={['dataMin - 0.5', 'dataMax + 0.5']} />
                   <Tooltip formatter={(value) => [`${value} kg`, 'Peso']} />
-                  <Line 
-                    type="monotone" 
-                    dataKey="weight" 
-                    stroke="#16a34a" 
+                  <Line
+                    type="monotone"
+                    dataKey="weight"
+                    stroke="#16a34a"
                     strokeWidth={3}
                     dot={{ fill: '#16a34a', strokeWidth: 2, r: 4 }}
                   />

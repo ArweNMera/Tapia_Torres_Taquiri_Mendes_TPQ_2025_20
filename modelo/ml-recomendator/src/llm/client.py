@@ -1,14 +1,16 @@
 from __future__ import annotations
+
 import os
 from dataclasses import dataclass
-from typing import Optional
 from pathlib import Path
 
 try:
     from dotenv import load_dotenv  # type: ignore
 except Exception:  # pragma: no cover
+
     def load_dotenv(*args, **kwargs):  # type: ignore
         return False
+
 
 import httpx
 
@@ -44,11 +46,7 @@ class OpenAICompatClient:
             r.raise_for_status()
             data = r.json()
         # OpenAI-compatible response parsing
-        return (
-            data.get("choices", [{}])[0]
-            .get("message", {})
-            .get("content", "")
-        )
+        return data.get("choices", [{}])[0].get("message", {}).get("content", "")
 
 
 def get_llm_client() -> OpenAICompatClient:
@@ -71,7 +69,9 @@ def get_llm_client() -> OpenAICompatClient:
     base_url = os.getenv("LLM_BASE_URL")
     model = os.getenv("LLM_MODEL")
     if not api_key or not base_url or not model:
-        raise RuntimeError("LLM env vars not fully configured (LLM_API_KEY, LLM_BASE_URL, LLM_MODEL)")
+        raise RuntimeError(
+            "LLM env vars not fully configured (LLM_API_KEY, LLM_BASE_URL, LLM_MODEL)"
+        )
     temp = float(os.getenv("LLM_TEMPERATURE", "0.2"))
     max_toks = int(os.getenv("LLM_MAX_TOKENS", "256"))
     timeout = float(os.getenv("LLM_TIMEOUT", "30"))

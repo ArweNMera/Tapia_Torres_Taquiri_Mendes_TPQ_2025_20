@@ -132,13 +132,13 @@ export function ScanScreen() {
         <Card className="p-6">
           <div className="flex items-start space-x-4">
             <div className="w-20 h-20 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-              <img 
-                src={scanResult.image} 
+              <img
+                src={scanResult.image}
                 alt={scanResult.name}
                 className="w-full h-full object-cover"
               />
             </div>
-            
+
             <div className="flex-1">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="font-semibold text-lg">{scanResult.name}</h3>
@@ -146,17 +146,17 @@ export function ScanScreen() {
                   {scanResult.healthScore}/100
                 </div>
               </div>
-              
+
               {scanResult.brand && (
                 <p className="text-muted-foreground mb-3">{scanResult.brand}</p>
               )}
-              
+
               <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${getHealthScoreBg(scanResult.healthScore)} text-white`}>
-                {scanResult.healthScore >= 80 ? <CheckCircle size={16} className="mr-1" /> : 
-                 scanResult.healthScore >= 60 ? <Info size={16} className="mr-1" /> : 
+                {scanResult.healthScore >= 80 ? <CheckCircle size={16} className="mr-1" /> :
+                 scanResult.healthScore >= 60 ? <Info size={16} className="mr-1" /> :
                  <AlertCircle size={16} className="mr-1" />}
-                {scanResult.healthScore >= 80 ? 'Muy Saludable' : 
-                 scanResult.healthScore >= 60 ? 'Moderadamente Saludable' : 
+                {scanResult.healthScore >= 80 ? 'Muy Saludable' :
+                 scanResult.healthScore >= 60 ? 'Moderadamente Saludable' :
                  'Poco Saludable'}
               </div>
             </div>
@@ -166,7 +166,7 @@ export function ScanScreen() {
         {/* Información nutricional */}
         <Card className="p-6">
           <h4 className="font-semibold mb-4">Información Nutricional (100g)</h4>
-          
+
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="text-center p-3 bg-muted rounded-lg">
               <p className="text-sm text-muted-foreground">Calorías</p>
@@ -251,7 +251,7 @@ export function ScanScreen() {
         {/* Resumen del ticket */}
         <Card className="p-6">
           <h3 className="font-semibold text-lg mb-4">Análisis de tu Compra</h3>
-          
+
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
             <div className="text-center p-3 bg-primary/10 rounded-lg">
               <p className="text-sm text-muted-foreground">Total Gastado</p>
@@ -273,7 +273,7 @@ export function ScanScreen() {
               const categoryItems = receiptItems.filter(item => item.category === category);
               const categoryTotal = categoryItems.reduce((sum, item) => sum + item.price, 0);
               const percentage = (categoryTotal / totalSpent) * 100;
-              
+
               return (
                 <div key={category} className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
@@ -284,7 +284,7 @@ export function ScanScreen() {
                   </div>
                   <div className="flex items-center space-x-2">
                     <div className="w-20 bg-muted rounded-full h-2">
-                      <div 
+                      <div
                         className="bg-primary h-2 rounded-full transition-all duration-300"
                         style={{ width: `${percentage}%` }}
                       />
@@ -325,11 +325,11 @@ export function ScanScreen() {
             <Alert>
               <Info size={16} />
               <AlertDescription>
-                ¡Excelente compra! Has incluido 3 grupos alimentarios principales. 
+                ¡Excelente compra! Has incluido 3 grupos alimentarios principales.
                 Te sugerimos agregar más verduras para una alimentación más balanceada.
               </AlertDescription>
             </Alert>
-            
+
             <Button className="w-full bg-secondary hover:bg-secondary-dark">
               Generar Plan de Comidas con estos Ingredientes
             </Button>
@@ -380,13 +380,13 @@ export function ScanScreen() {
             >
               <Scan size={32} className="text-primary" />
             </motion.div>
-            
+
             <div>
               <h3 className="text-lg font-semibold mb-2">
                 {scanMode === 'product' ? 'Escanear Producto' : 'Escanear Ticket de Compra'}
               </h3>
               <p className="text-muted-foreground">
-                {scanMode === 'product' 
+                {scanMode === 'product'
                   ? 'Toma una foto del producto o etiqueta nutricional'
                   : 'Sube una foto de tu ticket de compra para análisis automático'
                 }

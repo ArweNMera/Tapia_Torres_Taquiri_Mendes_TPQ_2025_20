@@ -1,9 +1,11 @@
 """
 Test simple de conexión a BD
 """
+
 import os
-from dotenv import load_dotenv
 from pathlib import Path
+
+from dotenv import load_dotenv
 
 # Cargar .env
 BASE_DIR = Path(__file__).resolve().parent
@@ -27,33 +29,33 @@ print("\n🔌 Intentando conectar...")
 
 try:
     import pymysql
-    
+
     conn = pymysql.connect(
-        host=os.getenv('DB_HOST', 'localhost'),
-        port=int(os.getenv('DB_PORT', '3306')),
-        user=os.getenv('DB_USER', 'root'),
-        password=os.getenv('DB_PASSWORD', ''),
-        database=os.getenv('DB_NAME', 'nutricion_db')
+        host=os.getenv("DB_HOST", "localhost"),
+        port=int(os.getenv("DB_PORT", "3306")),
+        user=os.getenv("DB_USER", "root"),
+        password=os.getenv("DB_PASSWORD", ""),
+        database=os.getenv("DB_NAME", "nutricion_db"),
     )
-    
+
     print("✅ CONEXIÓN EXITOSA!")
-    
+
     # Probar query
     cursor = conn.cursor()
     cursor.execute("""
-        SELECT COUNT(*) 
+        SELECT COUNT(*)
         FROM antropometrias a
         INNER JOIN ninos n ON a.nin_id = n.nin_id
         WHERE a.ant_peso_kg > 0 AND a.ant_talla_cm > 0
     """)
     total = cursor.fetchone()[0]
-    
-    print(f"\n📊 Datos disponibles:")
+
+    print("\n📊 Datos disponibles:")
     print(f"  Antropometrías válidas: {total}")
-    
+
     cursor.close()
     conn.close()
-    
+
 except Exception as e:
     print(f"❌ ERROR: {e}")
     print("\n💡 Verifica:")

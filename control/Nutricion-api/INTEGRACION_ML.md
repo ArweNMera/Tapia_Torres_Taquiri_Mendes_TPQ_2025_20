@@ -331,7 +331,7 @@ services:
       - ML_API_URL=http://ml-api:8003
     depends_on:
       - ml-api
-  
+
   ml-api:
     build: ./modelo/ml-recomendator
     ports:

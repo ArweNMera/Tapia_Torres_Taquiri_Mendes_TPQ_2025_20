@@ -10,16 +10,17 @@ sys.path.insert(0, str(BASE_DIR))
 
 from src.features import WHOCalculator
 
+
 def test_clasificacion():
     """Prueba la clasificación con diferentes valores de BAZ."""
-    
+
     print("\n" + "=" * 60)
     print("🧪 PRUEBA DE CLASIFICACIÓN OMS (7 CATEGORÍAS)")
     print("=" * 60)
-    
+
     # Crear calculadora (sin BD, solo para clasificar)
     who_calc = WHOCalculator()
-    
+
     # Casos de prueba
     test_cases = [
         (-4.5, "DESNUTRICION_SEVERA", 0),
@@ -33,24 +34,24 @@ def test_clasificacion():
         (3.5, "OBESIDAD", 6),
         (4.0, "OBESIDAD", 6),
     ]
-    
+
     print("\n📊 Probando clasificaciones:")
     print(f"{'BAZ':<8} {'Esperado':<25} {'Obtenido':<25} {'Label':<6} {'✓/✗'}")
     print("-" * 80)
-    
+
     all_passed = True
     for baz, expected_class, expected_label in test_cases:
         actual_class = who_calc.classify_nutritional_status(baz)
         actual_label = who_calc.classify_to_label(baz)
-        
-        passed = (actual_class == expected_class and actual_label == expected_label)
+
+        passed = actual_class == expected_class and actual_label == expected_label
         all_passed = all_passed and passed
-        
+
         status = "✅" if passed else "❌"
         print(f"{baz:<8.2f} {expected_class:<25} {actual_class:<25} {actual_label:<6} {status}")
-    
+
     print("-" * 80)
-    
+
     if all_passed:
         print("\n✅ TODAS LAS PRUEBAS PASARON")
         print("\n🎯 Las 7 categorías OMS están correctamente implementadas:")
@@ -64,7 +65,7 @@ def test_clasificacion():
     else:
         print("\n❌ ALGUNAS PRUEBAS FALLARON")
         return False
-    
+
     print("\n" + "=" * 60)
     return True
 

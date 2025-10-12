@@ -16,22 +16,22 @@ export function LoginScreen({ onLogin, onSignUp }: LoginScreenProps) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  
-  const { 
-    login, 
-    beginGoogleLogin, 
+
+  const {
+    login,
+    beginGoogleLogin,
     beginGithubLogin,
     beginFacebookLogin,
     beginMicrosoftLogin,
-    isLoading, 
-    socialAuthError, 
-    clearSocialAuthError 
+    isLoading,
+    socialAuthError,
+    clearSocialAuthError
   } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    
+
     if (!username.trim() || !password.trim()) {
       setError('Por favor, completa todos los campos');
       return;
@@ -150,7 +150,7 @@ export function LoginScreen({ onLogin, onSignUp }: LoginScreenProps) {
                   <p className="text-sm text-destructive">{error}</p>
                 </div>
               )}
-              
+
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
                   Usuario
@@ -195,8 +195,8 @@ export function LoginScreen({ onLogin, onSignUp }: LoginScreenProps) {
                 </div>
               </div>
 
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 className="w-full h-12 bg-primary hover:bg-primary-dark text-primary-foreground font-semibold"
                 disabled={isLoading}
               >
@@ -268,7 +268,7 @@ export function LoginScreen({ onLogin, onSignUp }: LoginScreenProps) {
 
         {/* Right Side - Image & Content */}
         <div className="w-1/2 relative overflow-hidden">
-          <div 
+          <div
             className="absolute inset-0 bg-gradient-to-br from-primary/20 via-secondary/20 to-accent/20"
             style={{
               backgroundImage: `url('https://images.unsplash.com/photo-1601049455794-76a4d978639d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmcmVzaCUyMGZydWl0cyUyMHZlZ2V0YWJsZXMlMjBjb2xvcmZ1bCUyMGhlYWx0aHklMjBudXRyaXRpb258ZW58MXx8fHwxNzU3MzYyNDg1fDA&ixlib=rb-4.1.0&q=80&w=1080')`,
@@ -298,7 +298,7 @@ export function LoginScreen({ onLogin, onSignUp }: LoginScreenProps) {
 
               <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
                 <blockquote className="text-xl font-medium mb-4">
-                  "NutriFamily me ayudó a incluir más frutas y vegetales en la dieta de mis hijos. 
+                  "NutriFamily me ayudó a incluir más frutas y vegetales en la dieta de mis hijos.
                   Ahora comen colorido y saludable todos los días con recetas que realmente les gustan."
                 </blockquote>
                 <div className="flex items-center space-x-3">
@@ -319,7 +319,7 @@ export function LoginScreen({ onLogin, onSignUp }: LoginScreenProps) {
       {/* Mobile Layout */}
       <div className="lg:hidden w-full flex flex-col">
         {/* Top Image Section */}
-        <div 
+        <div
           className="h-1/3 relative"
           style={{
             backgroundImage: `url('https://images.unsplash.com/photo-1601049455794-76a4d978639d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmcmVzaCUyMGZydWl0cyUyMHZlZ2V0YWJsZXMlMjBjb2xvcmZ1bCUyMGhlYWx0aHklMjBudXRyaXRpb258ZW58MXx8fHwxNzU3MzYyNDg1fDA&ixlib=rb-4.1.0&q=80&w=1080')`,
@@ -384,8 +384,8 @@ export function LoginScreen({ onLogin, onSignUp }: LoginScreenProps) {
                 </div>
               </div>
 
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 className="w-full h-11 bg-primary hover:bg-primary-dark text-primary-foreground"
               >
                 Iniciar Sesión

@@ -64,7 +64,7 @@ echo ""
 echo "4️⃣  Verificando métricas del modelo..."
 if [ -f "models/cv_metrics.json" ]; then
     echo "   ✅ Métricas de cross-validation encontradas"
-    
+
     # Extraer accuracy si jq está disponible
     if command -v jq &> /dev/null; then
         ACCURACY=$(jq -r '.mean_accuracy' models/cv_metrics.json 2>/dev/null)

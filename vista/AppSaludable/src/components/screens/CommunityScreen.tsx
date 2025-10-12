@@ -143,20 +143,20 @@ export function CommunityScreen() {
   const [postsData, setPostsData] = useState(posts);
 
   const handleLike = (postId: string) => {
-    setPostsData(prev => prev.map(post => 
-      post.id === postId 
-        ? { 
-            ...post, 
-            isLiked: !post.isLiked, 
-            likes: post.isLiked ? post.likes - 1 : post.likes + 1 
+    setPostsData(prev => prev.map(post =>
+      post.id === postId
+        ? {
+            ...post,
+            isLiked: !post.isLiked,
+            likes: post.isLiked ? post.likes - 1 : post.likes + 1
           }
         : post
     ));
   };
 
   const handleBookmark = (postId: string) => {
-    setPostsData(prev => prev.map(post => 
-      post.id === postId 
+    setPostsData(prev => prev.map(post =>
+      post.id === postId
         ? { ...post, isBookmarked: !post.isBookmarked }
         : post
     ));
@@ -211,7 +211,7 @@ export function CommunityScreen() {
               </div>
             </div>
           </div>
-          
+
           <div className="flex items-center space-x-2">
             <Badge variant="outline" className="text-xs">
               {post.category}
@@ -231,11 +231,11 @@ export function CommunityScreen() {
         <div className="mb-4">
           <h3 className="font-semibold text-lg mb-2">{post.title}</h3>
           <p className="text-muted-foreground mb-3">{post.content}</p>
-          
+
           {post.image && (
             <div className="rounded-lg overflow-hidden bg-muted h-48 mb-3">
-              <img 
-                src={post.image} 
+              <img
+                src={post.image}
                 alt="Post content"
                 className="w-full h-full object-cover"
               />
@@ -264,18 +264,18 @@ export function CommunityScreen() {
               <Heart size={16} fill={post.isLiked ? 'currentColor' : 'none'} />
               <span>{post.likes}</span>
             </Button>
-            
+
             <Button variant="ghost" size="sm" className="flex items-center space-x-2 text-muted-foreground">
               <MessageCircle size={16} />
               <span>{post.comments}</span>
             </Button>
-            
+
             <Button variant="ghost" size="sm" className="flex items-center space-x-2 text-muted-foreground">
               <Share2 size={16} />
               <span>{post.shares}</span>
             </Button>
           </div>
-          
+
           <Button variant="outline" size="sm">
             Ver completo
           </Button>
@@ -314,11 +314,11 @@ export function CommunityScreen() {
                   <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-success rounded-full border-2 border-white"></div>
                 )}
               </div>
-              
+
               <div className="flex-1">
                 <h4 className="font-semibold mb-1">{expert.name}</h4>
                 <p className="text-sm text-muted-foreground mb-2">{expert.specialty}</p>
-                
+
                 <div className="flex items-center space-x-4 mb-3">
                   <div className="flex items-center space-x-1">
                     <Star size={14} className="text-yellow-500" fill="currentColor" />
@@ -328,7 +328,7 @@ export function CommunityScreen() {
                     {expert.consultations} consultas
                   </div>
                 </div>
-                
+
                 <div className="flex space-x-2">
                   <Button size="sm" className="flex-1" disabled={!expert.isOnline}>
                     {expert.isOnline ? 'Consultar Ahora' : 'No Disponible'}
@@ -411,7 +411,7 @@ export function CommunityScreen() {
                 />
               </div>
             </div>
-            
+
             <div className="flex space-x-2">
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                 <SelectTrigger className="w-40">
@@ -425,7 +425,7 @@ export function CommunityScreen() {
                   ))}
                 </SelectContent>
               </Select>
-              
+
               <Select value={sortBy} onValueChange={setSortBy}>
                 <SelectTrigger className="w-40">
                   <SelectValue />
@@ -445,8 +445,8 @@ export function CommunityScreen() {
           <div>
             {postsData
               .filter(post => selectedCategory === 'Todos' || post.category === selectedCategory)
-              .filter(post => 
-                searchQuery === '' || 
+              .filter(post =>
+                searchQuery === '' ||
                 post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 post.content.toLowerCase().includes(searchQuery.toLowerCase())
               )

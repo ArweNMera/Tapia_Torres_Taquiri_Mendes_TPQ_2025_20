@@ -159,9 +159,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return { success: false, error: response.error || 'Error en el login' };
       }
     } catch (error) {
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Error desconocido' 
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Error desconocido'
       };
     } finally {
       setIsLoading(false);
@@ -403,9 +403,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return { success: false, error: response.error || 'Error en el registro' };
       }
     } catch (error) {
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Error desconocido' 
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Error desconocido'
       };
     } finally {
       setIsLoading(false);

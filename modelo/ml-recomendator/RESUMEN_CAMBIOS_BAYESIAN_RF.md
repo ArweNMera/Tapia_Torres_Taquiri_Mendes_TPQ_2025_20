@@ -4,7 +4,7 @@
 
 ### 1. Algoritmos de Machine Learning
 **Antes**: Solo Random Forest
-**Ahora**: 
+**Ahora**:
 - ✅ Naive Bayes (Bayesian)
 - ✅ Random Forest
 - ✅ Ensemble (combinación de ambos)

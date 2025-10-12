@@ -1,6 +1,7 @@
 """
 Verificar caso específico
 """
+
 import sys
 from pathlib import Path
 
@@ -12,7 +13,7 @@ from src.utils.db_connector import DatabaseConnector
 
 # Datos del caso
 edad_meses = 118  # 9.8 años
-sexo = 'M'
+sexo = "M"
 peso_kg = 40
 talla_cm = 145
 bmi = peso_kg / (talla_cm / 100) ** 2
@@ -20,7 +21,7 @@ bmi = peso_kg / (talla_cm / 100) ** 2
 print("=" * 60)
 print("VERIFICANDO CASO")
 print("=" * 60)
-print(f"\nDatos:")
+print("\nDatos:")
 print(f"  Edad: {edad_meses} meses ({edad_meses/12:.1f} años)")
 print(f"  Sexo: {sexo}")
 print(f"  Peso: {peso_kg} kg")
@@ -37,25 +38,27 @@ who_calc = WHOCalculator(db_connector=db)
 try:
     baz = who_calc.calculate_baz(bmi, edad_meses, sexo)
     clasificacion = who_calc.classify_nutritional_status(baz)
-    
-    print(f"\n✅ Resultado OMS:")
+
+    print("\n✅ Resultado OMS:")
     print(f"  BAZ: {baz:.2f}")
     print(f"  Clasificación: {clasificacion}")
-    
+
     # Verificar rangos
-    print(f"\n📊 Rangos OMS:")
-    print(f"  < -3.0: DESNUTRICION_SEVERA")
-    print(f"  -3.0 a -2.0: DESNUTRICION_MODERADA")
-    print(f"  -2.0 a -1.0: RIESGO_DESNUTRICION")
-    print(f"  -1.0 a 1.0: NORMAL ✅")
-    print(f"  1.0 a 2.0: RIESGO_SOBREPESO")
-    print(f"  2.0 a 3.0: SOBREPESO")
-    print(f"  > 3.0: OBESIDAD")
-    
+    print("\n📊 Rangos OMS:")
+    print("  < -3.0: DESNUTRICION_SEVERA")
+    print("  -3.0 a -2.0: DESNUTRICION_MODERADA")
+    print("  -2.0 a -1.0: RIESGO_DESNUTRICION")
+    print("  -1.0 a 1.0: NORMAL ✅")
+    print("  1.0 a 2.0: RIESGO_SOBREPESO")
+    print("  2.0 a 3.0: SOBREPESO")
+    print("  > 3.0: OBESIDAD")
+
     # Comparar con lo que predijo el modelo
-    print(f"\n🤖 El modelo predijo: DESNUTRICION_SEVERA")
-    print(f"   Esto sugiere que el modelo aprendió mal o los datos de entrenamiento están incorrectos")
-    
+    print("\n🤖 El modelo predijo: DESNUTRICION_SEVERA")
+    print(
+        "   Esto sugiere que el modelo aprendió mal o los datos de entrenamiento están incorrectos"
+    )
+
 except Exception as e:
     print(f"❌ Error: {e}")
 

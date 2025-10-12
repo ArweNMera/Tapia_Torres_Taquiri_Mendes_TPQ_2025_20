@@ -78,7 +78,7 @@
 - [ ] Crear script para extraer datos de MySQL a CSV
   ```python
   # Extraer datos de niños con antropometría y features
-  SELECT 
+  SELECT
     n.nin_id, n.nin_fecha_nac, n.nin_sexo,
     a.ant_peso_kg, a.ant_talla_cm, a.ant_fecha,
     f.*
@@ -212,8 +212,8 @@
 ### 6.2 Feedback Loop
 - [ ] Implementar sistema de validación por nutricionistas
   ```sql
-  UPDATE predicciones_ml 
-  SET pml_validado = TRUE, 
+  UPDATE predicciones_ml
+  SET pml_validado = TRUE,
       pml_validado_por = ?,
       pml_feedback = ?
   WHERE pml_id = ?;

@@ -21,7 +21,7 @@ export function DashboardScreen({ onRecipeClick }: DashboardScreenProps) {
   const avatarKey = user?.avatar_url && user.avatar_url.trim().length > 0
     ? user.avatar_url.trim()
     : 'dashboard-default-avatar';
-  
+
   const todayMeals = [
     {
       id: '1',

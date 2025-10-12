@@ -34,11 +34,11 @@ ingress:
   # Modelo ML
   - hostname: modelo.areallc.tech
     service: http://localhost:8001
-  
+
   # Backend API (ya existente)
   - hostname: api.areallc.tech
     service: http://localhost:8000
-  
+
   # Catch-all rule (requerido)
   - service: http_status:404
 ```
@@ -90,7 +90,7 @@ sudo launchctl list | grep cloudflared
 
 1. **Modelo ML**: https://modelo.areallc.tech/health
 2. **Documentación**: https://modelo.areallc.tech/docs
-3. **Endpoint de prueba**: 
+3. **Endpoint de prueba**:
    ```bash
    curl -X POST "https://modelo.areallc.tech/ml/predict_direct" \
      -H "Content-Type: application/json" \

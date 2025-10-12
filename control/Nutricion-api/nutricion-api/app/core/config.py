@@ -1,6 +1,5 @@
-from typing import Optional
-
 from pydantic_settings import BaseSettings
+
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Nutricion API"
@@ -10,18 +9,19 @@ class Settings(BaseSettings):
     SECRET_KEY: str
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-    GOOGLE_CLIENT_ID: Optional[str] = None
-    GOOGLE_CLIENT_SECRET: Optional[str] = None
-    GOOGLE_REDIRECT_URI: Optional[str] = None
-    GOOGLE_POST_LOGIN_REDIRECT: Optional[str] = "http://localhost:5173"
-    GOOGLE_ALLOWED_REDIRECTS: Optional[str] = None
-    FIREBASE_CREDENTIALS_PATH: Optional[str] = None
-    FIREBASE_PROJECT_ID: Optional[str] = None
-    
+    GOOGLE_CLIENT_ID: str | None = None
+    GOOGLE_CLIENT_SECRET: str | None = None
+    GOOGLE_REDIRECT_URI: str | None = None
+    GOOGLE_POST_LOGIN_REDIRECT: str | None = "http://localhost:5173"
+    GOOGLE_ALLOWED_REDIRECTS: str | None = None
+    FIREBASE_CREDENTIALS_PATH: str | None = None
+    FIREBASE_PROJECT_ID: str | None = None
+
     # ML API Configuration
     ML_API_URL: str = "http://localhost:8001"
 
     class Config:
         env_file = ".env"
+
 
 settings = Settings()

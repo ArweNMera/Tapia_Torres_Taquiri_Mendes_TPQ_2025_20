@@ -5,6 +5,7 @@ Reemplaza el comando mysql para compatibilidad con Mac.
 
 import sys
 from pathlib import Path
+
 from sqlalchemy import text
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -12,12 +13,13 @@ sys.path.insert(0, str(BASE_DIR))
 
 from src.utils import DatabaseConnector
 
+
 def main():
     print("\n🧹 Limpiando tabla features_ml...")
-    
+
     db = DatabaseConnector.from_env()
     db.connect()
-    
+
     try:
         with db.engine.begin() as conn:
             result = conn.execute(text("DELETE FROM features_ml"))
@@ -27,6 +29,7 @@ def main():
         raise
     finally:
         db.disconnect()
+
 
 if __name__ == "__main__":
     main()

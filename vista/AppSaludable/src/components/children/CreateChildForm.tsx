@@ -24,7 +24,7 @@ const CreateChildForm: React.FC<CreateChildFormProps> = ({ onSuccess, onCancel }
 
   const [selectedAllergies, setSelectedAllergies] = useState<string[]>([]);
   const [allergySearchTerm, setAllergySearchTerm] = useState('');
-  
+
   const { createChildProfile } = useChildProfileApi();
   const { getAllergyTypes, addAllergy } = useAllergiesApi();
 
@@ -34,7 +34,7 @@ const CreateChildForm: React.FC<CreateChildFormProps> = ({ onSuccess, onCancel }
       if (query.length >= 2) {
         getAllergyTypes.execute(query);
       }
-    }, 300); 
+    }, 300);
     return () => clearTimeout(handler);
   }, [allergySearchTerm]);
 
@@ -47,7 +47,7 @@ const CreateChildForm: React.FC<CreateChildFormProps> = ({ onSuccess, onCancel }
   };
 
   const handleAllergyToggle = (allergyCode: string) => {
-    setSelectedAllergies(prev => 
+    setSelectedAllergies(prev =>
       prev.includes(allergyCode)
         ? prev.filter(code => code !== allergyCode)
         : [...prev, allergyCode]
@@ -64,8 +64,8 @@ const CreateChildForm: React.FC<CreateChildFormProps> = ({ onSuccess, onCancel }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!formData.nin_nombres || !formData.nin_apellidos || !formData.nin_fecha_nac || !formData.nin_sexo || 
+
+    if (!formData.nin_nombres || !formData.nin_apellidos || !formData.nin_fecha_nac || !formData.nin_sexo ||
         !formData.ant_peso_kg || !formData.ant_talla_cm) {
       toast.error('Campos incompletos', {
         description: 'Por favor, completa todos los campos obligatorios.',
@@ -105,10 +105,10 @@ const CreateChildForm: React.FC<CreateChildFormProps> = ({ onSuccess, onCancel }
       };
 
       const result = await createChildProfile.execute(childRequest);
-      
+
       if (result) {
         const childId = result.nino.nin_id;
-        
+
         // Agregar alergias seleccionadas
         for (const allergyCode of selectedAllergies) {
           const allergyData: AlergiaCreate = {
@@ -218,7 +218,7 @@ const CreateChildForm: React.FC<CreateChildFormProps> = ({ onSuccess, onCancel }
         {/* Medidas antropométricas */}
         <div className="space-y-3">
           <h3 className="text-base md:text-lg font-bold text-gray-900">Medidas Actuales</h3>
-          
+
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -291,7 +291,7 @@ const CreateChildForm: React.FC<CreateChildFormProps> = ({ onSuccess, onCancel }
                 🔍
               </div>
             </div>
-            
+
             {/* Solo mostrar resultados si hay término de búsqueda de al menos 2 caracteres */}
             {allergySearchTerm.trim() && allergySearchTerm.trim().length >= 2 && (
               <>
@@ -303,8 +303,8 @@ const CreateChildForm: React.FC<CreateChildFormProps> = ({ onSuccess, onCancel }
                   <div className="border border-emerald-200 rounded-lg max-h-40 overflow-y-auto">
                     <div className="space-y-1 p-2">
                       {getAllergyTypes.data.map((allergy) => (
-                        <label 
-                          key={allergy.ta_codigo} 
+                        <label
+                          key={allergy.ta_codigo}
                           className="flex items-center space-x-3 p-2 hover:bg-emerald-50 rounded-md cursor-pointer transition-colors"
                         >
                           <input
@@ -330,7 +330,7 @@ const CreateChildForm: React.FC<CreateChildFormProps> = ({ onSuccess, onCancel }
                 )}
               </>
             )}
-            
+
             {/* Mostrar alergias seleccionadas */}
             {selectedAllergies.length > 0 && (
               <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
@@ -339,7 +339,7 @@ const CreateChildForm: React.FC<CreateChildFormProps> = ({ onSuccess, onCancel }
                   {selectedAllergies.map((allergyCode) => {
                     const allergy = getAllergyTypes.data?.find(a => a.ta_codigo === allergyCode);
                     return (
-                      <span 
+                      <span
                         key={allergyCode}
                         className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-800 text-xs px-2 py-1 rounded-full"
                       >
@@ -357,9 +357,9 @@ const CreateChildForm: React.FC<CreateChildFormProps> = ({ onSuccess, onCancel }
                 </div>
               </div>
             )}
-            
-            
-            
+
+
+
             {allergySearchTerm.trim() && allergySearchTerm.trim().length < 2 && (
               <div className="text-center py-4 border border-dashed border-gray-300 rounded-lg bg-gray-50">
                 <p className="text-sm text-gray-500">⌨️ Escribe al menos 2 caracteres para buscar</p>

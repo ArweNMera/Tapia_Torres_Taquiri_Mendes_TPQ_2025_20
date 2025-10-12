@@ -16,7 +16,7 @@ export function SettingsScreen() {
     tips: false,
     reminders: true
   });
-  
+
   const [preferences, setPreferences] = useState({
     darkMode: false,
     language: 'es',
@@ -204,7 +204,7 @@ export function SettingsScreen() {
                     <div className="ml-4">
                       {item.type === 'switch' && (
                         <Switch
-                          checked={section.title === 'Notificaciones' 
+                          checked={section.title === 'Notificaciones'
                             ? notifications[item.key as keyof typeof notifications]
                             : preferences[item.key as keyof typeof preferences] as boolean
                           }
@@ -289,8 +289,8 @@ export function SettingsScreen() {
           Acciones Rápidas
         </h3>
         <div className="space-y-3">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             className="w-full justify-between text-left"
           >
             <div className="flex items-center">
@@ -302,9 +302,9 @@ export function SettingsScreen() {
             </div>
             <ChevronRight size={16} />
           </Button>
-          
-          <Button 
-            variant="outline" 
+
+          <Button
+            variant="outline"
             className="w-full justify-between text-left"
           >
             <div className="flex items-center">
@@ -316,9 +316,9 @@ export function SettingsScreen() {
             </div>
             <ChevronRight size={16} />
           </Button>
-          
-          <Button 
-            variant="outline" 
+
+          <Button
+            variant="outline"
             className="w-full justify-between text-left"
           >
             <div className="flex items-center">
@@ -351,8 +351,8 @@ export function SettingsScreen() {
       </Card>
 
       {/* Logout */}
-      <Button 
-        variant="outline" 
+      <Button
+        variant="outline"
         className="w-full text-red-600 border-red-200 hover:bg-red-50"
         onClick={handleLogout}
       >

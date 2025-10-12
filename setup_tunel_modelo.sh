@@ -62,11 +62,11 @@ ingress:
   # Modelo ML
   - hostname: modelo.areallc.tech
     service: http://localhost:8001
-  
+
   # Backend API
   - hostname: api.areallc.tech
     service: http://localhost:8000
-  
+
   # Catch-all rule
   - service: http_status:404
 EOF
@@ -99,7 +99,7 @@ read -p "¿Instalar como servicio? (s/n): " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Ss]$ ]]; then
     sudo cloudflared service install
-    
+
     if [ $? -eq 0 ]; then
         echo "✅ Servicio instalado"
         echo ""

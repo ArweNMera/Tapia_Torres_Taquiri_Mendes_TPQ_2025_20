@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Script para actualizar el modelo ML cuando hay nuevos datos en la BD
-# Uso: 
+# Uso:
 #   ./actualizar_modelo.sh              # Usa solo datos reales
 #   ./actualizar_modelo.sh --sinteticos # Incluye datos sintéticos
 
@@ -64,7 +64,7 @@ echo "📈 Paso 3/6: Verificando cantidad de registros..."
 if [ -f "data/raw/surveys/datos_completos_oms_reales.csv" ]; then
     TOTAL_REGISTROS=$(tail -n +2 data/raw/surveys/datos_completos_oms_reales.csv | wc -l)
     echo "   Total de registros: $TOTAL_REGISTROS"
-    
+
     if [ $TOTAL_REGISTROS -lt 100 ]; then
         echo "   ⚠️  ADVERTENCIA: Menos de 100 registros"
         echo "   El modelo puede no funcionar bien con tan pocos datos"

@@ -232,7 +232,7 @@ AssertionError: Exception during login: Login failed with status 422
     exec(code, exec_env)
   File "<string>", line 77, in <module>
   File "<string>", line 21, in test_user_role_management
-AssertionError: Login failed: 
+AssertionError: Login failed:
 
 - **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/ddbb0195-042e-4afc-b997-7656543048f1/cf8c3ace-8506-4996-a020-a1fea66933ff
 - **Status:** ❌ Failed

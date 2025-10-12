@@ -115,7 +115,7 @@ export function RecipesScreen({ onRecipeClick }: RecipesScreenProps) {
             className="pl-10"
           />
         </div>
-        
+
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2 overflow-x-auto">
             {categories.map((category) => (
@@ -125,8 +125,8 @@ export function RecipesScreen({ onRecipeClick }: RecipesScreenProps) {
                 size="sm"
                 onClick={() => setSelectedCategory(category.id)}
                 className={`whitespace-nowrap ${
-                  selectedCategory === category.id 
-                    ? 'bg-green-600 text-white' 
+                  selectedCategory === category.id
+                    ? 'bg-green-600 text-white'
                     : 'text-gray-600 border-gray-300'
                 }`}
               >
@@ -166,7 +166,7 @@ export function RecipesScreen({ onRecipeClick }: RecipesScreenProps) {
           <TabsTrigger value="grid">Vista en Tarjetas</TabsTrigger>
           <TabsTrigger value="list">Vista en Lista</TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="grid">
           <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 lg:gap-4">
             {filteredRecipes.map((recipe) => (
@@ -178,17 +178,17 @@ export function RecipesScreen({ onRecipeClick }: RecipesScreenProps) {
             ))}
           </div>
         </TabsContent>
-        
+
         <TabsContent value="list">
           <div className="space-y-3">
             {filteredRecipes.map((recipe) => (
-              <div 
+              <div
                 key={recipe.id}
                 onClick={() => onRecipeClick?.(recipe.id)}
                 className="flex items-center p-3 bg-white rounded-lg border border-gray-200 cursor-pointer hover:shadow-md transition-shadow"
               >
-                <img 
-                  src={recipe.image} 
+                <img
+                  src={recipe.image}
                   alt={recipe.title}
                   className="w-16 h-16 rounded-lg object-cover mr-3"
                 />

@@ -50,7 +50,7 @@ export function QuickActionCard({
       whileTap={{ scale: 0.98 }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
     >
-      <Card 
+      <Card
         className={`p-6 cursor-pointer hover:shadow-lg transition-all duration-200 bg-gradient-to-br ${gradient} border-l-4 border-l-primary`}
         onClick={onAction}
       >
@@ -58,7 +58,7 @@ export function QuickActionCard({
           <div className="p-3 bg-white rounded-lg shadow-sm">
             {icon}
           </div>
-          
+
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between mb-2">
               <h3 className="font-semibold text-gray-900 truncate">{title}</h3>
@@ -66,11 +66,11 @@ export function QuickActionCard({
                 {getPriorityLabel()}
               </Badge>
             </div>
-            
+
             <p className="text-sm text-muted-foreground mb-3 leading-relaxed">
               {description}
             </p>
-            
+
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3 text-xs text-muted-foreground">
                 {category && (
@@ -82,7 +82,7 @@ export function QuickActionCard({
                   </span>
                 )}
               </div>
-              
+
               <span className="text-sm font-medium text-primary group-hover:text-primary-dark transition-colors">
                 {actionText} →
               </span>

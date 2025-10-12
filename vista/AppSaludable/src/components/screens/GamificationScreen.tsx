@@ -257,7 +257,7 @@ export function GamificationScreen() {
           <Zap className="mr-2 text-warning" size={20} />
           Tus Rachas
         </h3>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {streaks.map((streak, index) => (
             <motion.div
@@ -284,7 +284,7 @@ export function GamificationScreen() {
           <Award className="mr-2 text-yellow-500" size={20} />
           Logros Recientes
         </h3>
-        
+
         <div className="space-y-3">
           {achievements.filter(a => a.isCompleted).slice(0, 3).map((achievement) => (
             <div key={achievement.id} className="flex items-center space-x-4 p-3 bg-muted rounded-lg">
@@ -328,8 +328,8 @@ export function GamificationScreen() {
             animate={{ opacity: 1, scale: 1 }}
             whileHover={{ scale: 1.02 }}
             className={`p-6 border-2 rounded-lg transition-all ${
-              achievement.isCompleted 
-                ? 'border-success bg-success/5 shadow-md' 
+              achievement.isCompleted
+                ? 'border-success bg-success/5 shadow-md'
                 : 'border-muted hover:border-primary/30'
             }`}
           >
@@ -344,21 +344,21 @@ export function GamificationScreen() {
                 )}
               </div>
             </div>
-            
+
             <h3 className="font-semibold text-lg mb-2">{achievement.title}</h3>
             <p className="text-muted-foreground text-sm mb-4">{achievement.description}</p>
-            
+
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span>Progreso</span>
                 <span>{achievement.progress}/{achievement.maxProgress}</span>
               </div>
-              <Progress 
-                value={(achievement.progress / achievement.maxProgress) * 100} 
+              <Progress
+                value={(achievement.progress / achievement.maxProgress) * 100}
                 className="h-2"
               />
             </div>
-            
+
             <div className="flex justify-between items-center mt-4">
               <span className="text-sm font-medium text-primary">+{achievement.points} puntos</span>
               {achievement.isCompleted && achievement.unlockedAt && (
@@ -385,7 +385,7 @@ export function GamificationScreen() {
                   <p className="text-muted-foreground text-sm">{challenge.description}</p>
                   <div className="flex items-center space-x-3 mt-2">
                     <Badge className={getChallengeTypeColor(challenge.type)}>
-                      {challenge.type === 'daily' ? 'Diario' : 
+                      {challenge.type === 'daily' ? 'Diario' :
                        challenge.type === 'weekly' ? 'Semanal' : 'Mensual'}
                     </Badge>
                     {challenge.participants && (
@@ -396,26 +396,26 @@ export function GamificationScreen() {
                   </div>
                 </div>
               </div>
-              
+
               <div className="text-right">
                 <div className="text-lg font-bold text-primary">+{challenge.points}</div>
                 <div className="text-xs text-muted-foreground">{challenge.timeLeft} restantes</div>
               </div>
             </div>
-            
+
             <div className="space-y-2 mb-4">
               <div className="flex justify-between text-sm">
                 <span>Progreso</span>
                 <span>{challenge.progress}/{challenge.maxProgress}</span>
               </div>
-              <Progress 
-                value={(challenge.progress / challenge.maxProgress) * 100} 
+              <Progress
+                value={(challenge.progress / challenge.maxProgress) * 100}
                 className="h-3"
               />
             </div>
-            
+
             {challenge.progress === challenge.maxProgress ? (
-              <Button 
+              <Button
                 className="w-full bg-success hover:bg-success/90"
                 onClick={() => claimChallenge(challenge.id)}
               >
@@ -488,8 +488,8 @@ export function GamificationScreen() {
         <h3 className="font-semibold mb-4">Tabla de Posiciones</h3>
         <div className="space-y-3">
           {leaderboard.map((user) => (
-            <div 
-              key={user.rank} 
+            <div
+              key={user.rank}
               className={`flex items-center space-x-4 p-3 rounded-lg ${
                 user.isCurrentUser ? 'bg-primary/10 border border-primary/20' : 'bg-muted'
               }`}
@@ -497,18 +497,18 @@ export function GamificationScreen() {
               <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${getRankColor(user.rank)}`}>
                 {user.rank}
               </div>
-              
+
               <div className="w-10 h-10 rounded-full overflow-hidden">
                 <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
               </div>
-              
+
               <div className="flex-1">
                 <p className={`font-medium ${user.isCurrentUser ? 'text-primary' : ''}`}>
                   {user.name}
                   {user.isCurrentUser && <span className="ml-2 text-xs">(Tú)</span>}
                 </p>
               </div>
-              
+
               <div className="text-right">
                 <p className="font-bold">{user.points.toLocaleString()}</p>
                 <p className="text-xs text-muted-foreground">puntos</p>

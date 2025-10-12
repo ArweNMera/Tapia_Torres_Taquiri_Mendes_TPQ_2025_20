@@ -1,13 +1,14 @@
+from typing import Any
+
 from sqlalchemy import text
 from sqlalchemy.orm import Session
-from typing import List, Dict, Any, Optional
 
 
 class EntidadesRepository:
     def __init__(self, db: Session):
         self.db = db
 
-    def search_entidades(self, q: Optional[str] = None, limit: int = 20) -> List[Dict[str, Any]]:
+    def search_entidades(self, q: str | None = None, limit: int = 20) -> list[dict[str, Any]]:
         rows = self.db.execute(
             text("CALL sp_entidades_buscar(:query, :limit)"),
             {"query": q, "limit": limit},
@@ -30,7 +31,7 @@ class EntidadesRepository:
             for r in rows
         ]
 
-    def get_entidad_tipos(self) -> List[Dict[str, Any]]:
+    def get_entidad_tipos(self) -> list[dict[str, Any]]:
         rows = self.db.execute(text("CALL sp_entidad_tipos_listar()"))
         return [
             {
