@@ -85,20 +85,21 @@ class DatabaseConnector:
             self.connection.close()
             print("✅ Desconectado")
 
-    def execute_query(self, query: str) -> pd.DataFrame:
+    def execute_query(self, query: str, params: tuple = None) -> pd.DataFrame:
         """
         Ejecuta una query y retorna DataFrame.
 
         Args:
-            query: Query SQL
+            query: Query SQL (puede incluir %s para parámetros)
+            params: Tupla de parámetros para la query
 
         Returns:
             DataFrame con resultados
         """
         if self.engine:
-            return pd.read_sql(query, self.engine)
+            return pd.read_sql(query, self.engine, params=params)
         elif self.connection:
-            return pd.read_sql(query, self.connection)
+            return pd.read_sql(query, self.connection, params=params)
         else:
             raise ConnectionError("No hay conexión a la base de datos")
 

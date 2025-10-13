@@ -522,3 +522,12 @@ ALTER TABLE ninos
 ALTER TABLE evaluaciones_nutricionales
   ADD COLUMN en_imc DECIMAL(5,2) NULL COMMENT 'IMC calculado' AFTER en_edad_meses,
   ADD COLUMN en_percentil_imc DECIMAL(5,2) NULL COMMENT 'Percentil calculado' AFTER en_z_score_imc;
+
+
+CREATE TABLE recetas_comidas (
+  rec_id INT UNSIGNED NOT NULL,
+  rc_comida ENUM('DESAYUNO','ALMUERZO','CENA','REFACCION') NOT NULL,
+  PRIMARY KEY (rec_id, rc_comida),
+  CONSTRAINT fk_rc_receta FOREIGN KEY (rec_id)
+    REFERENCES recetas (rec_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

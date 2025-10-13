@@ -1079,3 +1079,74 @@ BEGIN
   -- resultado
   SELECT v_usr_id AS usr_id, 'OK' AS msg;
 END;
+
+
+DELIMITER $$
+
+CREATE PROCEDURE sp_top_recetas_por_nombre(
+  IN p_q_nombre  VARCHAR(150),
+  IN p_rc_comida VARCHAR(10),   -- 'DESAYUNO' | 'ALMUERZO' | 'CENA'
+  IN p_n_top     INT            -- si viene NULL, usa 3
+)
+BEGIN
+  DECLARE v_nin_id  BIGINT DEFAULT NULL;
+  DECLARE v_rc      VARCHAR(10);
+  DECLARE v_limit   INT;
+
+  -- Normaliza comida y límite
+  SET v_rc = CASE UPPER(COALESCE(p_rc_comida,'DESAYUNO'))
+               WHEN 'ALMUERZO' THEN 'ALMUERZO'
+               WHEN 'CENA'     THEN 'CENA'
+               ELSE 'DESAYUNO'
+             END;
+  SET v_limit = IFNULL(p_n_top, 3);
+
+  -- 1) Resolver niño por nombre: exacto > fulltext > like (sin CTE)
+  SELECT cand.nin_id
+    INTO v_nin_id
+  FROM (
+    SELECT n.nin_id, n.nin_nombres AS nm, 3 AS peso
+    FROM ninos n
+    WHERE n.nin_nombres COLLATE utf8mb4_0900_ai_ci = p_q_nombre
+
+    UNION ALL
+    SELECT n.nin_id, n.nin_nombres AS nm,
+           MATCH(n.nin_nombres) AGAINST (p_q_nombre IN NATURAL LANGUAGE MODE) AS peso
+    FROM ninos n
+    WHERE MATCH(n.nin_nombres) AGAINST (p_q_nombre IN NATURAL LANGUAGE MODE)
+
+    UNION ALL
+    SELECT n.nin_id, n.nin_nombres AS nm, 1 AS peso
+    FROM ninos n
+    WHERE n.nin_nombres COLLATE utf8mb4_0900_ai_ci LIKE CONCAT('%', p_q_nombre, '%')
+  ) AS cand
+  ORDER BY cand.peso DESC, CHAR_LENGTH(cand.nm) DESC
+  LIMIT 1;
+
+  -- 2) Si no hay match, devuelve 1 fila “NO_MATCH”
+  IF v_nin_id IS NULL THEN
+    SELECT 'NO_MATCH' AS status,
+           p_q_nombre AS q_nombre,
+           v_rc       AS rc_comida,
+           NULL AS rec_id, NULL AS rec_nombre,
+           NULL AS kcal, NULL AS proteina_g, NULL AS hierro_mg, NULL AS fibra_g,
+           NULL AS costo_soles_aprox, NULL AS score,
+           NULL AS en_clasificacion, NULL AS nin_id;
+  ELSE
+    -- 3) Top-N para ese niño y tipo de comida
+    SELECT
+      'OK' AS status,
+      t.nin_nombres, t.en_clasificacion, t.rc_comida,
+      t.rec_id, t.rec_nombre,
+      t.kcal, t.proteina_g, t.hierro_mg, t.fibra_g,
+      t.costo_soles_aprox, t.score,
+      t.nin_id
+    FROM v_recetas_scores_por_nino t
+    WHERE t.nin_id = v_nin_id
+      AND t.rc_comida = v_rc
+    ORDER BY t.score DESC
+    LIMIT v_limit;
+  END IF;
+END$$
+
+DELIMITER ;

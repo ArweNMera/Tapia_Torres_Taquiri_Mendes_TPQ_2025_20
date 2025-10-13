@@ -18,6 +18,8 @@ else:
         "http://127.0.0.1:5173",
         "http://localhost:5173",
         "https://appsaludable.netlify.app",
+        "https://tecno-express.shop",
+        "https://www.tecno-express.shop",
     ]
 
 app.add_middleware(

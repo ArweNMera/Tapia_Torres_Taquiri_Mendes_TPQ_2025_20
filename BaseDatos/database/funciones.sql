@@ -88,3 +88,47 @@ BEGIN
     'S', v_s
   );
 END;
+
+
+DELIMITER $$
+
+CREATE OR REPLACE FUNCTION fn_pick_nino(q_nombre VARCHAR(150))
+RETURNS BIGINT
+READS SQL DATA
+BEGIN
+  DECLARE v_nin_id BIGINT DEFAULT NULL;
+
+  WITH
+  cand_exact AS (
+    SELECT n.nin_id, 3 AS peso
+    FROM ninos n
+    WHERE n.nin_nombres COLLATE utf8mb4_0900_ai_ci = q_nombre
+  ),
+  cand_ft AS (
+    SELECT n.nin_id,
+           MATCH(n.nin_nombres) AGAINST (q_nombre IN NATURAL LANGUAGE MODE) AS peso
+    FROM ninos n
+    WHERE MATCH(n.nin_nombres) AGAINST (q_nombre IN NATURAL LANGUAGE MODE)
+  ),
+  cand_like AS (
+    SELECT n.nin_id, 1 AS peso
+    FROM ninos n
+    WHERE n.nin_nombres COLLATE utf8mb4_0900_ai_ci LIKE CONCAT('%', q_nombre, '%')
+  ),
+  candidatos AS (
+    SELECT * FROM cand_exact
+    UNION ALL
+    SELECT * FROM cand_ft
+    UNION ALL
+    SELECT * FROM cand_like
+  )
+  SELECT nin_id
+    INTO v_nin_id
+  FROM candidatos
+  ORDER BY peso DESC
+  LIMIT 1;
+
+  RETURN v_nin_id;
+END$$
+
+DELIMITER ;

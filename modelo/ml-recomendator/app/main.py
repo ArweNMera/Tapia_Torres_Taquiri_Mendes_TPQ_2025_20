@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import math
 import os
 import sys
@@ -10,6 +11,10 @@ import pandas as pd
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
+
+# Configurar logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 SRC_DIR = BASE_DIR / "src"
@@ -26,14 +31,10 @@ try:
 except Exception:
     get_llm_client = None
 
-# Importar modelo ML DIRECTO
 try:
-    from src.models.direct_classifier import DirectNutritionClassifier, cargar_modelo_directo
     from src.utils import DatabaseConnector
 except Exception as e:
-    print(f"⚠️  Error importando modelos ML: {e}")
-    cargar_modelo_directo = None
-    DirectNutritionClassifier = None
+    print(f"⚠️  Error importando DatabaseConnector: {e}")
     DatabaseConnector = None
 
 
@@ -47,8 +48,8 @@ else:
         "http://localhost:3000",
         "http://localhost:5173",
         "http://localhost:8000",
-        "https://appsaludable.netlify.app",  # Frontend en producción
-        "*",  # Permitir todos temporalmente
+        "https://appsaludable.netlify.app",  
+        "*",  
     ]
 
 app.add_middleware(
@@ -63,14 +64,11 @@ app.add_middleware(
 
 def _load_table(path: Path) -> pd.DataFrame:
     df = pd.read_csv(path)
-    # Limpiar nombres de columnas (quitar comillas, espacios, etc.)
     df.columns = df.columns.str.strip().str.replace('"', "").str.replace("'", "")
 
-    # Normalizar nombres de columnas
     cols = {c: c.strip().replace(" ", "_") for c in df.columns}
     df = df.rename(columns=cols)
 
-    # Mapear variaciones de nombres de columnas a nombres estándar
     column_mapping = {}
     for col in df.columns:
         col_lower = col.lower()
@@ -107,7 +105,6 @@ def _lms_cat(who_dir: Path, sex: str) -> pd.DataFrame:
         p = who_dir / pat
         if p.exists():
             df = _load_table(p)
-            # Verificar que tenemos las columnas necesarias
             required_cols = ["month", "L", "M", "S"]
             if all(col in df.columns for col in required_cols):
                 parts.append(df[required_cols].assign(sex=sex))
@@ -134,8 +131,6 @@ def _load_lms_from_db() -> pd.DataFrame:
 
         db = DatabaseConnector.from_env()
         db.connect()
-
-        # Consultar tabla oms_bmi_lms
         query = """
         SELECT
             sexo as sex,
@@ -200,35 +195,23 @@ try:
 except Exception:
     LMS = None
 
-# Cargar modelo ML DIRECTO al iniciar
-ML_MODEL = None
-
-
-def load_ml_model():
-    """Carga el modelo DIRECTO entrenado."""
-    global ML_MODEL
-    if cargar_modelo_directo is None:
-        print("⚠️  cargar_modelo_directo no disponible")
-        return
-
-    try:
-        ML_MODEL = cargar_modelo_directo()
-        print("✅ Modelo DIRECTO cargado exitosamente")
-        print("   Tipo: DirectNutritionClassifier")
-        print("   Categorías: 7 (OMS)")
-    except Exception as e:
-        print(f"⚠️  Modelo no cargado: {e}")
-        print("   Entrena primero: ./ENTRENAR_AHORA.sh")
-        ML_MODEL = None
-
-
-# Cargar modelo al iniciar
-load_ml_model()
-
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "ml_model_loaded": ML_MODEL is not None, "lms_loaded": LMS is not None}
+    llm_available = False
+    try:
+        if get_llm_client is not None:
+            client = get_llm_client()
+            llm_available = True
+    except:
+        pass
+    
+    return {
+        "status": "ok",
+        "llm_available": llm_available,
+        "lms_loaded": LMS is not None,
+        "db_available": DatabaseConnector is not None
+    }
 
 
 class PredictBAZRequest(BaseModel):
@@ -259,19 +242,19 @@ def _classify_from_baz(z: float) -> int:
     3=NORMAL, 4=RIESGO_SOBREPESO, 5=SOBREPESO, 6=OBESIDAD
     """
     if z < -3.0:
-        return 0  # DESNUTRICION_SEVERA
+        return 0  
     elif -3.0 <= z < -2.0:
-        return 1  # DESNUTRICION_MODERADA
+        return 1  
     elif -2.0 <= z < -1.0:
-        return 2  # RIESGO_DESNUTRICION
+        return 2  
     elif -1.0 <= z <= 1.0:
-        return 3  # NORMAL
+        return 3  
     elif 1.0 < z <= 2.0:
-        return 4  # RIESGO_SOBREPESO
+        return 4  
     elif 2.0 < z <= 3.0:
-        return 5  # SOBREPESO
-    else:  # z > 3.0
-        return 6  # OBESIDAD
+        return 5  
+    else:  
+        return 6  
 
 
 @app.post("/ml/predict_baz", response_model=PredictBAZResponse)
@@ -293,7 +276,6 @@ def predict_baz(req: PredictBAZRequest) -> PredictBAZResponse:
     baz = _baz_from_bmi(bmi, L, M, S)
     label = _classify_from_baz(baz)
 
-    # Mapeo de 7 categorías OMS
     label_map = {
         0: "DESNUTRICION_SEVERA",
         1: "DESNUTRICION_MODERADA",
@@ -304,7 +286,6 @@ def predict_baz(req: PredictBAZRequest) -> PredictBAZResponse:
         6: "OBESIDAD",
     }
 
-    # Scores según categoría
     if baz < -3:
         scores = {"DESNUTRICION_SEVERA": 0.9, "DESNUTRICION_MODERADA": 0.1}
     elif -3 <= baz < -2:
@@ -402,6 +383,23 @@ class ChatResponse(BaseModel):
     used_llm: bool
 
 
+class RecomendacionPersonalizadaRequest(BaseModel):
+    id_nino: int = Field(description="ID del niño para el que se solicita recomendación")
+    tipo_comida: str = Field(description="Tipo de comida (desayuno, almuerzo, cena, merienda)")
+    pregunta_usuario: str | None = Field(
+        default=None,
+        description="Pregunta específica del usuario sobre recomendaciones"
+    )
+
+
+class RecomendacionPersonalizadaResponse(BaseModel):
+    recomendacion: str
+    datos_nino: dict[str, Any]
+    recetas_disponibles: list[dict[str, Any]]
+    estado_nutricional: dict[str, Any]
+    used_llm: bool
+
+
 @app.post("/ml/chat", response_model=ChatResponse)
 def chat(req: ChatRequest) -> ChatResponse:
     if get_llm_client is not None:
@@ -416,596 +414,324 @@ def chat(req: ChatRequest) -> ChatResponse:
     return ChatResponse(reply=echo, used_llm=False)
 
 
-# ============================================================================
-# ENDPOINTS PARA MODELO ML (Random Forest)
-# ============================================================================
-
-
-class PredictMLRequest(BaseModel):
-    """Request para predicción con modelo ML."""
-
-    nin_id: int = Field(description="ID del niño")
-
-
-class PredictMLResponse(BaseModel):
-    """Response de predicción ML."""
-
-    nin_id: int
-    prediction: int  # 0-6: Ver classification_mapper.py para mapeo completo
-    label: str  # DESNUTRICION_SEVERA, DESNUTRICION_MODERADA, etc.
-    probability: float
-    probabilities: dict[str, float]
-    risk_score: float
-    features_used: dict[str, Any]  # Permite strings y números
-    model_version: str
-
-
-@app.post("/ml/predict", response_model=PredictMLResponse)
-def predict_ml(req: PredictMLRequest) -> PredictMLResponse:
-    """
-    Predice el estado nutricional usando el modelo Random Forest.
-
-    Obtiene datos del niño desde la BD y hace predicción.
-    """
-    if ML_MODEL is None:
-        raise HTTPException(
-            status_code=503,
-            detail="Modelo ML no disponible. Ejecuta: python src/pipeline/train_model.py",
-        )
-
+def consultar_datos_nino(id_nino: int) -> dict[str, Any]:
+    """Consulta los datos básicos del niño desde la base de datos."""
     if DatabaseConnector is None:
-        raise HTTPException(status_code=503, detail="DatabaseConnector no disponible")
+        raise HTTPException(status_code=503, detail="Conector de base de datos no disponible")
 
-    # Conectar a BD y obtener datos
     try:
         db = DatabaseConnector.from_env()
         db.connect()
 
-        # Obtener datos del niño usando procedimiento almacenado
-        df = db.get_child_data(req.nin_id)
-
-        if df.empty:
-            raise HTTPException(
-                status_code=404, detail=f"No se encontraron datos para nin_id={req.nin_id}"
-            )
-
-        # Preparar features
-        feature_cols = ML_MODEL.feature_names
-
-        # Convertir sex a sex_numeric si es necesario
-        if "sex_numeric" in feature_cols and "nin_sexo" in df.columns:
-            df["sex_numeric"] = df["nin_sexo"].map({"M": 1, "F": 0})
-
-        # Verificar que todos los features existen
-        missing_features = [f for f in feature_cols if f not in df.columns]
-        if missing_features:
-            raise HTTPException(status_code=400, detail=f"Features faltantes: {missing_features}")
-
-        X = df[feature_cols].iloc[0:1]  # Primera fila como DataFrame
-
-        # Hacer predicción
-        result = ML_MODEL.predict_with_metadata(X)
-        pred = result["predictions"][0]
-
-        # Extraer features usados
-        features_dict = X.iloc[0].to_dict()
-
-        db.disconnect()
-
-        return PredictMLResponse(
-            nin_id=req.nin_id,
-            prediction=pred["prediction"],
-            label=pred["label"],
-            probability=pred["probability"],
-            probabilities=pred["probabilities"],
-            risk_score=pred["risk_score"],
-            features_used=features_dict,
-            model_version=ML_MODEL.version,
-        )
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error en predicción: {str(e)}")
-
-
-class PredictMLDirectRequest(BaseModel):
-    """Request para predicción directa con MODELO DIRECTO (solo datos básicos)."""
-
-    age_months: int = Field(description="Edad en meses (0-228)")
-    sex: str = Field(description="M o F")
-    weight_kg: float = Field(description="Peso en kilogramos")
-    height_cm: float = Field(description="Talla en centímetros")
-
-
-@app.post("/ml/predict_direct", response_model=PredictMLResponse)
-def predict_ml_direct(req: PredictMLDirectRequest) -> PredictMLResponse:
-    """
-    Predice el estado nutricional usando MODELO DIRECTO.
-
-    Solo necesita: edad, sexo, peso, talla.
-    NO necesita BAZ ni otros features complejos.
-    """
-    if ML_MODEL is None:
-        raise HTTPException(
-            status_code=503, detail="Modelo ML no disponible. Entrena: ./ENTRENAR_AHORA.sh"
-        )
-
-    try:
-        # Validar datos
-        if req.age_months < 0 or req.age_months > 228:
-            raise HTTPException(400, "Edad debe estar entre 0 y 228 meses")
-
-        if req.sex.upper() not in ["M", "F"]:
-            raise HTTPException(400, "Sexo debe ser M o F")
-
-        if req.weight_kg <= 0:
-            raise HTTPException(400, "Peso debe ser mayor a 0")
-
-        if req.height_cm <= 0:
-            raise HTTPException(400, "Talla debe ser mayor a 0")
-
-        # Predecir con modelo DIRECTO
-        resultado = ML_MODEL.predecir(
-            edad_meses=req.age_months,
-            sexo=req.sex.upper(),
-            peso_kg=req.weight_kg,
-            talla_cm=req.height_cm,
-        )
-
-        # Calcular BMI para features_used
-        bmi = req.weight_kg / (req.height_cm / 100) ** 2
-
-        # Calcular risk_score basado en la clasificación
-        risk_map = {
-            "DESNUTRICION_SEVERA": 1.0,
-            "DESNUTRICION_MODERADA": 0.8,
-            "RIESGO_DESNUTRICION": 0.6,
-            "NORMAL": 0.0,
-            "RIESGO_SOBREPESO": 0.6,
-            "SOBREPESO": 0.8,
-            "OBESIDAD": 1.0,
-        }
-        risk_score = risk_map.get(resultado["clasificacion"], 0.5)
-
-        return PredictMLResponse(
-            nin_id=0,  # No hay nin_id en predicción directa
-            prediction=resultado["label"],
-            label=resultado["clasificacion"],
-            probability=resultado["confianza"],
-            probabilities=resultado["probabilidades"],
-            risk_score=risk_score,
-            features_used={
-                "edad_meses": req.age_months,
-                "sexo": req.sex.upper(),
-                "peso_kg": req.weight_kg,
-                "talla_cm": req.height_cm,
-                "bmi": round(bmi, 2),
-            },
-            model_version="2.0.0-directo",
-        )
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error en predicción: {str(e)}")
-
-
-@app.get("/ml/model_info")
-def model_info():
-    """Información sobre el modelo cargado."""
-    if ML_MODEL is None:
-        return {"loaded": False, "message": "Modelo no cargado. Entrena: ./ENTRENAR_AHORA.sh"}
-
-    return {
-        "loaded": True,
-        "model_name": "DirectNutritionClassifier",
-        "model_type": "Modelo Directo (aprende de edad, peso, talla)",
-        "version": "2.0.0-directo",
-        "categorias": list(ML_MODEL.LABEL_TO_CATEGORY.values()),
-        "features_basicas": ["edad_meses", "sexo", "peso_kg", "talla_cm"],
-        "descripcion": "Modelo que aprende DIRECTAMENTE de datos antropométricos básicos",
-    }
-
-
-# ============================================================================
-# ENDPOINT PARA REEMPLAZAR PROCEDIMIENTOS ALMACENADOS
-# ============================================================================
-
-
-class AnalisisNutricionalRequest(BaseModel):
-    """Request para análisis nutricional completo (reemplaza procedimientos)."""
-
-    nin_id: int = Field(description="ID del niño")
-    peso_kg: float = Field(description="Peso en kg")
-    talla_cm: float = Field(description="Talla en cm")
-    fecha_medicion: str | None = Field(None, description="Fecha de medición (YYYY-MM-DD)")
-
-
-class RecomendacionNutricional(BaseModel):
-    """Recomendación nutricional."""
-
-    icono: str
-    titulo: str
-    descripcion: str
-
-
-class AnalisisNutricionalResponse(BaseModel):
-    """Response completo de análisis nutricional."""
-
-    # Medición
-    fecha: str
-    peso_kg: float
-    talla_cm: float
-    imc: float
-
-    # Estado nutricional
-    diagnostico: str  # 7 categorías OMS: DESNUTRICION_SEVERA, DESNUTRICION_MODERADA, RIESGO_DESNUTRICION, NORMAL, RIESGO_SOBREPESO, SOBREPESO, OBESIDAD
-    imc_valor: float
-    percentil: float
-    nivel_riesgo: str  # BAJO, MEDIO, ALTO
-    baz: float
-
-    # Probabilidades del modelo
-    probabilidad: float
-    probabilidades: dict[str, float]
-
-    # Recomendaciones
-    recomendaciones: list[RecomendacionNutricional]
-
-    # Metadata
-    modelo_usado: bool
-    modelo_version: str
-
-
-@app.post("/ml/analisis_nutricional", response_model=AnalisisNutricionalResponse)
-def analisis_nutricional(req: AnalisisNutricionalRequest) -> AnalisisNutricionalResponse:
-    """
-    Análisis nutricional completo (reemplaza procedimientos almacenados).
-
-    Este endpoint:
-    1. Calcula BMI y BAZ usando tablas OMS
-    2. Calcula features ML desde la BD
-    3. Hace predicción con modelo Random Forest
-    4. Genera recomendaciones personalizadas
-    5. Retorna análisis completo para el frontend
-    """
-    if ML_MODEL is None:
-        raise HTTPException(status_code=503, detail="Modelo ML no disponible")
-
-    if DatabaseConnector is None:
-        raise HTTPException(status_code=503, detail="DatabaseConnector no disponible")
-
-    try:
-        # 1. Calcular BMI
-        altura_m = req.talla_cm / 100.0
-        if altura_m <= 0:
-            raise HTTPException(400, "Talla debe ser mayor a 0")
-
-        bmi = req.peso_kg / (altura_m**2)
-
-        # 2. Obtener datos del niño para calcular edad y BAZ
-        db = DatabaseConnector.from_env()
-        db.connect()
-
-        # Obtener datos básicos del niño
-        query_nino = f"""
+        query = """
         SELECT
-            nin_id,
-            nin_nombres,
-            nin_fecha_nac,
-            nin_sexo,
-            TIMESTAMPDIFF(MONTH, nin_fecha_nac, CURDATE()) as age_months
-        FROM ninos
-        WHERE nin_id = {req.nin_id}
+            n.nin_id,
+            n.nin_nombre,
+            n.nin_apellido,
+            n.nin_fecha_nacimiento,
+            n.nin_sexo,
+            n.nin_peso_actual,
+            n.nin_talla_actual,
+            n.nin_imc_actual,
+            n.nin_edad_meses,
+            n.nin_estado_nutricional,
+            n.nin_diagnostico_nutricional,
+            e.ent_nombre,
+            e.ent_codigo
+        FROM ninos n
+        LEFT JOIN entidades e ON n.ent_id = e.ent_id
+        WHERE n.nin_id = %s
         """
 
-        df_nino = db.execute_query(query_nino)
-
-        if df_nino.empty:
-            raise HTTPException(404, f"Niño con ID {req.nin_id} no encontrado")
-
-        nino = df_nino.iloc[0]
-        age_months = int(nino["age_months"])
-        sex = str(nino["nin_sexo"]).strip().upper()[0]
-
-        # 3. Calcular BAZ usando tablas OMS
-        global LMS
-        if LMS is None:
-            LMS = _load_lms(WHO_DIR)
-
-        L, M, S = _nearest_lms(LMS, sex, age_months)
-        baz = _baz_from_bmi(bmi, L, M, S)
-
-        # 4. Obtener features ML desde BD
-        try:
-            df_features = db.get_child_data(req.nin_id)
-
-            if df_features.empty:
-                # Si no hay features, calcularlos
-                db.call_procedure("sp_calcular_features_ml", [req.nin_id, 0])
-                df_features = db.get_child_data(req.nin_id)
-        except Exception:
-            # Si falla, usar valores por defecto (SIN BAZ - removido para evitar overfitting)
-            df_features = pd.DataFrame(
-                {
-                    "age_months": [age_months],
-                    "nin_sexo": [sex],
-                    "sex_numeric": [1 if sex == "M" else 0],
-                    "BMI": [bmi],
-                    "bmi_velocity": [0.0],
-                    "weight_velocity": [0.0],
-                    "height_velocity": [0.0],
-                    "allergy_count": [0],
-                    "adherence_score": [75.0],
-                    "symptom_frequency": [0],
-                    "dietary_diversity_score": [60.0],
-                    "altitude_m": [0.0],
-                }
-            )
-
-        # 5. Usar MODELO DIRECTO para predicción
-        # El modelo directo solo necesita: edad, sexo, peso, talla
-        resultado = ML_MODEL.predecir(
-            edad_meses=age_months, sexo=sex, peso_kg=req.peso_kg, talla_cm=req.talla_cm
-        )
-
-        # Convertir resultado del modelo directo al formato esperado
-        pred = {
-            "prediction": resultado["label"],
-            "label": resultado["clasificacion"],
-            "probability": resultado["confianza"],
-            "probabilities": resultado["probabilidades"],
-        }
-
-        # 7. Calcular percentil (aproximado desde BAZ)
-        # percentil ≈ CDF de distribución normal estándar
-        from scipy.stats import norm
-
-        percentil = norm.cdf(baz) * 100
-
-        # 8. Determinar nivel de riesgo según clasificación
-        clasificacion = pred["label"]
-        if clasificacion in ["DESNUTRICION_SEVERA", "OBESIDAD"]:
-            nivel_riesgo = "ALTO"
-        elif clasificacion in ["DESNUTRICION_MODERADA", "SOBREPESO"] or clasificacion in [
-            "RIESGO_DESNUTRICION",
-            "RIESGO_SOBREPESO",
-        ]:
-            nivel_riesgo = "MEDIO"
-        else:  # NORMAL
-            nivel_riesgo = "BAJO"
-
-        # 9. Generar recomendaciones personalizadas
-        recomendaciones = _generar_recomendaciones(
-            diagnostico=clasificacion, baz=baz, edad_meses=age_months, bmi=bmi
-        )
-
-        # 10. Fecha de medición
-        from datetime import datetime
-
-        fecha = req.fecha_medicion or datetime.now().strftime("%d/%m/%Y")
-        if req.fecha_medicion and "-" in req.fecha_medicion:
-            # Convertir YYYY-MM-DD a DD/MM/YYYY
-            fecha = datetime.strptime(req.fecha_medicion, "%Y-%m-%d").strftime("%d/%m/%Y")
-
+        df = db.execute_query(query, (id_nino,))
         db.disconnect()
 
-        return AnalisisNutricionalResponse(
-            # Medición
-            fecha=fecha,
-            peso_kg=round(req.peso_kg, 2),
-            talla_cm=round(req.talla_cm, 2),
-            imc=round(bmi, 2),
-            # Estado nutricional
-            diagnostico=clasificacion,
-            imc_valor=round(bmi, 2),
-            percentil=round(percentil, 1),
-            nivel_riesgo=nivel_riesgo,
-            baz=round(baz, 2),
-            # Probabilidades
-            probabilidad=round(pred["probability"], 4),
-            probabilidades=pred["probabilities"],
-            # Recomendaciones
-            recomendaciones=recomendaciones,
-            # Metadata
-            modelo_usado=True,
-            modelo_version="2.0.0-directo",
+        if df.empty:
+            raise HTTPException(status_code=404, detail=f"Niño con ID {id_nino} no encontrado")
+
+        row = df.iloc[0]
+        return {
+            "id": int(row["nin_id"]),
+            "nombre": f"{row['nin_nombre']} {row['nin_apellido']}",
+            "fecha_nacimiento": str(row["nin_fecha_nacimiento"]) if row["nin_fecha_nacimiento"] else None,
+            "sexo": row["nin_sexo"],
+            "peso_kg": float(row["nin_peso_actual"]) if row["nin_peso_actual"] else None,
+            "talla_cm": float(row["nin_talla_actual"]) if row["nin_talla_actual"] else None,
+            "imc": float(row["nin_imc_actual"]) if row["nin_imc_actual"] else None,
+            "edad_meses": int(row["nin_edad_meses"]) if row["nin_edad_meses"] else None,
+            "estado_nutricional": row["nin_estado_nutricional"],
+            "diagnostico": row["nin_diagnostico_nutricional"],
+            "entidad": row["ent_nombre"],
+            "codigo_entidad": row["ent_codigo"]
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error consultando datos del niño: {str(e)}")
+
+
+def consultar_recetas_por_nino(id_nino: int, tipo_comida: str) -> list[dict[str, Any]]:
+    """Consulta las mejores recetas usando sp_top_recetas_por_nombre."""
+    if DatabaseConnector is None:
+        raise HTTPException(503, "Conector de BD no disponible")
+    
+    try:
+        logger.info(f"Consultando recetas para niño {id_nino}, tipo: {tipo_comida}")
+        
+        # 1. Obtener nombre del niño
+        datos_nino = consultar_datos_nino(id_nino)
+        nombre_nino = datos_nino["nombre"]
+        
+        # 2. Normalizar tipo de comida
+        tipo_comida_norm = tipo_comida.upper()
+        if tipo_comida_norm not in ["DESAYUNO", "ALMUERZO", "CENA"]:
+            logger.warning(f"Tipo de comida '{tipo_comida}' no válido, usando DESAYUNO")
+            tipo_comida_norm = "DESAYUNO"
+        
+        # 3. Ejecutar procedimiento almacenado
+        db = DatabaseConnector.from_env()
+        db.connect()
+        
+        query = "CALL sp_top_recetas_por_nombre(%s, %s, %s)"
+        df = db.execute_query(query, (nombre_nino, tipo_comida_norm, 5))
+        
+        db.disconnect()
+        
+        # 4. Verificar resultado
+        if df.empty:
+            logger.warning(f"No se encontraron recetas para {nombre_nino}")
+            return []
+        
+        # 5. Verificar status
+        if df.iloc[0].get("status") == "NO_MATCH":
+            logger.warning(f"No se encontró niño con nombre: {nombre_nino}")
+            return []
+        
+        # 6. Parsear recetas
+        recetas = []
+        for _, row in df.iterrows():
+            recetas.append({
+                "id": int(row.get("rec_id", 0)),
+                "nombre": row.get("rec_nombre", ""),
+                "calorias": float(row.get("kcal", 0)),
+                "proteinas": float(row.get("proteina_g", 0)),
+                "carbohidratos": float(row.get("carbohidratos_g", 0)),
+                "grasas": float(row.get("grasas_g", 0)),
+                "fibra": float(row.get("fibra_g", 0)),
+                "hierro": float(row.get("hierro_mg", 0)),
+                "costo": float(row.get("costo_soles_aprox", 0)),
+                "puntuacion": float(row.get("score", 0))
+            })
+        
+        logger.info(f"✅ Encontradas {len(recetas)} recetas para {nombre_nino}")
+        return recetas
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error consultando recetas: {str(e)}")
+        return []
+
+
+def obtener_estado_nutricional(id_nino: int) -> dict[str, Any]:
+    """Obtiene el estado nutricional detallado del niño."""
+    try:
+        datos_nino = consultar_datos_nino(id_nino)
+
+        estado = {
+            "diagnostico": datos_nino.get("diagnostico", "No disponible"),
+            "estado_actual": datos_nino.get("estado_nutricional", "No disponible"),
+            "imc": datos_nino.get("imc"),
+            "peso_kg": datos_nino.get("peso_kg"),
+            "talla_cm": datos_nino.get("talla_cm"),
+            "edad_meses": datos_nino.get("edad_meses"),
+            "sexo": datos_nino.get("sexo")
+        }
+
+        return estado
+
+    except Exception as e:
+        return {
+            "diagnostico": "Error obteniendo diagnóstico",
+            "estado_actual": "Error obteniendo estado",
+            "imc": None,
+            "peso_kg": None,
+            "talla_cm": None,
+            "edad_meses": None,
+            "sexo": None
+        }
+
+
+def crear_prompt_recomendacion(
+    datos_nino: dict[str, Any],
+    estado_nutricional: dict[str, Any],
+    recetas: list[dict[str, Any]],
+    tipo_comida: str,
+    pregunta_usuario: str | None = None
+) -> str:
+    """Crea el prompt para el LLM con toda la información."""
+    
+    sexo_texto = "Masculino" if datos_nino.get("sexo") == "M" else "Femenino"
+    
+    prompt = f"""Eres un nutricionista especializado en alimentación infantil. Un padre/madre te consulta sobre recomendaciones nutricionales para su hijo/a.
+
+DATOS DEL NIÑO:
+- Nombre: {datos_nino.get('nombre', 'No especificado')}
+- Edad: {datos_nino.get('edad_meses', 'No especificada')} meses
+- Sexo: {sexo_texto}
+- Peso: {datos_nino.get('peso_kg', 'No especificado')} kg
+- Talla: {datos_nino.get('talla_cm', 'No especificada')} cm
+- IMC: {datos_nino.get('imc', 'No especificado')}
+- Estado nutricional: {estado_nutricional.get('diagnostico', 'No especificado')}
+- Diagnóstico: {estado_nutricional.get('estado_actual', 'No especificado')}
+
+RECETAS DISPONIBLES PARA {tipo_comida.upper()}:
+"""
+    
+    if recetas:
+        for i, receta in enumerate(recetas[:5], 1):
+            prompt += f"""
+{i}. {receta.get('nombre', 'Sin nombre')}
+   - Calorías: {receta.get('calorias', 0):.0f} kcal
+   - Proteínas: {receta.get('proteinas', 0):.1f}g
+   - Carbohidratos: {receta.get('carbohidratos', 0):.1f}g
+   - Grasas: {receta.get('grasas', 0):.1f}g
+   - Fibra: {receta.get('fibra', 0):.1f}g
+   - Hierro: {receta.get('hierro', 0):.1f}mg
+   - Costo aproximado: S/ {receta.get('costo', 0):.2f}
+   - Puntuación nutricional: {receta.get('puntuacion', 0):.1f}/10
+"""
+    else:
+        prompt += "\nNo hay recetas específicas disponibles en la base de datos para este tipo de comida.\n"
+    
+    if pregunta_usuario:
+        prompt += f"""
+
+PREGUNTA ESPECÍFICA DEL USUARIO: {pregunta_usuario}
+
+INSTRUCCIONES:
+1. Responde de manera clara, amable y profesional a la pregunta específica
+2. Considera el estado nutricional del niño al hacer recomendaciones
+3. Si hay recetas disponibles, sugiere las más apropiadas
+4. Incluye porciones adecuadas para la edad del niño
+5. Menciona cualquier precaución nutricional importante
+6. Si no hay recetas específicas, da recomendaciones generales saludables
+7. Mantén un tono positivo y alentador para los padres
+8. No emitas diagnósticos médicos ni reemplaces la consulta profesional
+
+RECOMENDACIÓN PERSONALIZADA:"""
+    else:
+        prompt += f"""
+
+INSTRUCCIONES:
+Proporciona una recomendación nutricional completa para {tipo_comida} considerando:
+1. El estado nutricional actual del niño
+2. Las mejores recetas disponibles (ordenadas por puntuación)
+3. Porciones apropiadas para su edad ({datos_nino.get('edad_meses', 0)} meses)
+4. Beneficios nutricionales de las recomendaciones
+5. Consejos prácticos para una alimentación saludable
+6. Consideraciones económicas (costo de las recetas)
+
+Mantén un tono amable, profesional y alentador. No emitas diagnósticos médicos.
+
+RECOMENDACIÓN PERSONALIZADA:"""
+    
+    return prompt
+
+
+def consultar_agente_llm(prompt: str) -> str:
+    """Consulta al agente LLM (CORA) con el prompt creado."""
+    if get_llm_client is None:
+        logger.error("Cliente LLM no disponible")
+        return "El servicio de recomendaciones no está disponible. Consulta con un nutricionista profesional."
+    
+    try:
+        logger.info("Consultando agente LLM...")
+        logger.debug(f"Prompt (primeros 200 chars): {prompt[:200]}...")
+        
+        client = get_llm_client()
+        
+        system_message = """Eres un nutricionista infantil experto especializado en alimentación en Perú. 
+
+IMPORTANTE:
+- Proporciona recomendaciones seguras y basadas en evidencia científica
+- Adapta las recomendaciones a la edad del niño
+- Considera el contexto económico y cultural peruano
+- Usa lenguaje claro y amigable para padres
+- NO emitas diagnósticos médicos
+- NO reemplaces la consulta con un profesional de salud
+- Enfócate en recomendaciones nutricionales prácticas y aplicables
+- Menciona porciones específicas apropiadas para la edad
+- Si el niño tiene desnutrición o sobrepeso, enfatiza la importancia de seguimiento médico"""
+        
+        respuesta = client.chat(
+            system_message=system_message,
+            user_message=prompt
+        )
+        
+        if respuesta and len(respuesta.strip()) > 10:
+            logger.info(f"✅ LLM respondió exitosamente ({len(respuesta)} chars)")
+            return respuesta
+        else:
+            logger.warning("LLM retornó respuesta vacía o muy corta")
+            return "No pude generar una recomendación personalizada. Te recomiendo consultar con un nutricionista profesional."
+    
+    except Exception as e:
+        logger.error(f"Error consultando LLM: {str(e)}")
+        return "Hubo un problema técnico generando la recomendación. Por favor, intenta nuevamente o consulta con un especialista."
+
+
+@app.post("/ml/recomendacion_personalizada", response_model=RecomendacionPersonalizadaResponse)
+def generar_recomendacion_personalizada(req: RecomendacionPersonalizadaRequest) -> RecomendacionPersonalizadaResponse:
+    """
+    Genera una recomendación nutricional personalizada para un niño específico.
+
+    Utiliza datos del niño, su estado nutricional, recetas disponibles y un agente LLM
+    para proporcionar recomendaciones personalizadas según el tipo de comida solicitado.
+    """
+    try:
+        logger.info(f"📝 Generando recomendación para niño {req.id_nino}, tipo: {req.tipo_comida}")
+        
+        # 1. Obtener datos del niño
+        datos_nino = consultar_datos_nino(req.id_nino)
+
+        # 2. Obtener estado nutricional
+        estado_nutricional = obtener_estado_nutricional(req.id_nino)
+
+        # 3. Consultar recetas disponibles
+        recetas = consultar_recetas_por_nino(req.id_nino, req.tipo_comida)
+
+        # 4. Crear prompt para el LLM
+        prompt = crear_prompt_recomendacion(
+            datos_nino,
+            estado_nutricional,
+            recetas,
+            req.tipo_comida,
+            req.pregunta_usuario
+        )
+
+        # 5. Consultar al agente LLM
+        recomendacion = consultar_agente_llm(prompt)
+        used_llm = "El servicio de recomendaciones no está disponible" not in recomendacion
+
+        logger.info(f"✅ Recomendación generada exitosamente (LLM usado: {used_llm})")
+        
+        return RecomendacionPersonalizadaResponse(
+            recomendacion=recomendacion,
+            datos_nino=datos_nino,
+            recetas_disponibles=recetas,
+            estado_nutricional=estado_nutricional,
+            used_llm=used_llm
         )
 
     except HTTPException:
         raise
     except Exception as e:
-        import traceback
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error generando recomendación personalizada: {str(e)}"
+        )
 
-        error_detail = f"Error en análisis nutricional: {str(e)}\n{traceback.format_exc()}"
-        print(f"❌ ERROR: {error_detail}")
-        raise HTTPException(status_code=500, detail=f"Error en análisis nutricional: {str(e)}")
+
+# Endpoints de predicción ML eliminados - ahora usamos LLM + procedimientos almacenados
 
 
-def _generar_recomendaciones(
-    diagnostico: str, baz: float, edad_meses: int, bmi: float
-) -> list[RecomendacionNutricional]:
-    """Genera recomendaciones personalizadas según el diagnóstico (7 categorías OMS)."""
-
-    recomendaciones = []
-
-    if diagnostico == "NORMAL":
-        recomendaciones = [
-            RecomendacionNutricional(
-                icono="✅",
-                titulo="Mantener alimentación balanceada y variada actual",
-                descripcion="Continuar con 3 comidas principales y 2 meriendas saludables",
-            ),
-            RecomendacionNutricional(
-                icono="🥗",
-                titulo="Incluir diariamente: frutas, verduras, proteínas, lácteos y cereales integrales",
-                descripcion="Hidratación adecuada con agua (evitar bebidas azucaradas)",
-            ),
-            RecomendacionNutricional(
-                icono="🏃",
-                titulo="Fomentar actividad física regular según edad",
-                descripcion="Limitar consumo de alimentos ultraprocesados y comida rápida",
-            ),
-            RecomendacionNutricional(
-                icono="📅",
-                titulo="Monitoreo de crecimiento cada 3-6 meses",
-                descripcion="Mantener buenos hábitos alimenticios y horarios regulares",
-            ),
-            RecomendacionNutricional(
-                icono="💪",
-                titulo="Promover imagen corporal positiva y autoestima",
-                descripcion="Educación nutricional para autonomía alimentaria",
-            ),
-        ]
-
-    elif diagnostico == "RIESGO_DESNUTRICION":
-        recomendaciones = [
-            RecomendacionNutricional(
-                icono="⚠️",
-                titulo="Aumentar frecuencia de comidas a 5-6 al día",
-                descripcion="Incluir alimentos densos en energía y nutrientes",
-            ),
-            RecomendacionNutricional(
-                icono="🥛",
-                titulo="Incrementar proteínas: carnes, huevos, lácteos, legumbres",
-                descripcion="Agregar grasas saludables: aguacate, frutos secos, aceite de oliva",
-            ),
-            RecomendacionNutricional(
-                icono="📊",
-                titulo="Monitoreo mensual de peso y talla",
-                descripcion="Consulta con nutricionista para plan personalizado",
-            ),
-            RecomendacionNutricional(
-                icono="💊",
-                titulo="Evaluar suplementación de vitaminas y minerales",
-                descripcion="Descartar causas médicas de bajo peso",
-            ),
-        ]
-
-    elif diagnostico == "RIESGO_SOBREPESO":
-        recomendaciones = [
-            RecomendacionNutricional(
-                icono="⚠️",
-                titulo="Controlar porciones y evitar segundas porciones",
-                descripcion="Reducir alimentos altos en azúcar y grasas saturadas",
-            ),
-            RecomendacionNutricional(
-                icono="🥗",
-                titulo="Aumentar consumo de frutas y verduras",
-                descripcion="Preferir agua en lugar de jugos o bebidas azucaradas",
-            ),
-            RecomendacionNutricional(
-                icono="🏃",
-                titulo="Incrementar actividad física a 60 min diarios",
-                descripcion="Limitar tiempo de pantalla (TV, tablet, celular)",
-            ),
-            RecomendacionNutricional(
-                icono="📅",
-                titulo="Monitoreo mensual con nutricionista",
-                descripcion="Involucrar a toda la familia en cambios de hábitos",
-            ),
-        ]
-
-    elif diagnostico == "DESNUTRICION_MODERADA":
-        recomendaciones = [
-            RecomendacionNutricional(
-                icono="🚨",
-                titulo="Consulta urgente con nutricionista y pediatra",
-                descripcion="Plan de recuperación nutricional intensivo",
-            ),
-            RecomendacionNutricional(
-                icono="🍽️",
-                titulo="6 comidas al día con alta densidad calórica",
-                descripcion="Suplementos nutricionales según indicación médica",
-            ),
-            RecomendacionNutricional(
-                icono="📊",
-                titulo="Monitoreo semanal de peso y talla",
-                descripcion="Evaluación de causas subyacentes (infecciones, parásitos)",
-            ),
-            RecomendacionNutricional(
-                icono="👨‍⚕️",
-                titulo="Seguimiento médico continuo",
-                descripcion="Educación nutricional familiar intensiva",
-            ),
-        ]
-
-    elif diagnostico == "SOBREPESO":
-        recomendaciones = [
-            RecomendacionNutricional(
-                icono="🚨",
-                titulo="Consulta con nutricionista para plan personalizado",
-                descripcion="Evaluación de hábitos alimentarios y actividad física",
-            ),
-            RecomendacionNutricional(
-                icono="🥗",
-                titulo="Dieta balanceada con control de porciones",
-                descripcion="Eliminar bebidas azucaradas y comida chatarra",
-            ),
-            RecomendacionNutricional(
-                icono="🏃",
-                titulo="Actividad física estructurada 60 min diarios",
-                descripcion="Reducir sedentarismo y tiempo de pantalla",
-            ),
-            RecomendacionNutricional(
-                icono="📅",
-                titulo="Monitoreo quincenal de progreso",
-                descripcion="Apoyo psicológico si hay problemas emocionales",
-            ),
-        ]
-
-    elif diagnostico == "DESNUTRICION_SEVERA":
-        recomendaciones = [
-            RecomendacionNutricional(
-                icono="🚨",
-                titulo="ATENCIÓN MÉDICA URGENTE - Hospitalización si es necesario",
-                descripcion="Evaluación completa por equipo multidisciplinario",
-            ),
-            RecomendacionNutricional(
-                icono="💊",
-                titulo="Tratamiento médico intensivo con suplementación",
-                descripcion="Fórmulas especiales de recuperación nutricional",
-            ),
-            RecomendacionNutricional(
-                icono="📊",
-                titulo="Monitoreo diario de signos vitales y peso",
-                descripcion="Tratamiento de complicaciones médicas",
-            ),
-            RecomendacionNutricional(
-                icono="👨‍⚕️",
-                titulo="Seguimiento hospitalario o ambulatorio intensivo",
-                descripcion="Apoyo social y familiar integral",
-            ),
-        ]
-
-    elif diagnostico == "OBESIDAD":
-        recomendaciones = [
-            RecomendacionNutricional(
-                icono="🚨",
-                titulo="Evaluación médica completa urgente",
-                descripcion="Descartar complicaciones metabólicas (diabetes, hipertensión)",
-            ),
-            RecomendacionNutricional(
-                icono="👨‍⚕️",
-                titulo="Tratamiento multidisciplinario: nutricionista, pediatra, psicólogo",
-                descripcion="Plan de reducción de peso supervisado médicamente",
-            ),
-            RecomendacionNutricional(
-                icono="🥗",
-                titulo="Dieta terapéutica estricta",
-                descripcion="Eliminación total de alimentos ultraprocesados",
-            ),
-            RecomendacionNutricional(
-                icono="🏃",
-                titulo="Programa de ejercicio supervisado",
-                descripcion="Cambio de estilo de vida familiar completo",
-            ),
-            RecomendacionNutricional(
-                icono="📅",
-                titulo="Monitoreo semanal con equipo médico",
-                descripcion="Apoyo psicológico para manejo de ansiedad y autoestima",
-            ),
-        ]
-
-    return recomendaciones
