@@ -6,11 +6,13 @@ from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
-from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.application.services.auth_service import get_current_user
+from app.application.services.usuarios_service import UsuariosService
 from app.infrastructure.db.session import get_db
+from app.infrastructure.repositories.usuarios_repo import UsuariosRepository
+from app.infrastructure.security.jwt_service import JWTService
 from app.infrastructure.security.password_service import PasswordService
 from app.schemas.auth import UserResponse
 
@@ -62,144 +64,66 @@ def verificar_admin(current_user: UserResponse = Depends(get_current_user)):
     return current_user
 
 
+def get_admin_usuarios_service(db: Session = Depends(get_db)) -> UsuariosService:
+    """Dependencia para obtener el servicio de usuarios en contexto admin."""
+    return UsuariosService(
+        repository=UsuariosRepository(db),
+        password_service=PasswordService(),
+        jwt_service=JWTService(),
+    )
+
+
 @router.get("/usuarios", response_model=List[UsuarioListResponse])
 def listar_usuarios(
-    db: Session = Depends(get_db), current_user: UserResponse = Depends(verificar_admin)
+    usuarios_service: UsuariosService = Depends(get_admin_usuarios_service),
+    current_user: UserResponse = Depends(verificar_admin),
 ):
     """
     Listar todos los usuarios del sistema (solo admin)
     """
-    query = text("""
-        SELECT
-            u.usr_id,
-            u.usr_usuario,
-            u.usr_nombre,
-            u.usr_apellido,
-            u.usr_correo,
-            u.usr_dni,
-            r.rol_nombre,
-            u.usr_activo,
-            u.creado_en
-        FROM usuarios u
-        INNER JOIN roles r ON u.rol_id = r.rol_id
-        WHERE u.eliminado_en IS NULL
-        ORDER BY u.creado_en DESC
-    """)
-
-    result = db.execute(query)
-    usuarios = []
-
-    for row in result:
-        usuarios.append(
-            UsuarioListResponse(
-                usr_id=row[0],
-                usr_usuario=row[1],
-                usr_nombre=row[2],
-                usr_apellido=row[3],
-                usr_correo=row[4],
-                usr_dni=row[5],
-                rol_nombre=row[6],
-                usr_activo=bool(row[7]),
-                creado_en=str(row[8]),
-            )
-        )
-
-    return usuarios
+    usuarios = usuarios_service.list_users_admin()
+    return [UsuarioListResponse(**usuario) for usuario in usuarios]
 
 
 @router.post("/reset-password", response_model=ResetPasswordResponse)
 def resetear_contrasena_usuario(
     request: ResetPasswordRequest,
-    db: Session = Depends(get_db),
+    usuarios_service: UsuariosService = Depends(get_admin_usuarios_service),
     current_user: UserResponse = Depends(verificar_admin),
 ):
     """
     Resetear la contraseña de cualquier usuario (solo admin)
     """
-    # Verificar que el usuario existe
-    query_usuario = text("""
-        SELECT usr_id, usr_usuario, usr_activo
-        FROM usuarios
-        WHERE usr_id = :usr_id AND eliminado_en IS NULL
-    """)
-
-    result = db.execute(query_usuario, {"usr_id": request.usr_id}).fetchone()
-
-    if not result:
+    usuarios_service.reset_password_admin(request.usr_id, request.nueva_contrasena)
+    usuario = usuarios_service.repository.get_user_by_id(request.usr_id)
+    if not usuario:
         raise HTTPException(
-            status_code=404, detail=f"Usuario con ID {request.usr_id} no encontrado"
+            status_code=404,
+            detail=f"Usuario con ID {request.usr_id} no encontrado",
         )
-
-    usr_id, usr_usuario, usr_activo = result
-
-    if not usr_activo:
-        raise HTTPException(
-            status_code=400, detail="No se puede resetear la contraseña de un usuario inactivo"
-        )
-
-    # Hashear la nueva contraseña
-    password_service = PasswordService()
-    hashed_password = password_service.hash_password(request.nueva_contrasena)
-
-    # Actualizar la contraseña en la base de datos
-    update_query = text("""
-        UPDATE usuarios
-        SET usr_contrasena = :nueva_contrasena,
-            actualizado_en = CURRENT_TIMESTAMP
-        WHERE usr_id = :usr_id
-    """)
-
-    db.execute(update_query, {"nueva_contrasena": hashed_password, "usr_id": usr_id})
-    db.commit()
-
     return ResetPasswordResponse(
-        message=f"Contraseña actualizada exitosamente para el usuario '{usr_usuario}'",
-        usr_usuario=usr_usuario,
+        message=f"Contraseña actualizada exitosamente para el usuario '{usuario.usr_usuario}'",
+        usr_usuario=usuario.usr_usuario,
     )
 
 
 @router.patch("/usuarios/{usr_id}/toggle-active")
 def toggle_usuario_activo(
     usr_id: int,
-    db: Session = Depends(get_db),
+    usuarios_service: UsuariosService = Depends(get_admin_usuarios_service),
     current_user: UserResponse = Depends(verificar_admin),
 ):
     """
     Activar/desactivar un usuario (solo admin)
     """
-    # Verificar que el usuario existe
-    query_usuario = text("""
-        SELECT usr_id, usr_usuario, usr_activo
-        FROM usuarios
-        WHERE usr_id = :usr_id AND eliminado_en IS NULL
-    """)
-
-    result = db.execute(query_usuario, {"usr_id": usr_id}).fetchone()
-
-    if not result:
-        raise HTTPException(status_code=404, detail=f"Usuario con ID {usr_id} no encontrado")
-
-    usr_id_db, usr_usuario, usr_activo = result
-
-    # No permitir desactivar al propio admin
     if usr_id == current_user.usr_id:
         raise HTTPException(status_code=400, detail="No puedes desactivar tu propia cuenta")
 
-    # Toggle del estado
-    nuevo_estado = not usr_activo
-
-    update_query = text("""
-        UPDATE usuarios
-        SET usr_activo = :nuevo_estado,
-            actualizado_en = CURRENT_TIMESTAMP
-        WHERE usr_id = :usr_id
-    """)
-
-    db.execute(update_query, {"nuevo_estado": nuevo_estado, "usr_id": usr_id})
-    db.commit()
+    resultado = usuarios_service.toggle_user_active_admin(usr_id, current_user.usr_id)
 
     return {
-        "message": f"Usuario '{usr_usuario}' {'activado' if nuevo_estado else 'desactivado'} exitosamente",
-        "usr_usuario": usr_usuario,
-        "usr_activo": nuevo_estado,
+        "message": f"Usuario '{resultado['usr_usuario']}' "
+        f"{'activado' if resultado['usr_activo'] else 'desactivado'} exitosamente",
+        "usr_usuario": resultado["usr_usuario"],
+        "usr_activo": resultado["usr_activo"],
     }

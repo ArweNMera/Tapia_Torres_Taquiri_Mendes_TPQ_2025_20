@@ -15,12 +15,9 @@ class PlanesComidasRepository:
 
     def obtener_perfil_nutricional(self, nin_id: int) -> Optional[Dict]:
         """Obtiene el perfil nutricional vigente del niño"""
-        query = text("""
-            SELECT * FROM perfil_nutricional_nino
-            WHERE nin_id = :nin_id AND pnn_vigente = TRUE
-            LIMIT 1
-        """)
-        result = self.db.execute(query, {"nin_id": nin_id})
+        result = self.db.execute(
+            text("CALL sp_perfil_nutricional_vigente(:nin_id)"), {"nin_id": nin_id}
+        )
         row = result.first()
         return dict(row._mapping) if row else None
 
@@ -66,12 +63,8 @@ class PlanesComidasRepository:
         self, nin_id: int, fecha_inicio: date, fecha_fin: date, generado_por: str = "IA"
     ) -> int:
         """Crea un nuevo menú"""
-        query = text("""
-            INSERT INTO menus (nin_id, men_generado_por, men_inicio, men_fin, men_estado)
-            VALUES (:nin_id, :generado_por, :inicio, :fin, 'BORRADOR')
-        """)
         result = self.db.execute(
-            query,
+            text("CALL sp_menus_crear(:nin_id, :generado_por, :inicio, :fin)"),
             {
                 "nin_id": nin_id,
                 "generado_por": generado_por,
@@ -80,18 +73,15 @@ class PlanesComidasRepository:
             },
         )
         self.db.commit()
-        return result.lastrowid
+        row = result.fetchone()
+        return int(row.men_id) if row and hasattr(row, "men_id") else 0
 
     def agregar_item_menu(
         self, men_id: int, dia_idx: int, tipo_comida: str, rec_id: int, kcal: int
     ) -> int:
         """Agrega un item al menú"""
-        query = text("""
-            INSERT INTO menus_items (men_id, mei_dia_idx, mei_comida, rec_id, mei_kcal)
-            VALUES (:men_id, :dia_idx, :comida, :rec_id, :kcal)
-        """)
         result = self.db.execute(
-            query,
+            text("CALL sp_menus_items_agregar(:men_id, :dia_idx, :comida, :rec_id, :kcal)"),
             {
                 "men_id": men_id,
                 "dia_idx": dia_idx,
@@ -101,110 +91,55 @@ class PlanesComidasRepository:
             },
         )
         self.db.commit()
-        return result.lastrowid
+        row = result.fetchone()
+        return int(row.mei_id) if row and hasattr(row, "mei_id") else 0
 
     def actualizar_calorias_menu(self, men_id: int, kcal_total: int):
         """Actualiza las calorías totales del menú"""
-        query = text("""
-            UPDATE menus SET men_kcal_total = :kcal WHERE men_id = :men_id
-        """)
-        self.db.execute(query, {"men_id": men_id, "kcal": kcal_total})
+        self.db.execute(
+            text("CALL sp_menus_actualizar_kcal(:men_id, :kcal_total)"),
+            {"men_id": men_id, "kcal_total": kcal_total},
+        )
         self.db.commit()
 
     def obtener_datos_nino(self, nin_id: int) -> Optional[Dict]:
         """Obtiene datos básicos del niño"""
-        query = text("""
-            SELECT
-                n.nin_id,
-                n.nin_nombres,
-                n.nin_fecha_nac,
-                n.nin_sexo,
-                n.ent_id,
-                TIMESTAMPDIFF(MONTH, n.nin_fecha_nac, CURDATE()) AS edad_meses,
-                e.ent_nombre,
-                e.ent_distrito
-            FROM ninos n
-            LEFT JOIN entidades e ON e.ent_id = n.ent_id
-            WHERE n.nin_id = :nin_id
-        """)
-        result = self.db.execute(query, {"nin_id": nin_id})
+        result = self.db.execute(text("CALL sp_ninos_datos_basicos(:nin_id)"), {"nin_id": nin_id})
         row = result.first()
         return dict(row._mapping) if row else None
 
     def obtener_ingredientes_receta(self, rec_id: int) -> List[Dict]:
         """Obtiene los ingredientes de una receta"""
-        query = text("""
-            SELECT
-                a.ali_nombre,
-                ri.ri_cantidad AS cantidad,
-                ri.ri_unidad AS unidad
-            FROM recetas_ingredientes ri
-            INNER JOIN alimentos a ON a.ali_id = ri.ali_id
-            WHERE ri.rec_id = :rec_id
-        """)
-        result = self.db.execute(query, {"rec_id": rec_id})
+        result = self.db.execute(text("CALL sp_recetas_ingredientes(:rec_id)"), {"rec_id": rec_id})
         return [dict(row._mapping) for row in result]
 
     def listar_menus_nino(
         self, nin_id: int, estado: Optional[str] = None, limit: int = 10
     ) -> List[Dict]:
         """Lista los menús de un niño"""
-        if estado:
-            query = text("""
-                SELECT * FROM menus
-                WHERE nin_id = :nin_id AND men_estado = :estado
-                ORDER BY men_inicio DESC
-                LIMIT :limit
-            """)
-            params = {"nin_id": nin_id, "estado": estado, "limit": limit}
-        else:
-            query = text("""
-                SELECT * FROM menus
-                WHERE nin_id = :nin_id
-                ORDER BY men_inicio DESC
-                LIMIT :limit
-            """)
-            params = {"nin_id": nin_id, "limit": limit}
-
-        result = self.db.execute(query, params)
+        result = self.db.execute(
+            text("CALL sp_menus_listar(:nin_id, :estado, :limit)"),
+            {"nin_id": nin_id, "estado": estado, "limit": limit},
+        )
         return [dict(row._mapping) for row in result]
 
     def obtener_detalle_menu(self, men_id: int) -> Optional[Dict]:
         """Obtiene el detalle completo de un menú"""
-        query = text("""
-            SELECT
-                m.*,
-                n.nin_nombres
-            FROM menus m
-            INNER JOIN ninos n ON n.nin_id = m.nin_id
-            WHERE m.men_id = :men_id
-        """)
-        result = self.db.execute(query, {"men_id": men_id})
+        result = self.db.execute(text("CALL sp_menus_detalle(:men_id)"), {"men_id": men_id})
         row = result.first()
         return dict(row._mapping) if row else None
 
     def obtener_items_menu(self, men_id: int) -> List[Dict]:
         """Obtiene los items de un menú"""
-        query = text("""
-            SELECT
-                mi.*,
-                r.rec_nombre,
-                r.rec_instrucciones
-            FROM menus_items mi
-            INNER JOIN recetas r ON r.rec_id = mi.rec_id
-            WHERE mi.men_id = :men_id
-            ORDER BY mi.mei_dia_idx,
-                FIELD(mi.mei_comida, 'DESAYUNO', 'ALMUERZO', 'CENA', 'REFACCION')
-        """)
-        result = self.db.execute(query, {"men_id": men_id})
+        result = self.db.execute(text("CALL sp_menus_items_listar(:men_id)"), {"men_id": men_id})
         return [dict(row._mapping) for row in result]
 
     def actualizar_estado_menu(self, men_id: int, estado: str):
         """Actualiza el estado de un menú"""
-        query = text("""
-            UPDATE menus SET men_estado = :estado WHERE men_id = :men_id
-        """)
-        self.db.execute(query, {"men_id": men_id, "estado": estado})
+        self.db.execute(
+            text("CALL sp_menus_cambiar_estado(:men_id, :estado)"),
+            {"men_id": men_id, "estado": estado},
+        )
         self.db.commit()
 
     async def generar_plan_con_llm(
@@ -305,22 +240,10 @@ class PlanesComidasRepository:
 
     def _obtener_recetas_disponibles(self, ent_id: Optional[int]) -> List[Dict]:
         """Obtiene recetas disponibles con sus tipos de comida"""
-        query = text("""
-            SELECT
-                r.rec_id,
-                r.rec_nombre,
-                r.rec_instrucciones,
-                GROUP_CONCAT(DISTINCT rc.rc_comida) as tipos_comida,
-                COALESCE(SUM(an.an_cantidad_100 * ri.ri_cantidad / 100), 0) as calorias_aprox
-            FROM recetas r
-            LEFT JOIN recetas_comidas rc ON rc.rec_id = r.rec_id
-            LEFT JOIN recetas_ingredientes ri ON ri.rec_id = r.rec_id
-            LEFT JOIN alimentos_nutrientes an ON an.ali_id = ri.ali_id AND an.nutri_id = 1
-            WHERE r.rec_activo = 1
-            GROUP BY r.rec_id, r.rec_nombre, r.rec_instrucciones
-            LIMIT 100
-        """)
-        result = self.db.execute(query, {"ent_id": ent_id or 0})
+        result = self.db.execute(
+            text("CALL sp_recetas_disponibles(:ent_id, :limit)"),
+            {"ent_id": ent_id or 0, "limit": 100},
+        )
         return [dict(row._mapping) for row in result]
 
     async def _llamar_llm_generar_plan(
@@ -410,15 +333,7 @@ class PlanesComidasRepository:
         logger.warning("Generando plan fallback sin LLM")
 
         # Obtener recetas simples
-        query = text("""
-            SELECT r.rec_id, r.rec_nombre, rc.rc_comida
-            FROM recetas r
-            INNER JOIN recetas_comidas rc ON rc.rec_id = r.rec_id
-            WHERE r.rec_activo = 1
-            ORDER BY RAND()
-            LIMIT 21
-        """)
-        result = self.db.execute(query)
+        result = self.db.execute(text("CALL sp_recetas_aleatorias(:limit)"), {"limit": 21})
         recetas = [dict(row._mapping) for row in result]
 
         dias = []
@@ -450,15 +365,7 @@ class PlanesComidasRepository:
 
     def _obtener_detalle_receta(self, rec_id: int) -> Dict:
         """Obtiene los detalles de una receta incluyendo ingredientes"""
-        query = text("""
-            SELECT
-                r.rec_id,
-                r.rec_nombre,
-                r.rec_instrucciones
-            FROM recetas r
-            WHERE r.rec_id = :rec_id
-        """)
-        result = self.db.execute(query, {"rec_id": rec_id})
+        result = self.db.execute(text("CALL sp_recetas_detalle(:rec_id)"), {"rec_id": rec_id})
         row = result.first()
 
         if not row:
@@ -470,9 +377,70 @@ class PlanesComidasRepository:
 
         # Obtener ingredientes
         ingredientes = self.obtener_ingredientes_receta(rec_id)
+        nutrientes_row = self.db.execute(
+            text("CALL sp_recetas_nutrientes(:rec_id)"), {"rec_id": rec_id}
+        ).first()
+
+        nutrientes = {}
+        if nutrientes_row:
+            mapping = nutrientes_row._mapping
+            nutrientes = {k: float(mapping.get(k) or 0) for k in mapping.keys()}
 
         return {
             "rec_nombre": row.rec_nombre,
             "rec_instrucciones": row.rec_instrucciones or "",
+            "rec_activo": bool(getattr(row, "rec_activo", 1)),
             "ingredientes": ingredientes,
+            "nutrientes": nutrientes,
         }
+
+    def listar_comidas_favoritas(self, nin_id: int) -> list[Dict]:
+        """Retorna las comidas favoritas registradas para un niño."""
+        result = self.db.execute(
+            text("CALL sp_comidas_favoritas_listar(:nin_id)"), {"nin_id": nin_id}
+        )
+        return [dict(row._mapping) for row in result]
+
+    def agregar_comida_favorita(self, nin_id: int, rec_id: int) -> None:
+        """Agrega una comida favorita usando procedimiento almacenado."""
+        try:
+            self.db.execute(
+                text("CALL sp_comidas_favoritas_agregar(:nin_id, :rec_id)"),
+                {"nin_id": nin_id, "rec_id": rec_id},
+            )
+            self.db.commit()
+        except Exception:
+            self.db.rollback()
+            raise
+
+    def eliminar_comida_favorita(self, ncf_id: int) -> bool:
+        """Elimina una comida favorita."""
+        result = self.db.execute(
+            text("CALL sp_comidas_favoritas_eliminar(:ncf_id)"), {"ncf_id": ncf_id}
+        )
+        self.db.commit()
+        row = result.fetchone()
+        return bool(row and getattr(row, "affected_rows", 0))
+
+    def buscar_recetas(self, query: str, tipo_comida: str | None, limit: int) -> list[Dict]:
+        """Busca recetas disponibles usando stored procedure."""
+        result = self.db.execute(
+            text("CALL sp_recetas_buscar(:query, :tipo_comida, :limit)"),
+            {"query": query, "tipo_comida": tipo_comida, "limit": limit},
+        )
+        return [dict(row._mapping) for row in result]
+
+    def obtener_detalle_receta_completo(self, rec_id: int) -> Dict:
+        """Obtiene detalle completo de una receta para exposición pública."""
+        detalle = self._obtener_detalle_receta(rec_id)
+        if "nutrientes" in detalle:
+            nutrientes = detalle["nutrientes"]
+            detalle["nutrientes"] = {
+                "kcal": round(float(nutrientes.get("kcal", 0)), 1),
+                "proteina_g": round(float(nutrientes.get("proteina_g", 0)), 1),
+                "carbohidratos_g": round(float(nutrientes.get("carbohidratos_g", 0)), 1),
+                "grasa_g": round(float(nutrientes.get("grasa_g", 0)), 1),
+                "fibra_g": round(float(nutrientes.get("fibra_g", 0)), 1),
+                "hierro_mg": round(float(nutrientes.get("hierro_mg", 0)), 2),
+            }
+        return detalle

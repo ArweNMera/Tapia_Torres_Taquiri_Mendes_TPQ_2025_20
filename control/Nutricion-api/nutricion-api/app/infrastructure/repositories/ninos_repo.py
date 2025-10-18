@@ -425,15 +425,8 @@ class NinosRepository(INinosRepository):
 
             if en_id:
                 rec_rows = self.db.execute(
-                    text("""
-                        SELECT rt.rt_codigo, rt.rt_titulo, rt.rt_descripcion
-                        FROM evaluaciones_recomendaciones er
-                        JOIN recomendaciones_tipos rt ON rt.rt_id = er.rt_id
-                        WHERE er.en_id = :en_id
-                        ORDER BY rt.rt_prioridad ASC, rt.rt_id ASC
-                        LIMIT 5
-                    """),
-                    {"en_id": en_id},
+                    text("CALL sp_evaluaciones_recomendaciones(:en_id, :limit)"),
+                    {"en_id": en_id, "limit": 5},
                 ).fetchall()
 
                 recomendaciones = [
@@ -512,6 +505,14 @@ class NinosRepository(INinosRepository):
         except Exception as e:
             self.db.rollback()
             raise e
+
+    def eliminar_alergia(self, na_id: int, nin_id: int | None = None) -> bool:
+        """Eliminar alergia de un niño mediante procedimiento almacenado."""
+        params = {"na_id": na_id, "nin_id": nin_id or 0}
+        result = self.db.execute(text("CALL sp_ninos_alergia_eliminar(:na_id, :nin_id)"), params)
+        self.db.commit()
+        row = result.fetchone()
+        return bool(row and getattr(row, "affected_rows", 0))
 
     def obtener_alergias(self, nin_id: int) -> list[dict[str, Any]]:
         """Obtener alergias de un niño usando sp_ninos_obtener_alergias"""

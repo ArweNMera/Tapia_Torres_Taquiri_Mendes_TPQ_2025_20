@@ -269,12 +269,9 @@ def eliminar_alergia_nino(
     na_id: int, db: Session = Depends(get_db), current_user=Depends(get_current_user)
 ):
     """Elimina una alergia"""
-    from sqlalchemy import text
+    ninos_repo = NinosRepository(db)
 
-    result = db.execute(text("DELETE FROM ninos_alergias WHERE na_id = :na_id"), {"na_id": na_id})
-    db.commit()
-
-    if result.rowcount == 0:
+    if not ninos_repo.eliminar_alergia(na_id):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Alergia no encontrada")
 
     return {"mensaje": "Alergia eliminada exitosamente"}
@@ -290,26 +287,8 @@ def obtener_comidas_favoritas_nino(
     nin_id: int, db: Session = Depends(get_db), current_user=Depends(get_current_user)
 ):
     """Obtiene las comidas favoritas de un niño"""
-    from sqlalchemy import text
-
-    query = text("""
-        SELECT
-            ncf.ncf_id,
-            ncf.nin_id,
-            ncf.rec_id,
-            r.rec_nombre,
-            GROUP_CONCAT(DISTINCT rc.rc_comida) as rec_tipo_comida,
-            ncf.creado_en
-        FROM ninos_comidas_favoritas ncf
-        INNER JOIN recetas r ON r.rec_id = ncf.rec_id
-        LEFT JOIN recetas_comidas rc ON rc.rec_id = r.rec_id
-        WHERE ncf.nin_id = :nin_id
-        GROUP BY ncf.ncf_id, ncf.nin_id, ncf.rec_id, r.rec_nombre, ncf.creado_en
-        ORDER BY ncf.creado_en DESC
-    """)
-
-    result = db.execute(query, {"nin_id": nin_id})
-    favoritas = [dict(row._mapping) for row in result]
+    repo = PlanesComidasRepository(db)
+    favoritas = repo.listar_comidas_favoritas(nin_id)
 
     return {"favoritas": favoritas}
 
@@ -322,28 +301,18 @@ def agregar_comida_favorita_nino(
     current_user=Depends(get_current_user),
 ):
     """Agrega una comida favorita para un niño"""
-    from sqlalchemy import text
+    repo = PlanesComidasRepository(db)
 
     rec_id = favorita_data.get("rec_id")
     if not rec_id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="rec_id es requerido")
 
-    # Verificar que la receta existe
-    query = text("SELECT rec_id FROM recetas WHERE rec_id = :rec_id")
-    result = db.execute(query, {"rec_id": rec_id})
-    if not result.first():
+    try:
+        repo.agregar_comida_favorita(nin_id, rec_id)
+    except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=f"No se encontró la receta {rec_id}"
-        )
-
-    # Agregar favorita
-    query = text("""
-        INSERT INTO ninos_comidas_favoritas (nin_id, rec_id)
-        VALUES (:nin_id, :rec_id)
-        ON DUPLICATE KEY UPDATE actualizado_en = CURRENT_TIMESTAMP
-    """)
-    db.execute(query, {"nin_id": nin_id, "rec_id": rec_id})
-    db.commit()
+        ) from exc
 
     return {"mensaje": "Comida favorita agregada exitosamente"}
 
@@ -353,14 +322,9 @@ def eliminar_comida_favorita_nino(
     ncf_id: int, db: Session = Depends(get_db), current_user=Depends(get_current_user)
 ):
     """Elimina una comida favorita"""
-    from sqlalchemy import text
+    repo = PlanesComidasRepository(db)
 
-    result = db.execute(
-        text("DELETE FROM ninos_comidas_favoritas WHERE ncf_id = :ncf_id"), {"ncf_id": ncf_id}
-    )
-    db.commit()
-
-    if result.rowcount == 0:
+    if not repo.eliminar_comida_favorita(ncf_id):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Comida favorita no encontrada"
         )
@@ -377,44 +341,8 @@ def buscar_recetas_disponibles(
     current_user=Depends(get_current_user),
 ):
     """Busca recetas por nombre o tipo de comida"""
-    from sqlalchemy import text
-
-    if tipo_comida:
-        query = text("""
-            SELECT
-                r.rec_id,
-                r.rec_nombre,
-                GROUP_CONCAT(DISTINCT rc.rc_comida) as rec_tipo_comida,
-                COALESCE(SUM(an.an_cantidad_100 * ri.ri_cantidad / 100), 0) as rec_kcal
-            FROM recetas r
-            LEFT JOIN recetas_comidas rc ON rc.rec_id = r.rec_id
-            LEFT JOIN recetas_ingredientes ri ON ri.rec_id = r.rec_id
-            LEFT JOIN alimentos_nutrientes an ON an.ali_id = ri.ali_id AND an.nutri_id = 1
-            WHERE r.rec_activo = 1
-                AND r.rec_nombre LIKE :query
-                AND rc.rc_comida = :tipo_comida
-            GROUP BY r.rec_id, r.rec_nombre
-            LIMIT :limit
-        """)
-        result = db.execute(query, {"query": f"%{q}%", "tipo_comida": tipo_comida, "limit": limit})
-    else:
-        query = text("""
-            SELECT
-                r.rec_id,
-                r.rec_nombre,
-                GROUP_CONCAT(DISTINCT rc.rc_comida) as rec_tipo_comida,
-                COALESCE(SUM(an.an_cantidad_100 * ri.ri_cantidad / 100), 0) as rec_kcal
-            FROM recetas r
-            LEFT JOIN recetas_comidas rc ON rc.rec_id = r.rec_id
-            LEFT JOIN recetas_ingredientes ri ON ri.rec_id = r.rec_id
-            LEFT JOIN alimentos_nutrientes an ON an.ali_id = ri.ali_id AND an.nutri_id = 1
-            WHERE r.rec_activo = 1 AND r.rec_nombre LIKE :query
-            GROUP BY r.rec_id, r.rec_nombre
-            LIMIT :limit
-        """)
-        result = db.execute(query, {"query": f"%{q}%", "limit": limit})
-
-    recetas = [dict(row._mapping) for row in result]
+    repo = PlanesComidasRepository(db)
+    recetas = repo.buscar_recetas(q, tipo_comida, limit)
     return {"recetas": recetas}
 
 
@@ -423,67 +351,25 @@ def obtener_detalle_receta(
     rec_id: int, db: Session = Depends(get_db), current_user=Depends(get_current_user)
 ):
     """Obtiene el detalle completo de una receta con ingredientes y nutrientes"""
-    from sqlalchemy import text
-
-    # Obtener datos básicos de la receta
-    query_receta = text("""
-        SELECT
-            r.rec_id,
-            r.rec_nombre,
-            r.rec_instrucciones,
-            r.rec_activo
-        FROM recetas r
-        WHERE r.rec_id = :rec_id
-    """)
-    result = db.execute(query_receta, {"rec_id": rec_id})
-    receta = result.first()
-
-    if not receta:
+    repo = PlanesComidasRepository(db)
+    detalle = repo.obtener_detalle_receta_completo(rec_id)
+    if detalle.get("rec_nombre") == "Receta no encontrada":
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=f"Receta {rec_id} no encontrada"
         )
 
-    # Obtener ingredientes
-    query_ingredientes = text("""
-        SELECT
-            a.ali_nombre,
-            ri.ri_cantidad AS cantidad,
-            ri.ri_unidad AS unidad
-        FROM recetas_ingredientes ri
-        INNER JOIN alimentos a ON a.ali_id = ri.ali_id
-        WHERE ri.rec_id = :rec_id
-    """)
-    result_ing = db.execute(query_ingredientes, {"rec_id": rec_id})
-    ingredientes = [dict(row._mapping) for row in result_ing]
-
-    # Obtener nutrientes totales de la receta
-    query_nutrientes = text("""
-        SELECT
-            SUM(CASE WHEN an.nutri_id = 1 THEN an.an_cantidad_100 * ri.ri_cantidad / 100 ELSE 0 END) as kcal,
-            SUM(CASE WHEN an.nutri_id = 2 THEN an.an_cantidad_100 * ri.ri_cantidad / 100 ELSE 0 END) as proteina_g,
-            SUM(CASE WHEN an.nutri_id = 3 THEN an.an_cantidad_100 * ri.ri_cantidad / 100 ELSE 0 END) as carbohidratos_g,
-            SUM(CASE WHEN an.nutri_id = 4 THEN an.an_cantidad_100 * ri.ri_cantidad / 100 ELSE 0 END) as grasa_g,
-            SUM(CASE WHEN an.nutri_id = 5 THEN an.an_cantidad_100 * ri.ri_cantidad / 100 ELSE 0 END) as fibra_g,
-            SUM(CASE WHEN an.nutri_id = 6 THEN an.an_cantidad_100 * ri.ri_cantidad / 100 ELSE 0 END) as hierro_mg
-        FROM recetas_ingredientes ri
-        LEFT JOIN alimentos_nutrientes an ON an.ali_id = ri.ali_id
-        WHERE ri.rec_id = :rec_id
-    """)
-    result_nut = db.execute(query_nutrientes, {"rec_id": rec_id})
-    nutrientes = dict(result_nut.first()._mapping)
-
     return {
-        "rec_id": receta.rec_id,
-        "rec_nombre": receta.rec_nombre,
-        "rec_instrucciones": receta.rec_instrucciones or "",
-        "rec_activo": receta.rec_activo,
-        "ingredientes": ingredientes,
+        "rec_id": rec_id,
+        "rec_nombre": detalle["rec_nombre"],
+        "rec_instrucciones": detalle.get("rec_instrucciones", ""),
+        "rec_activo": detalle.get("rec_activo", True),
+        "ingredientes": detalle.get("ingredientes", []),
         "nutrientes": {
-            "kcal": round(float(nutrientes.get("kcal") or 0), 1),
-            "proteina_g": round(float(nutrientes.get("proteina_g") or 0), 1),
-            "carbohidratos_g": round(float(nutrientes.get("carbohidratos_g") or 0), 1),
-            "grasa_g": round(float(nutrientes.get("grasa_g") or 0), 1),
-            "fibra_g": round(float(nutrientes.get("fibra_g") or 0), 1),
-            "hierro_mg": round(float(nutrientes.get("hierro_mg") or 0), 2),
+            "kcal": detalle.get("nutrientes", {}).get("kcal", 0.0),
+            "proteina_g": detalle.get("nutrientes", {}).get("proteina_g", 0.0),
+            "carbohidratos_g": detalle.get("nutrientes", {}).get("carbohidratos_g", 0.0),
+            "grasa_g": detalle.get("nutrientes", {}).get("grasa_g", 0.0),
+            "fibra_g": detalle.get("nutrientes", {}).get("fibra_g", 0.0),
+            "hierro_mg": detalle.get("nutrientes", {}).get("hierro_mg", 0.0),
         },
     }

@@ -199,6 +199,54 @@ class UsuariosService:
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error al cambiar rol: {str(e)}")
 
+    def list_users_admin(self) -> list[dict[str, Any]]:
+        """Caso de uso: Listar usuarios para administración."""
+        try:
+            return self.repository.admin_list_users()
+        except Exception as exc:
+            raise HTTPException(status_code=500, detail=f"Error al listar usuarios: {exc}") from exc
+
+    def reset_password_admin(self, usr_id: int, plain_password: str) -> None:
+        """Caso de uso: Resetear contraseña de un usuario por admin."""
+        hashed_password = self.password_service.hash_password(plain_password)
+        try:
+            success = self.repository.admin_reset_password(usr_id, hashed_password)
+        except Exception as exc:
+            raise HTTPException(
+                status_code=500, detail=f"Error al resetear la contraseña: {exc}"
+            ) from exc
+
+        if not success:
+            raise HTTPException(status_code=404, detail=f"Usuario con ID {usr_id} no encontrado")
+
+    def toggle_user_active_admin(self, usr_id: int, actor_id: int) -> dict[str, Any]:
+        """Caso de uso: Alternar estado activo/inactivo de un usuario."""
+        usuario = self.repository.get_user_by_id(usr_id)
+        if not usuario:
+            raise HTTPException(status_code=404, detail=f"Usuario con ID {usr_id} no encontrado")
+
+        if usr_id == actor_id:
+            raise HTTPException(status_code=400, detail="No puedes desactivar tu propia cuenta")
+
+        try:
+            result = self.repository.admin_toggle_active(usr_id, actor_id)
+        except HTTPException:
+            raise
+        except Exception as exc:
+            raise HTTPException(
+                status_code=500, detail=f"Error al cambiar estado del usuario: {exc}"
+            ) from exc
+
+        if not result or not result.get("affected_rows"):
+            raise HTTPException(
+                status_code=500, detail="No se pudo actualizar el estado del usuario"
+            )
+
+        return {
+            "usr_usuario": result.get("usr_usuario"),
+            "usr_activo": result.get("usr_activo"),
+        }
+
     def create_role(self, rol_codigo: str, rol_nombre: str) -> Any:
         """
         Caso de uso: Crear un nuevo rol.

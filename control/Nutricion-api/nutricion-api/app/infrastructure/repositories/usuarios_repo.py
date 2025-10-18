@@ -245,55 +245,54 @@ class UsuariosRepository(IUsuariosRepository):
 
         result = self.db.execute(
             text(
-                """
-                UPDATE usuarios
-                SET usr_correo = :correo,
-                    usr_contrasena = :contrasena,
-                    usr_nombre = :nombre,
-                    usr_apellido = :apellido,
-                    usr_usuario = :usuario,
-                    usr_activo = 0,
-                    eliminado_en = NOW()
-                WHERE usr_id = :usr_id
-                """
-            ),
-            {
-                "correo": temp_email,
-                "contrasena": random_password,
-                "nombre": "Cuenta eliminada",
-                "apellido": "NutriFamily",
-                "usuario": temp_username,
-                "usr_id": usr_id,
-            },
-        )
-
-        self.db.execute(
-            text(
-                """
-                UPDATE usuarios_perfil
-                SET usrper_avatar_url = NULL,
-                    usrper_telefono = :telefono,
-                    usrper_direccion = NULL,
-                    usrper_genero = NULL,
-                    usrper_fecha_nac = NULL,
-                    usrper_idioma = 'es-PE',
-                    eliminado_en = NOW()
-                WHERE usr_id = :usr_id
-                """
+                "CALL sp_usuarios_anonimizar(:usr_id, :usuario_temp, :correo_temp, :password_hash, :telefono)"
             ),
             {
                 "usr_id": usr_id,
+                "usuario_temp": temp_username,
+                "correo_temp": temp_email,
+                "password_hash": random_password,
                 "telefono": "000000000",
             },
         )
 
         self.db.commit()
-        return result.rowcount > 0
+        row = result.fetchone()
+        return bool(row and getattr(row, "affected_rows", 0))
 
     def get_rol_nombre_by_id(self, rol_id: int) -> str | None:
         """Obtener el nombre del rol por su ID."""
-        result = self.db.execute(
-            text("SELECT rol_nombre FROM roles WHERE rol_id = :rol_id"), {"rol_id": rol_id}
+        row = self.db.execute(
+            text("CALL sp_roles_nombre_por_id(:rol_id)"), {"rol_id": rol_id}
         ).fetchone()
+        return row.rol_nombre if row and hasattr(row, "rol_nombre") else None
 
-        return result[0] if result else None
+    def admin_list_users(self) -> list[dict[str, Any]]:
+        """Listar usuarios para administración."""
+        result = self.db.execute(text("CALL sp_admin_usuarios_listar()"))
+        return [dict(row._mapping) for row in result]
+
+    def admin_reset_password(self, usr_id: int, password_hash: str) -> bool:
+        """Resetear contraseña desde administración."""
+        row = self.db.execute(
+            text("CALL sp_admin_resetear_contrasena(:usr_id, :password_hash)"),
+            {"usr_id": usr_id, "password_hash": password_hash},
+        ).fetchone()
+        self.db.commit()
+        return bool(row and getattr(row, "affected_rows", 0))
+
+    def admin_toggle_active(self, usr_id: int, actor_id: int) -> dict[str, Any]:
+        """Alternar estado activo de usuario desde administración."""
+        result = self.db.execute(
+            text("CALL sp_admin_toggle_usuario(:usr_id, :actor_id)"),
+            {"usr_id": usr_id, "actor_id": actor_id},
+        )
+        self.db.commit()
+        row = result.fetchone()
+        if not row:
+            return {}
+        return {
+            "affected_rows": getattr(row, "affected_rows", 0),
+            "usr_usuario": getattr(row, "usr_usuario", None),
+            "usr_activo": bool(getattr(row, "usr_activo", 0)),
+        }

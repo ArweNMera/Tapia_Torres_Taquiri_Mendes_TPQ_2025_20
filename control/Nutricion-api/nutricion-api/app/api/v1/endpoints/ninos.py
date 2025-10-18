@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.application.services.auth_service import get_current_user
@@ -433,11 +432,6 @@ def delete_child_allergy(
         raise HTTPException(status_code=404, detail="Niño no encontrado")
 
     # Eliminar relación específica
-    affected = db.execute(
-        text("DELETE FROM ninos_alergias WHERE na_id = :na_id AND nin_id = :nin_id"),
-        {"na_id": alergia_id, "nin_id": nin_id},
-    )
-    db.commit()
-    if affected.rowcount == 0:
+    if not repo.eliminar_alergia(alergia_id, nin_id):
         raise HTTPException(status_code=404, detail="Alergia no encontrada para este niño")
     return {"message": "Alergia eliminada"}
