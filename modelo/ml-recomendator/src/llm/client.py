@@ -31,7 +31,10 @@ class OpenAICompatClient:
         }
 
     def chat(self, system_message: str, user_message: str) -> str:
-        url = self.base_url.rstrip("/") + "/chat/completions"
+        # Construir URL del endpoint
+        base = self.base_url.rstrip("/")
+        url = base + "/chat/completions"
+
         payload = {
             "model": self.model,
             "messages": [
@@ -73,7 +76,7 @@ def get_llm_client() -> OpenAICompatClient:
             "LLM env vars not fully configured (LLM_API_KEY, LLM_BASE_URL, LLM_MODEL)"
         )
     temp = float(os.getenv("LLM_TEMPERATURE", "0.2"))
-    max_toks = int(os.getenv("LLM_MAX_TOKENS", "256"))
+    max_toks = int(os.getenv("LLM_MAX_TOKENS", "2000"))
     timeout = float(os.getenv("LLM_TIMEOUT", "30"))
     return OpenAICompatClient(
         base_url=base_url,

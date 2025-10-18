@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
 import ProfileManagementScreen from './ProfileManagementScreen';
 import { SettingsScreen } from './SettingsScreen';
+import { AdminUsersPage } from '../../pages/AdminUsersPage';
+import { useAuth } from '../../contexts/AuthContext';
 
-type Section = 'gestion' | 'config';
+type Section = 'gestion' | 'config' | 'admin';
 
 export default function ProfileHubScreen() {
+  const { user } = useAuth();
+  const isAdmin = user?.rol_nombre === 'Administrador';
   const [section, setSection] = useState<Section>('gestion');
 
   return (
@@ -32,16 +36,26 @@ export default function ProfileHubScreen() {
           >
             Configuración
           </button>
+          {isAdmin && (
+            <button
+              onClick={() => setSection('admin')}
+              className={`whitespace-nowrap py-3 px-4 border-b-2 font-medium text-sm rounded-t-md transition-all ${
+                section === 'admin'
+                  ? 'border-red-600 text-red-700 bg-red-50'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              🛡️ Administración
+            </button>
+          )}
         </nav>
       </div>
 
       {/* Content */}
       <div>
-        {section === 'gestion' ? (
-          <ProfileManagementScreen />
-        ) : (
-          <SettingsScreen />
-        )}
+        {section === 'gestion' && <ProfileManagementScreen />}
+        {section === 'config' && <SettingsScreen />}
+        {section === 'admin' && isAdmin && <AdminUsersPage />}
       </div>
     </div>
   );

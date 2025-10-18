@@ -16,6 +16,7 @@ import ProfileManagementScreen from './components/screens/ProfileManagementScree
 import { SettingsScreen } from './components/screens/SettingsScreen';
 import SelfAnthropometry from './components/SelfAnthropometry';
 import ProfileHubScreen from './components/screens/ProfileHubScreen';
+import { AdminUsersPage } from './pages/AdminUsersPage';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Toaster } from './components/ui/toaster';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
@@ -23,9 +24,9 @@ import TermsPage from './pages/TermsPage';
 import DeleteDataPage from './pages/DeleteDataPage';
 
 type AppState = 'login' | 'register' | 'onboarding' | 'main';
-type ActiveTab = 'home' | 'meal-plan' | 'scan' | 'risk-prediction' | 'progress' | 'community' | 'gamification' | 'profile' | 'clinical';
+type ActiveTab = 'home' | 'meal-plan' | 'scan' | 'risk-prediction' | 'progress' | 'community' | 'gamification' | 'profile' | 'clinical' | 'admin';
 
-const STATIC_PAGES: Record<string, JSX.Element> = {
+const STATIC_PAGES: Record<string, React.ReactElement> = {
   '/privacy': <PrivacyPolicyPage />,
   '/terms': <TermsPage />,
   '/delete-data': <DeleteDataPage />,
@@ -163,6 +164,9 @@ function AppContent() {
         )}
         {activeTab === 'profile' && (
           <ProfileHubScreen />
+        )}
+        {activeTab === 'admin' && (
+          <AdminUsersPage />
         )}
       </Layout>
 

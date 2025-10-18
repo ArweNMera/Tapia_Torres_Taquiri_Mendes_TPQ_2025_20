@@ -31,9 +31,9 @@ repos:
       - id: ruff-format
         files: \.(py)$
 
-Mypy para type checking (DESACTIVADO TEMPORALMENTE - muchos errores)
-  - repo: https://github.com/pre-commit/mirrors-mypy
-rev: v1.11.2
+  # Mypy para type checking (DESACTIVADO TEMPORALMENTE - muchos errores)
+  # - repo: https://github.com/pre-commit/mirrors-mypy
+  #   rev: v1.11.2
   #   hooks:
   #     - id: mypy
   #       files: ^(control/Nutricion-api/nutricion-api/app|modelo/ml-recomendator/src)/.*\.py$
@@ -43,4 +43,4 @@ rev: v1.11.2
   #         - types-PyYAML
   #         - types-requests
   #         - sqlalchemy[mypy]
-  #       args: [--ignore-missing-imports, --show-error-ces]
+  #       args: [--ignore-missing-imports, --show-error-codes]

@@ -100,6 +100,7 @@ class UsuariosRepository(IUsuariosRepository):
             usr_nombre=result.usr_nombre,
             usr_apellido=result.usr_apellido,
             rol_id=result.rol_id,
+            rol_nombre=result.rol_nombre if hasattr(result, "rol_nombre") else None,
             usr_activo=bool(result.usr_activo),
             password_hash=result.password_hash,
         )
@@ -120,6 +121,7 @@ class UsuariosRepository(IUsuariosRepository):
             usr_nombre=row.usr_nombre,
             usr_apellido=row.usr_apellido,
             rol_id=row.rol_id,
+            rol_nombre=row.rol_nombre if hasattr(row, "rol_nombre") else None,
             usr_activo=bool(row.usr_activo),
             password_hash=row.password_hash,
         )
@@ -287,3 +289,11 @@ class UsuariosRepository(IUsuariosRepository):
 
         self.db.commit()
         return result.rowcount > 0
+
+    def get_rol_nombre_by_id(self, rol_id: int) -> str | None:
+        """Obtener el nombre del rol por su ID."""
+        result = self.db.execute(
+            text("SELECT rol_nombre FROM roles WHERE rol_id = :rol_id"), {"rol_id": rol_id}
+        ).fetchone()
+
+        return result[0] if result else None

@@ -84,6 +84,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           usr_nombre: u.usr_nombre,
           usr_apellido: u.usr_apellido,
           rol_id: u.rol_id,
+          rol_nombre: u.rol_nombre,
           avatar_url: resolvedAvatar,
           token,
         });
@@ -391,6 +392,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             usr_nombre: profile.usr_nombre,
             usr_apellido: profile.usr_apellido,
             rol_id: profile.rol_id,
+            rol_nombre: profile.rol_nombre,
             avatar_url: profile.avatar_url,
             token: apiService.getToken() || response.data.access_token,
           });

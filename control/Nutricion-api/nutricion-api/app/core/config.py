@@ -19,6 +19,7 @@ class Settings(BaseSettings):
 
     # ML API Configuration
     ML_API_URL: str = "http://localhost:8001"
+    ML_SERVICE_URL: str = "http://localhost:8001"
 
     class Config:
         env_file = ".env"

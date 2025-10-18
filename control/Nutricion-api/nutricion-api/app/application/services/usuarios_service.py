@@ -87,6 +87,9 @@ class UsuariosService:
 
         profile = self.repository.get_user_profile(usr_id) or {}
 
+        # Obtener el nombre del rol
+        rol_nombre = self.repository.get_rol_nombre_by_id(user.rol_id) if user.rol_id else None
+
         # Ensamblar respuesta
         return {
             "usr_id": user.usr_id,
@@ -95,6 +98,7 @@ class UsuariosService:
             "usr_nombre": profile.get("usr_nombre"),
             "usr_apellido": profile.get("usr_apellido"),
             "rol_id": user.rol_id,
+            "rol_nombre": rol_nombre,
             "usr_activo": user.usr_activo,
             # Campos de perfil opcionales
             "dni": profile.get("dni"),

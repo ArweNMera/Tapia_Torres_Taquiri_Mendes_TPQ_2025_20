@@ -13,6 +13,7 @@ class UserResponse(BaseModel):
     usr_nombre: str
     usr_apellido: str
     rol_id: int
+    rol_nombre: str | None = None
     usr_activo: bool
     password_hash: str
 

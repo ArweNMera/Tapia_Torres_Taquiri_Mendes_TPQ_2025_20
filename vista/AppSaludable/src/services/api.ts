@@ -25,7 +25,12 @@ import {
   PaginatedResponse,
   UserRoleChangeRequest,
   UserRoleChangeResponse,
-  AssignTutorRequest
+  AssignTutorRequest,
+  ChatBotRequest,
+  ChatBotResponse,
+  UsuarioAdmin,
+  ResetPasswordRequest,
+  ResetPasswordResponse
 } from '../types/api';
 
 class ApiService {
@@ -50,18 +55,19 @@ class ApiService {
 
   private async makeRequest<T>(
     url: string,
-    options: RequestInit = {}
+    options: RequestInit & { silentErrors?: boolean } = {}
   ): Promise<ApiResponse<T>> {
     try {
       const token = localStorage.getItem(this.tokenKey);
+      const { silentErrors, ...fetchOptions } = options;
 
       const config: RequestInit = {
         headers: {
           'Content-Type': 'application/json',
           ...(token && { Authorization: `Bearer ${token}` }),
-          ...options.headers,
+          ...fetchOptions.headers,
         },
-        ...options,
+        ...fetchOptions,
       };
 
       const response = await fetch(url, config);
@@ -83,7 +89,10 @@ class ApiService {
         data,
       };
     } catch (error) {
-      console.error('API request failed:', error);
+      // Solo mostrar error en consola si no está silenciado
+      if (!options.silentErrors) {
+        console.error('API request failed:', error);
+      }
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error occurred',
@@ -515,6 +524,61 @@ class ApiService {
     const ninId = selfChild.data.nin_id;
     return this.makeRequest<NutritionalStatusResponse>(
       this.getApiUrl(`/children/${ninId}/nutritional-status`)
+    );
+  }
+
+  // Chatbot y recomendaciones nutricionales
+  async getChatBotRecommendation(
+    nombreNino: string,
+    tipoComida: string,
+    preguntaUsuario?: string
+  ): Promise<ApiResponse<import('../types/api').ChatBotResponse>> {
+    const mlBaseUrl = import.meta.env.VITE_ML_API_BASE_URL || 'http://localhost:8003';
+    const url = `${mlBaseUrl}/ml/recomendacion_personalizada`;
+
+    return this.makeRequest<import('../types/api').ChatBotResponse>(url, {
+      method: 'POST',
+      body: JSON.stringify({
+        nombre_nino: nombreNino,
+        tipo_comida: tipoComida,
+        pregunta_usuario: preguntaUsuario,
+      }),
+    });
+  }
+
+  // ========== Admin Endpoints ==========
+
+  // Listar todos los usuarios (solo admin)
+  async getAllUsers(): Promise<ApiResponse<import('../types/api').UsuarioAdmin[]>> {
+    return this.makeRequest<import('../types/api').UsuarioAdmin[]>(
+      this.getApiUrl('/admin/usuarios')
+    );
+  }
+
+  // Resetear contraseña de un usuario (solo admin)
+  async resetUserPassword(
+    usrId: number,
+    nuevaContrasena: string
+  ): Promise<ApiResponse<import('../types/api').ResetPasswordResponse>> {
+    return this.makeRequest<import('../types/api').ResetPasswordResponse>(
+      this.getApiUrl('/admin/reset-password'),
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          usr_id: usrId,
+          nueva_contrasena: nuevaContrasena,
+        }),
+      }
+    );
+  }
+
+  // Activar/desactivar usuario (solo admin)
+  async toggleUserActive(usrId: number): Promise<ApiResponse<any>> {
+    return this.makeRequest<any>(
+      this.getApiUrl(`/admin/usuarios/${usrId}/toggle-active`),
+      {
+        method: 'PATCH',
+      }
     );
   }
 }

@@ -53,6 +53,13 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
     }
   };
 
+  const isAdmin = user?.rol_nombre === 'Administrador';
+
+  // Debug: ver el rol del usuario
+  console.log('Usuario actual:', user);
+  console.log('Rol del usuario:', user?.rol_nombre);
+  console.log('Es admin?:', isAdmin);
+
   const tabs = [
     { id: 'home', icon: Home, label: 'Inicio', category: 'principal' },
     { id: 'meal-plan', icon: Calendar, label: 'Plan de Comidas', category: 'planificacion' },
@@ -63,6 +70,7 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
     { id: 'gamification', icon: Trophy, label: 'Logros', category: 'social' },
     { id: 'clinical', icon: BookOpen, label: 'Datos Clínicos', category: 'personal' },
     { id: 'profile', icon: User, label: 'Perfil', category: 'personal' },
+    ...(isAdmin ? [{ id: 'admin', icon: Settings, label: '🛡️ Panel Admin', category: 'admin' }] : []),
   ];
 
   // Orden específico para el sidebar de escritorio: colocar "Datos Clínicos" debajo de Inicio
@@ -76,6 +84,7 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
     'community',
     'gamification',
     'profile',
+    ...(isAdmin ? ['admin'] : []),
   ];
 
   // Tabs principales para navegación inferior móvil
@@ -91,6 +100,7 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
       case 'seguimiento': return 'Seguimiento';
       case 'social': return 'Social';
       case 'personal': return 'Personal';
+      case 'admin': return 'Administración';
       default: return 'Otros';
     }
   };
@@ -103,6 +113,7 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
       case 'seguimiento': return 'bg-info text-white';
       case 'social': return 'bg-success text-white';
       case 'personal': return 'bg-muted text-muted-foreground';
+      case 'admin': return 'bg-red-600 text-white';
       default: return 'bg-muted text-muted-foreground';
     }
   };
@@ -142,69 +153,69 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
               </div>
             </SheetTrigger>
 
-        {/* Fixed User Avatar - Mobile */}
-        <div className="fixed top-4 right-4 z-50">
-          <div className="relative">
-            <Button
-              variant="ghost"
-              className="relative h-12 w-12 rounded-full p-0 bg-white shadow-lg hover:bg-gray-50"
-              onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-            >
-              <Avatar className="h-10 w-10 border-2 border-primary/20">
-                <AvatarImage
-                  key={avatarKey}
-                  src={resolvedAvatar}
-                  alt={user?.usr_usuario || 'Usuario'}
-                />
-                <AvatarFallback className="bg-primary text-white font-semibold text-sm">
-                  {getUserInitials()}
-                </AvatarFallback>
-              </Avatar>
-            </Button>
+            {/* Fixed User Avatar - Mobile */}
+            <div className="fixed top-4 right-4 z-50">
+              <div className="relative">
+                <Button
+                  variant="ghost"
+                  className="relative h-12 w-12 rounded-full p-0 bg-white shadow-lg hover:bg-gray-50"
+                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                >
+                  <Avatar className="h-10 w-10 border-2 border-primary/20">
+                    <AvatarImage
+                      key={avatarKey}
+                      src={resolvedAvatar}
+                      alt={user?.usr_usuario || 'Usuario'}
+                    />
+                    <AvatarFallback className="bg-primary text-white font-semibold text-sm">
+                      {getUserInitials()}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
 
-            {/* Mobile Dropdown Menu */}
-            {isUserMenuOpen && (
-              <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
-                <div className="p-3 border-b border-gray-100">
-                  <p className="font-medium text-sm text-gray-900">
-                    {user?.usr_nombre ? `${user.usr_nombre} ${user.usr_apellido}` : user?.usr_usuario}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    {user?.usr_correo}
-                  </p>
-                </div>
+                {/* Mobile Dropdown Menu */}
+                {isUserMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                    <div className="p-3 border-b border-gray-100">
+                      <p className="font-medium text-sm text-gray-900">
+                        {user?.usr_nombre ? `${user.usr_nombre} ${user.usr_apellido}` : user?.usr_usuario}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {user?.usr_correo}
+                      </p>
+                    </div>
 
-                <div className="py-1">
-                  <button
-                    onClick={() => handleUserMenuClick('profile')}
-                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  >
-                    <User className="mr-2 h-4 w-4" />
-                    Ver Perfil
-                  </button>
+                    <div className="py-1">
+                      <button
+                        onClick={() => handleUserMenuClick('profile')}
+                        className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      >
+                        <User className="mr-2 h-4 w-4" />
+                        Ver Perfil
+                      </button>
 
-                  <button
-                    onClick={() => handleUserMenuClick('settings')}
-                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  >
-                    <Settings className="mr-2 h-4 w-4" />
-                    Configuración
-                  </button>
+                      <button
+                        onClick={() => handleUserMenuClick('settings')}
+                        className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      >
+                        <Settings className="mr-2 h-4 w-4" />
+                        Configuración
+                      </button>
 
-                  <div className="border-t border-gray-100 my-1"></div>
+                      <div className="border-t border-gray-100 my-1"></div>
 
-                  <button
-                    onClick={() => handleUserMenuClick('logout')}
-                    className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-                  >
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Cerrar Sesión
-                  </button>
-                </div>
+                      <button
+                        onClick={() => handleUserMenuClick('logout')}
+                        className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                      >
+                        <LogOut className="mr-2 h-4 w-4" />
+                        Cerrar Sesión
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        </div>
+            </div>
 
             <SheetContent
               side="left"
@@ -238,7 +249,7 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
                 <div className="p-4 border-b bg-muted/20">
                   <div className="flex items-center space-x-3">
                     <Avatar className="w-12 h-12 ring-2 ring-primary/20">
-                    <AvatarImage key={`${avatarKey}-sheet`} src={resolvedAvatar} />
+                      <AvatarImage key={`${avatarKey}-sheet`} src={resolvedAvatar} />
                       <AvatarFallback className="bg-primary text-white">{getUserInitials()}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
@@ -282,11 +293,10 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
                               transition={{ delay: (categoryIndex * 0.1) + (tabIndex * 0.05) }}
                               whileTap={{ scale: 0.95 }}
                               onClick={() => handleMobileMenuItemClick(tab.id)}
-                              className={`w-full flex items-center space-x-3 px-3 py-3 rounded-lg text-left transition-all relative ${
-                                isActive
+                              className={`w-full flex items-center space-x-3 px-3 py-3 rounded-lg text-left transition-all relative ${isActive
                                   ? 'bg-primary text-white shadow-md'
                                   : 'text-gray-600 hover:bg-gray-100 active:bg-gray-200'
-                              }`}
+                                }`}
                             >
                               <div className="relative">
                                 <Icon size={20} />
@@ -364,11 +374,10 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
                 <button
                   key={tab.id}
                   onClick={() => onTabChange(tab.id)}
-                  className={`flex flex-col items-center py-2 px-2 rounded-lg transition-colors ${
-                    isActive
+                  className={`flex flex-col items-center py-2 px-2 rounded-lg transition-colors ${isActive
                       ? 'text-primary bg-primary/10'
                       : 'text-gray-500 hover:text-primary'
-                  }`}
+                    }`}
                 >
                   <Icon size={18} />
                   <span className="text-xs mt-1">{tab.label}</span>
@@ -422,11 +431,10 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
                   <button
                     key={tab.id}
                     onClick={() => onTabChange(tab.id)}
-                    className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors ${
-                      isActive
+                    className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors ${isActive
                         ? 'bg-green-100 text-green-700 border border-green-200'
                         : 'text-gray-600 hover:bg-gray-100 hover:text-gray-800'
-                    }`}
+                      }`}
                   >
                     <Icon size={20} />
                     <span className="text-sm font-medium">{tab.label}</span>
@@ -464,6 +472,7 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
                   {activeTab === 'gamification' && 'Logros y recompensas'}
                   {activeTab === 'clinical' && 'Antropometría, alergias y entidad'}
                   {activeTab === 'profile' && 'Configuración y perfil'}
+                  {activeTab === 'admin' && 'Gestión de usuarios y contraseñas'}
                 </p>
               </div>
 

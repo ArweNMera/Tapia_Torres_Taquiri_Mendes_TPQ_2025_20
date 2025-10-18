@@ -4,13 +4,17 @@ from sqlalchemy.orm import Session
 from app.infrastructure.db.session import get_db
 from app.infrastructure.repositories.ninos_repo import NinosRepository
 
-from .endpoints import auth, ninos, usuarios
+from .endpoints import admin, auth, ninos, usuarios
 from .endpoints import entidades as entidades_endpoints
 from .endpoints import ml as ml_endpoints
+from .endpoints import nutricion as nutricion_endpoints
+from .endpoints import planes_comidas as planes_comidas_endpoints
+from .endpoints import preferencias as preferencias_endpoints
 
 api_router = APIRouter()
 api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
 api_router.include_router(usuarios.router, prefix="/usuarios", tags=["usuarios"])
+api_router.include_router(admin.router, prefix="/admin", tags=["admin"])
 api_router.include_router(ninos.router, prefix="/children", tags=["children"])
 """
 Compatibilidad: expone también las rutas de `children` bajo `/ninos` para
@@ -42,3 +46,6 @@ def create_allergy_type(payload: dict, db: Session = Depends(get_db)):
 api_router.include_router(alergias_router, prefix="/alergias", tags=["alergias"])
 api_router.include_router(entidades_endpoints.router, prefix="/entidades", tags=["entidades"])
 api_router.include_router(ml_endpoints.router, prefix="/ml", tags=["ml"])
+api_router.include_router(nutricion_endpoints.router, prefix="/nutricion", tags=["nutricion"])
+api_router.include_router(preferencias_endpoints.router, tags=["preferencias"])
+api_router.include_router(planes_comidas_endpoints.router, tags=["planes-comidas"])
