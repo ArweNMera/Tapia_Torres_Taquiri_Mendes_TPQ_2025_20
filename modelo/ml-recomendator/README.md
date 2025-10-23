@@ -281,63 +281,46 @@ LLM_MODEL=tu_modelo
 LLM_TEMPERATURE=0.7
 ```
 
-## 📚 Documentación
+## 🧭 Plan de Trabajo — Planificador de Menús
+- Definir objetivos diarios por perfil y estado nutricional (kcal, proteína).
+- Implementar filtro duro por alergias y restricciones.
+- Diseñar ranking suave: ajuste a objetivos + preferencias + favoritas + estado.
+- Generar plan semanal: 4 slots por día (desayuno, almuerzo, cena, snack).
+- Explicar cada recomendación con razones breves.
+- Integrar datos reales de BD (nutrientes por menú/ingrediente) en siguiente fase.
+- Validar con nutricionistas y crear feedback loop.
 
-- **[ARQUITECTURA_ML.md](docs/ARQUITECTURA_ML.md)**: Arquitectura completa del sistema
-- **[MIGRACIONES_BD.sql](docs/MIGRACIONES_BD.sql)**: Scripts SQL para base de datos
-- **[RESUMEN_IMPLEMENTACION.md](docs/RESUMEN_IMPLEMENTACION.md)**: Guía de implementación paso a paso
+## ☁️ Guía Colab — Planificador de Menús
+1) Subir la carpeta `modelo/ml-recomendator` a Google Drive o como .zip.
+2) En Colab, montar Drive:
+   ```python
+   from google.colab import drive
+   drive.mount('/content/drive')
+   ```
+3) Ir al directorio del proyecto:
+   ```bash
+   cd /content/drive/MyDrive/<ruta>/modelo/ml-recomendator
+   ```
+4) (Opcional) Instalar dependencias:
+   ```bash
+   pip install -r requirements.txt
+   ```
+5) Ejecutar el ejemplo del planificador:
+   ```bash
+   python examples/colab_meal_planner.py
+   ```
+6) Personalizar preferencias y alergias directamente en el script de ejemplo.
 
-## 🧪 Testing
-
-```bash
-# Validar datos
-python -c "from src.features import DataValidator; print(DataValidator().validate_anthropometric_data(df))"
-
-# Evaluar modelo
-python src/pipeline/train_model.py --data data/test.csv --model ensemble
+### API Rápida
+```python
+from src.recommender import MealPlanner
+planner = MealPlanner({"kcal": 1800, "proteina_g": 50.0})
+plan = planner.generar_plan_semanal(
+    estado_nutricional="MODERADO",
+    alergias=["maní"],
+    preferencias={"vegetariano": 0.5, "alto_fibra": 0.3},
+    favoritas=["fruta", "yogur"],
+    dias=7,
+)
+print(plan.resumen())
 ```
-
-## 🤝 Contribuir
-
-1. Revisar documentación en `docs/`
-2. Seguir estructura de código existente
-3. Agregar tests para nuevas features
-4. Actualizar documentación
-
-## 📝 Changelog
-
-### v1.1 (2025-01-08) - **INTEGRACIÓN COMPLETADA** ✅
-- ✅ Modelo Random Forest entrenado (90.18% accuracy)
-- ✅ Integración completa en API FastAPI
-- ✅ Reemplaza clasificación por BAZ
-- ✅ 7 categorías OMS implementadas
-- ✅ Scripts de testing y verificación
-- ✅ Documentación completa de integración
-
-### v1.0 (2025-01-07)
-- ✅ Arquitectura limpia implementada
-- ✅ Random Forest + Red Neuronal + Ensemble
-- ✅ Feature engineering completo
-- ✅ Validación de datos robusta
-- ✅ Integración con base de datos
-- ✅ Documentación completa
-
-## 📚 Documentación de Integración
-
-### Guías Principales
-- **[INTEGRACION_MODELO_ML.md](INTEGRACION_MODELO_ML.md)**: Documentación técnica completa
-- **[COMO_PROBAR.md](COMO_PROBAR.md)**: Guía de pruebas paso a paso
-- **[RESUMEN_INTEGRACION.md](RESUMEN_INTEGRACION.md)**: Resumen ejecutivo
-
-### Información del Modelo
-- **[MODELO_FINAL_90_ACCURACY.md](MODELO_FINAL_90_ACCURACY.md)**: Detalles del entrenamiento
-- **[CAMBIOS_APLICADOS_7CAT.md](CAMBIOS_APLICADOS_7CAT.md)**: Migración a 7 categorías
-
-### Documentación Técnica
-- **[docs/ARQUITECTURA_ML.md](docs/ARQUITECTURA_ML.md)**: Arquitectura del sistema
-- **[docs/API_ML.md](docs/API_ML.md)**: Documentación de la API
-- **[docs/MIGRACIONES_BD.sql](docs/MIGRACIONES_BD.sql)**: Scripts SQL
-
-## 📄 Licencia
-
-Proyecto interno - Sistema de Evaluación Nutricional Infantil

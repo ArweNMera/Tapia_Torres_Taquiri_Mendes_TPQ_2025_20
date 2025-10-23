@@ -5,7 +5,6 @@ Este script simula una llamada al endpoint sin necesidad de ejecutar el servidor
 """
 
 import sys
-import os
 from pathlib import Path
 
 # Agregar el directorio src al path
@@ -13,6 +12,7 @@ BASE_DIR = Path(__file__).resolve().parent
 SRC_DIR = BASE_DIR / "src"
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
+
 
 def simular_recomendacion():
     """Simula el proceso de generar una recomendación personalizada."""
@@ -24,7 +24,7 @@ def simular_recomendacion():
     request_data = {
         "id_nino": 1,
         "tipo_comida": "desayuno",
-        "pregunta_usuario": "¿Qué puedo darle de desayuno a mi hijo que sea saludable?"
+        "pregunta_usuario": "¿Qué puedo darle de desayuno a mi hijo que sea saludable?",
     }
 
     print(f"📝 Datos de entrada: {request_data}")
@@ -43,7 +43,7 @@ def simular_recomendacion():
         "estado_nutricional": "NORMAL",
         "diagnostico": "Peso normal para la edad",
         "entidad": "Hospital Central",
-        "codigo_entidad": "HC001"
+        "codigo_entidad": "HC001",
     }
 
     print("👶 Datos del niño obtenidos:")
@@ -59,7 +59,7 @@ def simular_recomendacion():
         "peso_kg": 7.5,
         "talla_cm": 65.0,
         "edad_meses": 6,
-        "sexo": "M"
+        "sexo": "M",
     }
 
     print("📊 Estado nutricional:")
@@ -78,7 +78,7 @@ def simular_recomendacion():
             "proteinas": 4.5,
             "carbohidratos": 28.0,
             "grasas": 2.5,
-            "puntuacion": 8.5
+            "puntuacion": 8.5,
         },
         {
             "id": 2,
@@ -89,8 +89,8 @@ def simular_recomendacion():
             "proteinas": 5.0,
             "carbohidratos": 18.0,
             "grasas": 3.0,
-            "puntuacion": 8.2
-        }
+            "puntuacion": 8.2,
+        },
     ]
 
     print("🍽️  Recetas disponibles:")
@@ -124,7 +124,7 @@ Recuerda ofrecer la comida en un ambiente tranquilo y no forzar al niño si no t
         "datos_nino": datos_nino_simulados,
         "recetas_disponibles": recetas_simuladas,
         "estado_nutricional": estado_nutricional_simulado,
-        "used_llm": True
+        "used_llm": True,
     }
 
     print("✅ Respuesta del endpoint simulada exitosamente")
@@ -132,6 +132,7 @@ Recuerda ofrecer la comida en un ambiente tranquilo y no forzar al niño si no t
     print("🧠 LLM utilizado: Sí")
     print("📝 Recomendación generada: Sí")
     return response_simulada
+
 
 if __name__ == "__main__":
     try:

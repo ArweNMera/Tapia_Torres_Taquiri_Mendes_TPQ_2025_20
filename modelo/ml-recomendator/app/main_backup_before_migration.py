@@ -46,8 +46,8 @@ else:
         "http://localhost:3000",
         "http://localhost:5173",
         "http://localhost:8000",
-        "https://appsaludable.netlify.app",  
-        "*",  
+        "https://appsaludable.netlify.app",
+        "*",
     ]
 
 app.add_middleware(
@@ -213,6 +213,7 @@ def load_ml_model():
         print("   Entrena primero: ./ENTRENAR_AHORA.sh")
         ML_MODEL = None
 
+
 load_ml_model()
 
 
@@ -249,19 +250,19 @@ def _classify_from_baz(z: float) -> int:
     3=NORMAL, 4=RIESGO_SOBREPESO, 5=SOBREPESO, 6=OBESIDAD
     """
     if z < -3.0:
-        return 0  
+        return 0
     elif -3.0 <= z < -2.0:
-        return 1  
+        return 1
     elif -2.0 <= z < -1.0:
-        return 2  
+        return 2
     elif -1.0 <= z <= 1.0:
-        return 3  
+        return 3
     elif 1.0 < z <= 2.0:
-        return 4  
+        return 4
     elif 2.0 < z <= 3.0:
-        return 5  
-    else:  
-        return 6  
+        return 5
+    else:
+        return 6
 
 
 @app.post("/ml/predict_baz", response_model=PredictBAZResponse)
@@ -380,7 +381,7 @@ class ChatRequest(BaseModel):
     message: str
     system: str | None = Field(
         default=(
-            "Eres un asistente que explica y responde de forma clara, " "sin emitir consejo médico."
+            "Eres un asistente que explica y responde de forma clara, sin emitir consejo médico."
         )
     )
 
@@ -394,8 +395,7 @@ class RecomendacionPersonalizadaRequest(BaseModel):
     id_nino: int = Field(description="ID del niño para el que se solicita recomendación")
     tipo_comida: str = Field(description="Tipo de comida (desayuno, almuerzo, cena, merienda)")
     pregunta_usuario: str | None = Field(
-        default=None,
-        description="Pregunta específica del usuario sobre recomendaciones"
+        default=None, description="Pregunta específica del usuario sobre recomendaciones"
     )
 
 
@@ -460,7 +460,9 @@ def consultar_datos_nino(id_nino: int) -> dict[str, Any]:
         return {
             "id": int(row["nin_id"]),
             "nombre": f"{row['nin_nombre']} {row['nin_apellido']}",
-            "fecha_nacimiento": str(row["nin_fecha_nacimiento"]) if row["nin_fecha_nacimiento"] else None,
+            "fecha_nacimiento": str(row["nin_fecha_nacimiento"])
+            if row["nin_fecha_nacimiento"]
+            else None,
             "sexo": row["nin_sexo"],
             "peso_kg": float(row["nin_peso_actual"]) if row["nin_peso_actual"] else None,
             "talla_cm": float(row["nin_talla_actual"]) if row["nin_talla_actual"] else None,
@@ -469,7 +471,7 @@ def consultar_datos_nino(id_nino: int) -> dict[str, Any]:
             "estado_nutricional": row["nin_estado_nutricional"],
             "diagnostico": row["nin_diagnostico_nutricional"],
             "entidad": row["ent_nombre"],
-            "codigo_entidad": row["ent_codigo"]
+            "codigo_entidad": row["ent_codigo"],
         }
 
     except Exception as e:
@@ -501,17 +503,19 @@ def consultar_recetas_por_nino(id_nino: int, tipo_comida: str) -> list[dict[str,
 
         recetas = []
         for _, row in df.iterrows():
-            recetas.append({
-                "id": int(row.get("rec_id", 0)),
-                "nombre": row.get("rec_nombre", ""),
-                "descripcion": row.get("rec_descripcion", ""),
-                "tipo_comida": row.get("rec_tipo_comida", ""),
-                "calorias": float(row.get("rec_calorias", 0)),
-                "proteinas": float(row.get("rec_proteinas", 0)),
-                "carbohidratos": float(row.get("rec_carbohidratos", 0)),
-                "grasas": float(row.get("rec_grasas", 0)),
-                "puntuacion": float(row.get("puntuacion", 0))
-            })
+            recetas.append(
+                {
+                    "id": int(row.get("rec_id", 0)),
+                    "nombre": row.get("rec_nombre", ""),
+                    "descripcion": row.get("rec_descripcion", ""),
+                    "tipo_comida": row.get("rec_tipo_comida", ""),
+                    "calorias": float(row.get("rec_calorias", 0)),
+                    "proteinas": float(row.get("rec_proteinas", 0)),
+                    "carbohidratos": float(row.get("rec_carbohidratos", 0)),
+                    "grasas": float(row.get("rec_grasas", 0)),
+                    "puntuacion": float(row.get("puntuacion", 0)),
+                }
+            )
 
         return recetas
 
@@ -532,7 +536,7 @@ def obtener_estado_nutricional(id_nino: int) -> dict[str, Any]:
             "peso_kg": datos_nino.get("peso_kg"),
             "talla_cm": datos_nino.get("talla_cm"),
             "edad_meses": datos_nino.get("edad_meses"),
-            "sexo": datos_nino.get("sexo")
+            "sexo": datos_nino.get("sexo"),
         }
 
         return estado
@@ -545,7 +549,7 @@ def obtener_estado_nutricional(id_nino: int) -> dict[str, Any]:
             "peso_kg": None,
             "talla_cm": None,
             "edad_meses": None,
-            "sexo": None
+            "sexo": None,
         }
 
 
@@ -554,21 +558,21 @@ def crear_prompt_recomendacion(
     estado_nutricional: dict[str, Any],
     recetas: list[dict[str, Any]],
     tipo_comida: str,
-    pregunta_usuario: str | None = None
+    pregunta_usuario: str | None = None,
 ) -> str:
     """Crea el prompt para el LLM con toda la información del niño y recetas disponibles."""
 
     prompt = f"""Eres un nutricionista especializado en alimentación infantil. Un padre/madre te consulta sobre recomendaciones nutricionales para su hijo/a.
 
 DATOS DEL NIÑO:
-- Nombre: {datos_nino.get('nombre', 'No especificado')}
-- Edad: {datos_nino.get('edad_meses', 'No especificada')} meses
-- Sexo: {'Masculino' if datos_nino.get('sexo') == 'M' else 'Femenino'}
-- Peso: {datos_nino.get('peso_kg', 'No especificado')} kg
-- Talla: {datos_nino.get('talla_cm', 'No especificada')} cm
-- IMC: {datos_nino.get('imc', 'No especificado')}
-- Estado nutricional: {estado_nutricional.get('diagnostico', 'No especificado')}
-- Diagnóstico: {estado_nutricional.get('estado_actual', 'No especificado')}
+- Nombre: {datos_nino.get("nombre", "No especificado")}
+- Edad: {datos_nino.get("edad_meses", "No especificada")} meses
+- Sexo: {"Masculino" if datos_nino.get("sexo") == "M" else "Femenino"}
+- Peso: {datos_nino.get("peso_kg", "No especificado")} kg
+- Talla: {datos_nino.get("talla_cm", "No especificada")} cm
+- IMC: {datos_nino.get("imc", "No especificado")}
+- Estado nutricional: {estado_nutricional.get("diagnostico", "No especificado")}
+- Diagnóstico: {estado_nutricional.get("estado_actual", "No especificado")}
 
 RECETAS DISPONIBLES PARA {tipo_comida.upper()}:
 """
@@ -576,13 +580,13 @@ RECETAS DISPONIBLES PARA {tipo_comida.upper()}:
     if recetas:
         for i, receta in enumerate(recetas[:5], 1):  # Limitar a 5 mejores recetas
             prompt += f"""
-{i}. {receta.get('nombre', 'Sin nombre')}
-   - Descripción: {receta.get('descripcion', 'Sin descripción')}
-   - Calorías: {receta.get('calorias', 0)} kcal
-   - Proteínas: {receta.get('proteinas', 0)}g
-   - Carbohidratos: {receta.get('carbohidratos', 0)}g
-   - Grasas: {receta.get('grasas', 0)}g
-   - Puntuación nutricional: {receta.get('puntuacion', 0)}/10
+{i}. {receta.get("nombre", "Sin nombre")}
+   - Descripción: {receta.get("descripcion", "Sin descripción")}
+   - Calorías: {receta.get("calorias", 0)} kcal
+   - Proteínas: {receta.get("proteinas", 0)}g
+   - Carbohidratos: {receta.get("carbohidratos", 0)}g
+   - Grasas: {receta.get("grasas", 0)}g
+   - Puntuación nutricional: {receta.get("puntuacion", 0)}/10
 """
     else:
         prompt += "\nNo hay recetas específicas disponibles para este tipo de comida.\n"
@@ -627,10 +631,12 @@ def consultar_agente_llm(prompt: str) -> str:
         client = get_llm_client()
         respuesta = client.chat(
             system_message="Eres un nutricionista infantil experto. Proporciona recomendaciones seguras, basadas en evidencia científica y apropiadas para la edad del niño.",
-            user_message=prompt
+            user_message=prompt,
         )
 
-        if respuesta and len(respuesta.strip()) > 10:  # Verificar que no sea una respuesta vacía o demasiado corta
+        if (
+            respuesta and len(respuesta.strip()) > 10
+        ):  # Verificar que no sea una respuesta vacía o demasiado corta
             return respuesta
         else:
             return "No pude generar una recomendación personalizada en este momento. Te recomiendo consultar con un profesional de la nutrición."
@@ -641,7 +647,9 @@ def consultar_agente_llm(prompt: str) -> str:
 
 
 @app.post("/ml/recomendacion_personalizada", response_model=RecomendacionPersonalizadaResponse)
-def generar_recomendacion_personalizada(req: RecomendacionPersonalizadaRequest) -> RecomendacionPersonalizadaResponse:
+def generar_recomendacion_personalizada(
+    req: RecomendacionPersonalizadaRequest,
+) -> RecomendacionPersonalizadaResponse:
     """
     Genera una recomendación nutricional personalizada para un niño específico.
 
@@ -660,31 +668,29 @@ def generar_recomendacion_personalizada(req: RecomendacionPersonalizadaRequest) 
 
         # 4. Crear prompt para el LLM
         prompt = crear_prompt_recomendacion(
-            datos_nino,
-            estado_nutricional,
-            recetas,
-            req.tipo_comida,
-            req.pregunta_usuario
+            datos_nino, estado_nutricional, recetas, req.tipo_comida, req.pregunta_usuario
         )
 
         # 5. Consultar al agente LLM
         recomendacion = consultar_agente_llm(prompt)
-        used_llm = recomendacion != "Lo siento, el servicio de recomendaciones está temporalmente no disponible. Consulta con un nutricionista profesional."
+        used_llm = (
+            recomendacion
+            != "Lo siento, el servicio de recomendaciones está temporalmente no disponible. Consulta con un nutricionista profesional."
+        )
 
         return RecomendacionPersonalizadaResponse(
             recomendacion=recomendacion,
             datos_nino=datos_nino,
             recetas_disponibles=recetas,
             estado_nutricional=estado_nutricional,
-            used_llm=used_llm
+            used_llm=used_llm,
         )
 
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(
-            status_code=500,
-            detail=f"Error generando recomendación personalizada: {str(e)}"
+            status_code=500, detail=f"Error generando recomendación personalizada: {str(e)}"
         )
 
 
@@ -698,11 +704,11 @@ class PredictMLResponse(BaseModel):
     """Response de predicción ML."""
 
     nin_id: int
-    prediction: int  
+    prediction: int
     probability: float
     probabilities: dict[str, float]
     risk_score: float
-    features_used: dict[str, Any]  
+    features_used: dict[str, Any]
     model_version: str
 
 
@@ -742,7 +748,7 @@ def predict_ml(req: PredictMLRequest) -> PredictMLResponse:
         if missing_features:
             raise HTTPException(status_code=400, detail=f"Features faltantes: {missing_features}")
 
-        X = df[feature_cols].iloc[0:1]  
+        X = df[feature_cols].iloc[0:1]
 
         result = ML_MODEL.predict_with_metadata(X)
         pred = result["predictions"][0]
@@ -824,7 +830,7 @@ def predict_ml_direct(req: PredictMLDirectRequest) -> PredictMLResponse:
         risk_score = risk_map.get(resultado["clasificacion"], 0.5)
 
         return PredictMLResponse(
-            nin_id=0,  
+            nin_id=0,
             prediction=resultado["label"],
             label=resultado["clasificacion"],
             probability=resultado["confianza"],
@@ -887,10 +893,10 @@ class AnalisisNutricionalResponse(BaseModel):
     peso_kg: float
     talla_cm: float
     imc: float
-    diagnostico: str  
+    diagnostico: str
     imc_valor: float
     percentil: float
-    nivel_riesgo: str 
+    nivel_riesgo: str
     baz: float
     probabilidad: float
     probabilidades: dict[str, float]
@@ -1000,7 +1006,7 @@ def analisis_nutricional(req: AnalisisNutricionalRequest) -> AnalisisNutricional
             "RIESGO_SOBREPESO",
         ]:
             nivel_riesgo = "MEDIO"
-        else:  
+        else:
             nivel_riesgo = "BAJO"
 
         recomendaciones = _generar_recomendaciones(

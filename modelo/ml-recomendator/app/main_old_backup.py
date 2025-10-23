@@ -383,7 +383,7 @@ class ChatRequest(BaseModel):
     message: str
     system: str | None = Field(
         default=(
-            "Eres un asistente que explica y responde de forma clara, " "sin emitir consejo médico."
+            "Eres un asistente que explica y responde de forma clara, sin emitir consejo médico."
         )
     )
 

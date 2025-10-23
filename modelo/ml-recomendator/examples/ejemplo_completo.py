@@ -124,7 +124,9 @@ def ejemplo_con_features_completos():
     data = engineer.create_features(data)
 
     print("\n📊 Datos del niño:")
-    print(f"   Edad: {data['age_months'].iloc[0]} meses ({data['age_months'].iloc[0]/12:.1f} años)")
+    print(
+        f"   Edad: {data['age_months'].iloc[0]} meses ({data['age_months'].iloc[0] / 12:.1f} años)"
+    )
     print(f"   Sexo: {'Femenino' if data['sex'].iloc[0] == 'F' else 'Masculino'}")
     print(f"   BMI: {data['BMI'].iloc[0]:.2f}")
     print(f"   BAZ: {data['baz'].iloc[0]:.2f}")

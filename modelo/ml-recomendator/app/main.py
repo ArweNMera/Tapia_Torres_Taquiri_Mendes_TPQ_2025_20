@@ -373,7 +373,7 @@ class ChatRequest(BaseModel):
     message: str
     system: str | None = Field(
         default=(
-            "Eres un asistente que explica y responde de forma clara, " "sin emitir consejo médico."
+            "Eres un asistente que explica y responde de forma clara, sin emitir consejo médico."
         )
     )
 
@@ -527,13 +527,13 @@ def crear_prompt_recomendacion(
     prompt = f"""Eres un nutricionista especializado en alimentación infantil. Un padre/madre te consulta sobre recomendaciones nutricionales para su hijo/a.
 
 DATOS DEL NIÑO:
-- Nombre: {datos_nino.get('nombre', 'No especificado')}
+- Nombre: {datos_nino.get("nombre", "No especificado")}
 - Edad: {edad_texto}
 - Sexo: {sexo_texto}
 - Peso: {peso_texto}
 - Talla: {talla_texto}
 - IMC: {imc_texto}
-- Estado nutricional: {datos_nino.get('estado_nutricional', 'No especificado')}
+- Estado nutricional: {datos_nino.get("estado_nutricional", "No especificado")}
 
 RECETAS DISPONIBLES PARA {tipo_comida.upper()}:
 """
@@ -541,15 +541,15 @@ RECETAS DISPONIBLES PARA {tipo_comida.upper()}:
     if recetas:
         for i, receta in enumerate(recetas[:5], 1):
             prompt += f"""
-{i}. {receta.get('nombre', 'Sin nombre')}
-   - Calorías: {receta.get('calorias', 0):.0f} kcal
-   - Proteínas: {receta.get('proteinas', 0):.1f}g
-   - Carbohidratos: {receta.get('carbohidratos', 0):.1f}g
-   - Grasas: {receta.get('grasas', 0):.1f}g
-   - Fibra: {receta.get('fibra', 0):.1f}g
-   - Hierro: {receta.get('hierro', 0):.1f}mg
-   - Costo aproximado: S/ {receta.get('costo', 0):.2f}
-   - Puntuación nutricional: {receta.get('puntuacion', 0):.1f}/10
+{i}. {receta.get("nombre", "Sin nombre")}
+   - Calorías: {receta.get("calorias", 0):.0f} kcal
+   - Proteínas: {receta.get("proteinas", 0):.1f}g
+   - Carbohidratos: {receta.get("carbohidratos", 0):.1f}g
+   - Grasas: {receta.get("grasas", 0):.1f}g
+   - Fibra: {receta.get("fibra", 0):.1f}g
+   - Hierro: {receta.get("hierro", 0):.1f}mg
+   - Costo aproximado: S/ {receta.get("costo", 0):.2f}
+   - Puntuación nutricional: {receta.get("puntuacion", 0):.1f}/10
 """
     else:
         prompt += "\nNo hay recetas específicas disponibles en la base de datos para este tipo de comida.\n"
@@ -566,8 +566,8 @@ RESPUESTA:"""
         prompt += f"""
 
 TAREA:
-Recomienda las 3 mejores opciones de {tipo_comida} para {datos_nino.get('nombre', 'el niño')}, considerando:
-- Estado nutricional: {datos_nino.get('estado_nutricional', 'No especificado')}
+Recomienda las 3 mejores opciones de {tipo_comida} para {datos_nino.get("nombre", "el niño")}, considerando:
+- Estado nutricional: {datos_nino.get("estado_nutricional", "No especificado")}
 - Edad: {edad_texto}
 - Recetas ordenadas por puntuación nutricional
 
@@ -777,34 +777,34 @@ def _preparar_contexto_plan_semanal(
     contexto = f"""Eres un nutricionista experto. Genera un plan de comidas semanal (7 días) para un niño.
 
 PERFIL DEL NIÑO:
-- Nombre: {nino.get('nin_nombres')}
-- Edad: {nino.get('edad_meses', 0) // 12} años ({nino.get('edad_meses', 0)} meses)
-- Sexo: {nino.get('nin_sexo')}
-- Clasificación: {perfil.get('pnn_clasificacion', 'No especificada')}
+- Nombre: {nino.get("nin_nombres")}
+- Edad: {nino.get("edad_meses", 0) // 12} años ({nino.get("edad_meses", 0)} meses)
+- Sexo: {nino.get("nin_sexo")}
+- Clasificación: {perfil.get("pnn_clasificacion", "No especificada")}
 
 REQUERIMIENTOS DIARIOS:
-- Calorías: {perfil.get('pnn_calorias_diarias', 0)} kcal
-- Proteínas: {perfil.get('pnn_proteinas_g', 0)} g
-- Carbohidratos: {perfil.get('pnn_carbohidratos_g', 0)} g
-- Grasas: {perfil.get('pnn_grasas_g', 0)} g
+- Calorías: {perfil.get("pnn_calorias_diarias", 0)} kcal
+- Proteínas: {perfil.get("pnn_proteinas_g", 0)} g
+- Carbohidratos: {perfil.get("pnn_carbohidratos_g", 0)} g
+- Grasas: {perfil.get("pnn_grasas_g", 0)} g
 
 PREFERENCIAS:
-- Desayuno: {', '.join(preferencias.get('DESAYUNO', [])) or 'Sin preferencias'}
-- Almuerzo: {', '.join(preferencias.get('ALMUERZO', [])) or 'Sin preferencias'}
-- Cena: {', '.join(preferencias.get('CENA', [])) or 'Sin preferencias'}
+- Desayuno: {", ".join(preferencias.get("DESAYUNO", [])) or "Sin preferencias"}
+- Almuerzo: {", ".join(preferencias.get("ALMUERZO", [])) or "Sin preferencias"}
+- Cena: {", ".join(preferencias.get("CENA", [])) or "Sin preferencias"}
 
-ALERGIAS: {', '.join(alergias) if alergias else 'Ninguna'}
+ALERGIAS: {", ".join(alergias) if alergias else "Ninguna"}
 
 RECETAS DISPONIBLES:
 
-DESAYUNOS ({len(recetas_por_tipo['DESAYUNO'])} opciones):
-{_format_recetas_para_prompt(recetas_por_tipo['DESAYUNO'][:15])}
+DESAYUNOS ({len(recetas_por_tipo["DESAYUNO"])} opciones):
+{_format_recetas_para_prompt(recetas_por_tipo["DESAYUNO"][:15])}
 
-ALMUERZOS ({len(recetas_por_tipo['ALMUERZO'])} opciones):
-{_format_recetas_para_prompt(recetas_por_tipo['ALMUERZO'][:20])}
+ALMUERZOS ({len(recetas_por_tipo["ALMUERZO"])} opciones):
+{_format_recetas_para_prompt(recetas_por_tipo["ALMUERZO"][:20])}
 
-CENAS ({len(recetas_por_tipo['CENA'])} opciones):
-{_format_recetas_para_prompt(recetas_por_tipo['CENA'][:15])}
+CENAS ({len(recetas_por_tipo["CENA"])} opciones):
+{_format_recetas_para_prompt(recetas_por_tipo["CENA"][:15])}
 
 INSTRUCCIONES:
 1. Genera un plan para 7 días (lunes a domingo)

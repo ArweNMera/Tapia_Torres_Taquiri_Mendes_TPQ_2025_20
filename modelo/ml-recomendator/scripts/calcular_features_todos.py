@@ -76,7 +76,7 @@ def calcular_features_todos():
         print(f"✅ Exitosos: {exitosos}")
         print(f"❌ Errores: {errores}")
         print(f"📊 Total: {total}")
-        print(f"📈 Tasa de éxito: {(exitosos/total*100):.1f}%")
+        print(f"📈 Tasa de éxito: {(exitosos / total * 100):.1f}%")
 
         # Verificar features creados
         query_check = "SELECT COUNT(*) as total FROM features_ml"

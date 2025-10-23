@@ -66,7 +66,7 @@ for caso in casos:
     print("-" * 80)
     print(f"👤 {caso['nombre']}")
     print(
-        f"   Edad: {caso['edad_meses']} meses ({caso['edad_meses']//12} años {caso['edad_meses']%12} meses)"
+        f"   Edad: {caso['edad_meses']} meses ({caso['edad_meses'] // 12} años {caso['edad_meses'] % 12} meses)"
     )
     print(f"   Sexo: {caso['sexo']}")
     print(f"   Peso: {caso['peso_kg']} kg")
@@ -131,7 +131,9 @@ for sexo in ["M", "F"]:
     print(f"Sexo {sexo}:")
     print(f"  Registros: {len(datos_sexo)}")
     print(f"  Rango edad: {datos_sexo['month'].min()} - {datos_sexo['month'].max()} meses")
-    print(f"  Rango edad: {datos_sexo['month'].min()//12} - {datos_sexo['month'].max()//12} años")
+    print(
+        f"  Rango edad: {datos_sexo['month'].min() // 12} - {datos_sexo['month'].max() // 12} años"
+    )
 
     # Verificar si tenemos datos para 14-15 años
     edad_14 = 14 * 12
