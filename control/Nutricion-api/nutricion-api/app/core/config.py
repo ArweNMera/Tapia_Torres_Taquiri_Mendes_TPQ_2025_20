@@ -15,14 +15,15 @@ class Settings(BaseSettings):
     GOOGLE_POST_LOGIN_REDIRECT: str | None = "http://localhost:5173"
     GOOGLE_ALLOWED_REDIRECTS: str | None = None
     FIREBASE_CREDENTIALS_PATH: str | None = None
+    FIREBASE_CREDENTIALS_JSON: str | None = None
     FIREBASE_PROJECT_ID: str | None = None
 
-    # ML API Configuration
     ML_API_URL: str = "http://localhost:8001"
     ML_SERVICE_URL: str = "http://localhost:8001"
 
     class Config:
         env_file = ".env"
+        extra = "ignore"
 
 
 settings = Settings()

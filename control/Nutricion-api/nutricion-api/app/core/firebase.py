@@ -21,7 +21,7 @@ def _resolve_credentials_path(path: str) -> Path:
     if candidate.is_absolute():
         return candidate
 
-    base_dir = Path(__file__).resolve().parents[2]  # control/Nutricion-api/nutricion-api
+    base_dir = Path(__file__).resolve().parents[2]
     return (base_dir / candidate).resolve()
 
 
@@ -30,15 +30,27 @@ def _initialize_firebase_app() -> firebase_admin.App:
     if _firebase_app:
         return _firebase_app
 
-    cred_path = settings.FIREBASE_CREDENTIALS_PATH
-    if not cred_path:
-        raise FirebaseNotConfigured("FIREBASE_CREDENTIALS_PATH no está configurado")
+    resolved_path: Path | None = None
 
-    resolved_path = _resolve_credentials_path(cred_path)
-    if not resolved_path.exists():
-        raise FirebaseNotConfigured(
-            f"Archivo de credenciales Firebase no encontrado: {resolved_path}"
-        )
+    cred_json = settings.FIREBASE_CREDENTIALS_JSON
+    if cred_json:
+        try:
+            tmp_path = Path("/tmp/firebase_credentials.json")
+            tmp_path.write_text(cred_json, encoding="utf-8")
+            resolved_path = tmp_path
+        except Exception as exc:
+            raise FirebaseNotConfigured(f"No se pudo escribir credenciales Firebase en /tmp: {exc}")
+
+    if resolved_path is None:
+        cred_path = settings.FIREBASE_CREDENTIALS_PATH
+        if not cred_path:
+            raise FirebaseNotConfigured("FIREBASE_CREDENTIALS_PATH no está configurado")
+
+        resolved_path = _resolve_credentials_path(cred_path)
+        if not resolved_path.exists():
+            raise FirebaseNotConfigured(
+                f"Archivo de credenciales Firebase no encontrado: {resolved_path}"
+            )
 
     cred = credentials.Certificate(str(resolved_path))
 

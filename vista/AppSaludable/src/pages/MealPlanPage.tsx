@@ -126,15 +126,17 @@ export const MealPlanPage: React.FC = () => {
     setModalGenerarPlan(true);
   };
 
-  const cerrarModales = () => {
+  const cerrarModales = (recargar: boolean = false) => {
     setModalPreferencias(false);
     setModalPerfil(false);
     setModalAlergias(false);
     setModalComidas(false);
     setModalGenerarPlan(false);
     setNinoSeleccionado(null);
-    // Recargar para actualizar estados
-    cargarNinos();
+    // Solo recargar si hubo cambios
+    if (recargar) {
+      cargarNinos();
+    }
   };
 
   if (loading) {

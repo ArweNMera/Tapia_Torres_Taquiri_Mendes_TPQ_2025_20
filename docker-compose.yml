@@ -10,6 +10,10 @@ services:
     volumes:
       # Hot-reload: monta el código fuente
       - ./control/Nutricion-api/nutricion-api:/app
+      # Credenciales de Firebase (solo lectura dentro del contenedor)
+      - ./control/Nutricion-api/nutricion-api/nutricion-dd80c-firebase-adminsdk-fbsvc-356ee61526.json:/secrets/firebase_credentials.json:ro
+      # Variables de entorno de la API (reutilizamos el .env local)
+      - ./control/Nutricion-api/nutricion-api/.env:/app/.env:ro
     environment:
       - DATABASE_URL=mysql+pymysql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}
       - SECRET_KEY=${SECRET_KEY}
@@ -21,6 +25,10 @@ services:
       - GOOGLE_POST_LOGIN_REDIRECT=${GOOGLE_POST_LOGIN_REDIRECT}
       - GOOGLE_ALLOWED_REDIRECTS=${GOOGLE_ALLOWED_REDIRECTS}
       - ML_API_URL=http://modelo-ml:8001
+      - FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID}
+      - FIREBASE_CREDENTIALS_PATH=/secrets/firebase_credentials.json
+      - FRONTEND_ORIGINS=${FRONTEND_ORIGINS}
+      - ML_SERVICE_URL=http://modelo-ml:8001
     extra_hosts:
       - "host.docker.internal:host-gateway"
     networks:
@@ -41,11 +49,16 @@ services:
       # Hot-reload: monta el código fuente
       - ./vista/AppSaludable:/app
       - /app/node_modules  # Evita sobrescribir node_modules
+      # Variables de entorno del frontend (Vite toma este archivo)
+      - ./vista/AppSaludable/.env:/app/.env:ro
     environment:
       - VITE_API_BASE_URL=http://localhost:8000
       - VITE_API_VERSION=v1
       - VITE_TOKEN_KEY=auth_token
       - VITE_GOOGLE_POST_LOGIN_REDIRECT=http://localhost:5173
+      - VITE_DEV_PORT=5173
+      - VITE_DEV_HOST=0.0.0.0
+      - VITE_OPEN_BROWSER=false
     stdin_open: true
     tty: true
     networks:

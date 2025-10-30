@@ -9,16 +9,7 @@ from sqlalchemy.orm import Session
 from app.infrastructure.db.session import get_db
 from app.infrastructure.repositories.ninos_repo import NinosRepository
 
-# Try to import assist from ml-recomendator; add path fallback if needed
-# NOTA: Estos imports están comentados porque el backend no necesita acceso directo al código ML
-# El backend se comunica con el modelo ML vía HTTP (puerto 8001)
-# try:
-#     from src.llm.assist import summarize_with_llm, format_recommender_prompt
-# except Exception:
-#     pass
 
-
-# Funciones dummy para compatibilidad (no se usan en Docker)
 def summarize_with_llm(features, scores):
     return None
 
@@ -60,11 +51,6 @@ def summarize(req: SummaryRequest) -> SummaryResponse:
         except Exception as e:  # Should not happen; guard anyway
             raise HTTPException(status_code=500, detail=f"No se pudo generar resumen: {e}")
     return SummaryResponse(text=text, used_llm=used_llm)
-
-
-# ============================================================================
-# NUEVO ENDPOINT: Análisis Nutricional usando procedimientos almacenados
-# ============================================================================
 
 
 class AnalisisNutricionalRequest(BaseModel):
@@ -156,10 +142,41 @@ async def analisis_nutricional(
 @router.get("/health")
 async def ml_health():
     """
-    Verifica el estado del módulo de análisis nutricional basado en procedimientos almacenados.
+    Verifica el estado del servicio ML externo y la conectividad.
     """
-    return {
-        "status": "ok",
-        "source": "stored_procedure",
-        "detail": "Analizador nutricional usando sp_evaluar_estado_nutricional",
-    }
+    import os
+
+    import httpx
+
+    ml_service_url = os.getenv("ML_SERVICE_URL", "http://localhost:8001")
+    ml_service_url = ml_service_url.rstrip("/")
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(f"{ml_service_url}/health")
+
+            if response.status_code == 200:
+                ml_data = response.json()
+                return {
+                    "status": "ok",
+                    "ml_api_url": ml_service_url,
+                    "ml_api_status": "ok",
+                    "ml_model_loaded": ml_data.get("lms_loaded", False),
+                    "ml_llm_available": ml_data.get("llm_available", False),
+                    "ml_db_available": ml_data.get("db_available", False),
+                }
+            else:
+                return {
+                    "status": "error",
+                    "ml_api_url": ml_service_url,
+                    "ml_api_status": f"HTTP {response.status_code}",
+                    "detail": "Servicio ML no responde correctamente",
+                }
+
+    except Exception as e:
+        return {
+            "status": "error",
+            "ml_api_url": ml_service_url,
+            "ml_api_status": "unreachable",
+            "detail": f"No se puede conectar al servicio ML: {str(e)}",
+        }

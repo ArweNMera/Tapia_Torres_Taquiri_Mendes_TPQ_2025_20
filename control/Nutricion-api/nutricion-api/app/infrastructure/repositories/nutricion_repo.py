@@ -229,14 +229,12 @@ class NutricionRepository:
 
     def get_receta_completa(self, rec_id: int) -> Optional[Dict]:
         """Obtener receta completa con ingredientes usando procedimiento almacenado"""
-        # Este SP retorna múltiples result sets
         placeholders = ":param0"
         query = f"CALL sp_recetas_completa_obtener({placeholders})"
         param_dict = {"param0": rec_id}
 
         result = self.db.execute(text(query), param_dict)
 
-        # Primera result set: información de la receta
         receta_data = None
         if result.returns_rows:
             columns = result.keys()
@@ -246,8 +244,6 @@ class NutricionRepository:
 
         if not receta_data:
             return None
-
-        # Obtener segunda result set (ingredientes)
         try:
             if result.cursor.nextset():
                 columns = [desc[0] for desc in result.cursor.description]
@@ -260,8 +256,6 @@ class NutricionRepository:
 
         self.db.commit()
         return receta_data
-
-    # ========== RECETAS_INGREDIENTES ==========
 
     def add_ingrediente_receta(self, data: dict) -> bool:
         """Agregar ingrediente a receta"""
@@ -278,7 +272,6 @@ class NutricionRepository:
 
     def update_ingrediente_receta(self, rec_id: int, ali_id: int, data: dict) -> bool:
         """Actualizar ingrediente de receta"""
-        # Usar PRIMARY KEY compuesta (rec_id, ali_id)
         results = self._call_sp(
             "sp_recetas_ingredientes_actualizar",
             [rec_id, ali_id, data.get("ri_cantidad"), data.get("ri_unidad")],
@@ -287,11 +280,8 @@ class NutricionRepository:
 
     def delete_ingrediente_receta(self, rec_id: int, ali_id: int) -> bool:
         """Eliminar ingrediente de receta"""
-        # Usar PRIMARY KEY compuesta (rec_id, ali_id)
         results = self._call_sp("sp_recetas_ingredientes_eliminar", [rec_id, ali_id])
         return results[0].get("affected_rows", 0) > 0 if results else False
-
-    # ========== RECETAS_COMIDAS ==========
 
     def add_tipo_comida_receta(self, rec_id: int, tipo_comida: str) -> bool:
         """Asociar receta con tipo de comida"""
@@ -303,13 +293,10 @@ class NutricionRepository:
         results = self._call_sp("sp_recetas_comidas_eliminar", [rc_id])
         return results[0].get("affected_rows", 0) > 0 if results else False
 
-    # ========== DISPONIBILIDAD_ALIMENTOS ==========
-
     def get_disponibilidad_alimentos(
         self, region: Optional[str] = None, periodo: Optional[str] = None, limit: int = 100
     ) -> List[Dict]:
         """Listar disponibilidad de alimentos usando procedimiento almacenado"""
-        # Usar el SP sp_disponibilidad_listar que acepta region, periodo y limit
         return self._call_sp("sp_disponibilidad_listar", [region, periodo, limit])
 
     def create_disponibilidad_alimento(self, data: dict) -> Optional[Dict]:

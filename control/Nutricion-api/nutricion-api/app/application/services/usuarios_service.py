@@ -202,7 +202,17 @@ class UsuariosService:
     def list_users_admin(self) -> list[dict[str, Any]]:
         """Caso de uso: Listar usuarios para administración."""
         try:
-            return self.repository.admin_list_users()
+            raw_users = self.repository.admin_list_users()
+            enriched: list[dict[str, Any]] = []
+            for user in raw_users:
+                data = dict(user)
+                creado_en = data.get("creado_en")
+                if creado_en is not None:
+                    data["creado_en"] = (
+                        creado_en.isoformat() if hasattr(creado_en, "isoformat") else str(creado_en)
+                    )
+                enriched.append(data)
+            return enriched
         except Exception as exc:
             raise HTTPException(status_code=500, detail=f"Error al listar usuarios: {exc}") from exc
 

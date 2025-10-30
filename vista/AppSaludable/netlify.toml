@@ -1,9 +1,10 @@
 [build]
-  command = "npm run build"
+  command = "npm run build -- --mode production"
   publish = "build"
 
 [build.environment]
   NODE_VERSION = "18"
+  VITE_API_BASE_URL = "https://nutricion-backend-343042748851.europe-west1.run.app"
 
 [[redirects]]
   from = "/*"

@@ -15,3 +15,21 @@ cryptography>=46.0.0  # Requerido para autenticación MySQL caching_sha2_passwor
 
 # Para cálculo de BAZ (si se necesita scipy)
 scipy>=1.11.0
+
+# Machine Learning - Modelo Híbrido
+lightgbm>=4.1.0
+scikit-learn>=1.3.0
+numpy>=1.24.0
+
+# Optimización
+ortools>=9.8.0
+pulp>=2.7.0
+
+# Explicabilidad
+shap>=0.43.0
+
+# Métricas y evaluación
+scikit-metrics>=0.1.0
+
+# Procesamiento de datos adicional
+joblib>=1.3.0

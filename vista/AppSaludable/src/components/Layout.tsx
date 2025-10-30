@@ -1,5 +1,5 @@
 import { ReactNode, useState } from 'react';
-import { Home, User, BookOpen, BarChart, Settings, Menu, Calendar, Scan, Shield, Users, Trophy, X, LogOut, ChevronDown } from 'lucide-react';
+import { Home, User, BookOpen, BarChart, Settings, Menu, Calendar, Scan, Shield, Users, Trophy, X, LogOut, ChevronDown, Apple, ChefHat } from 'lucide-react';
 import { Button } from './ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from './ui/sheet';
@@ -63,6 +63,8 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
   const tabs = [
     { id: 'home', icon: Home, label: 'Inicio', category: 'principal' },
     { id: 'meal-plan', icon: Calendar, label: 'Plan de Comidas', category: 'planificacion' },
+    { id: 'alimentos', icon: Apple, label: 'Alimentos', category: 'planificacion' },
+    { id: 'recetas', icon: ChefHat, label: 'Recetas', category: 'planificacion' },
     { id: 'scan', icon: Scan, label: 'Escanear', category: 'herramientas' },
     { id: 'risk-prediction', icon: Shield, label: 'Análisis de Riesgos', category: 'herramientas' },
     { id: 'progress', icon: BarChart, label: 'Progreso', category: 'seguimiento' },
@@ -78,6 +80,8 @@ export function Layout({ children, activeTab, onTabChange }: LayoutProps) {
     'home',
     'clinical',
     'meal-plan',
+    'alimentos',
+    'recetas',
     'scan',
     'risk-prediction',
     'progress',

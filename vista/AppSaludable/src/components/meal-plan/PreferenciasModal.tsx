@@ -1,6 +1,3 @@
-/**
- * Modal para gestionar preferencias alimentarias
- */
 import React, { useState, useEffect } from 'react';
 import {
   Dialog,
@@ -16,7 +13,7 @@ import type { Preferencias } from '../../types/mealPlan';
 
 interface PreferenciasModalProps {
   open: boolean;
-  onClose: () => void;
+  onClose: (recargar?: boolean) => void;
   ninId: number;
   ninNombre: string;
 }
@@ -76,7 +73,7 @@ export const PreferenciasModal: React.FC<PreferenciasModalProps> = ({
         title: 'Preferencias guardadas',
         description: `Las preferencias de ${ninNombre} se guardaron exitosamente`,
       });
-      onClose();
+      onClose(true);
     } catch (error) {
       toast({
         title: 'Error',

@@ -321,3 +321,96 @@ export interface ChatBotResponse {
   estado_nutricional: EstadoNutricional;
   used_llm: boolean;
 }
+
+// ========== TIPOS PARA ALIMENTOS ==========
+export interface AlimentoBase {
+  ali_nombre: string;
+  ali_nombre_cientifico?: string;
+  ali_grupo?: string;
+  ali_unidad?: string;
+  ali_activo?: boolean;
+}
+
+export interface AlimentoCreate extends AlimentoBase {}
+
+export interface AlimentoUpdate {
+  ali_nombre?: string;
+  ali_nombre_cientifico?: string;
+  ali_grupo?: string;
+  ali_unidad?: string;
+  ali_activo?: boolean;
+}
+
+export interface AlimentoResponse extends AlimentoBase {
+  ali_id: number;
+}
+
+export interface NutrienteResponse {
+  nutri_id: number;
+  nutri_codigo: string;
+  nutri_nombre: string;
+  nutri_unidad: string;
+}
+
+export interface AlimentoNutrienteResponse {
+  ali_id: number;
+  nutri_id: number;
+  an_cantidad_100: number;
+  an_fuente?: string;
+}
+
+export interface AlimentoConNutrientesResponse extends AlimentoResponse {
+  nutrientes: Array<{
+    nutri_id: number;
+    nutri_codigo: string;
+    nutri_nombre: string;
+    nutri_unidad: string;
+    an_cantidad_100: number;
+    an_fuente?: string;
+  }>;
+}
+
+// ========== TIPOS PARA RECETAS ==========
+export interface RecetaBase {
+  rec_nombre: string;
+  rec_instrucciones?: string;
+  rec_activo?: boolean;
+}
+
+export interface RecetaCreate extends RecetaBase {}
+
+export interface RecetaUpdate {
+  rec_nombre?: string;
+  rec_instrucciones?: string;
+  rec_activo?: boolean;
+}
+
+export interface RecetaResponse extends RecetaBase {
+  rec_id: number;
+}
+
+export interface RecetaIngredienteResponse {
+  rec_id: number;
+  ali_id: number;
+  ri_cantidad: number;
+  ri_unidad: string;
+  ali_nombre?: string;
+}
+
+export interface RecetaCompletaResponse extends RecetaResponse {
+  ingredientes: RecetaIngredienteResponse[];
+  tipos_comida: string[];
+  informacion_nutricional: Record<string, any>;
+}
+
+export interface RecetaIngredienteCreate {
+  rec_id: number;
+  ali_id: number;
+  ri_cantidad: number;
+  ri_unidad?: string;
+}
+
+export interface RecetaIngredienteUpdate {
+  ri_cantidad?: number;
+  ri_unidad?: string;
+}

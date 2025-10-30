@@ -24,7 +24,6 @@ class PreferenciasRepository:
 
     def guardar_preferencias(self, nin_id: int, tipo_comida: str, preferencias: List[str]) -> Dict:
         """Guarda las preferencias de un niño para un tipo de comida"""
-        # Convertir lista a JSON
         preferencias_json = json.dumps(preferencias)
 
         query = text("""

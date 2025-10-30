@@ -54,7 +54,8 @@
       outDir: 'build',
     },
     server: {
-      port: 3000,
-      open: true,
+      port: Number(process.env.VITE_DEV_PORT ?? 5173),
+      host: process.env.VITE_DEV_HOST ?? '0.0.0.0',
+      open: process.env.VITE_OPEN_BROWSER === 'true',
     },
   });

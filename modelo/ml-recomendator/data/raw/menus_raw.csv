@@ -1,0 +1,274 @@
+men_id,nin_id,men_generado_por,men_inicio,men_fin,men_kcal_total,men_estado,fecha_creacion,mei_id,mei_dia_idx,mei_comida,mei_kcal,rec_id,rec_nombre,rec_instrucciones,rec_activo
+1,299,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:33:38,1,0,DESAYUNO,500,206,Puré de papa con huevo,Puré de papa; servir con huevo sancochado.,1
+1,299,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:33:38,2,0,ALMUERZO,800,207,Ensalada de palta y zanahoria,Mezclar palta en cubos con zanahoria rallada.,1
+1,299,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:33:38,3,0,CENA,600,203,Anchoveta al horno con yuca,Hornear anchoveta 15 min; servir con yuca cocida.,1
+1,299,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:33:38,4,1,DESAYUNO,500,215,Yogurt con mango y avena,"Mezclar yogurt, mango y avena hidratada.",1
+1,299,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:33:38,5,1,ALMUERZO,800,226,Brócoli salteado con queso fresco,Saltear brócoli; finalizar con queso fresco en cubos.,1
+1,299,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:33:38,6,1,CENA,600,221,Camote con huevo revuelto,Saltear camote en cubos; añadir huevo.,1
+1,299,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:33:38,7,2,DESAYUNO,500,216,Papaya con queso fresco,Servir cubos de papaya con queso fresco.,1
+1,299,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:33:38,8,2,ALMUERZO,800,222,Palta con tomate sobre pan integral,Untar pan; colocar palta y tomate.,1
+1,299,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:33:38,9,2,CENA,600,218,Quinua salteada con brócoli,Saltear quinua cocida con brócoli.,1
+1,299,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:33:38,10,3,DESAYUNO,500,227,"Tazón de frutas (naranja, papaya, fresa)",Cortar frutas y mezclar.,1
+1,299,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:33:38,11,3,ALMUERZO,800,224,Arroz con anchoveta y espinaca,Saltear anchoveta; mezclar con arroz y espinaca.,1
+1,299,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:33:38,12,3,CENA,600,201,Pollo a la plancha con ensalada,"Sellar pollo; acompañar con espinaca, zanahoria y tomate.",1
+1,299,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:33:38,13,4,DESAYUNO,500,204,Avena con yogurt y fresa,Cocer avena; mezclar con yogurt; agregar fresa.,1
+1,299,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:33:38,14,4,ALMUERZO,800,202,Guiso de lentejas con papa,Sofreír; añadir lentejas y papa; hervir 12–15 min.,1
+1,299,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:33:38,15,4,CENA,600,219,Hígado de pollo encebollado,Saltear hígado con cebolla; cocción completa.,1
+1,299,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:33:38,16,5,DESAYUNO,500,213,Arroz con lentejas y plátano salteado,Mezclar arroz/lentejas; servir con plátano salteado.,1
+1,299,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:33:38,17,5,ALMUERZO,800,217,Ensalada de tomate y cebolla,Cortar y mezclar; aliño suave.,1
+1,299,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:33:38,18,5,CENA,600,214,Bonito a la plancha con choclo,Plancha bonito; servir con maíz choclo.,1
+1,299,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:33:38,19,6,DESAYUNO,500,223,Sopa de pollo con verduras,Hervir pollo con zanahoria y papa.,1
+1,299,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:33:38,20,6,ALMUERZO,800,225,Lentejas con hígado en dados,Agregar dados de hígado a lentejas cocidas.,1
+1,299,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:33:38,21,6,CENA,600,208,Camote al horno con queso fresco,Hornear camote; coronar con queso fresco.,1
+2,299,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:35:53,22,0,DESAYUNO,500,202,Guiso de lentejas con papa,Sofreír; añadir lentejas y papa; hervir 12–15 min.,1
+2,299,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:35:53,23,0,ALMUERZO,800,223,Sopa de pollo con verduras,Hervir pollo con zanahoria y papa.,1
+2,299,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:35:53,24,0,CENA,600,203,Anchoveta al horno con yuca,Hornear anchoveta 15 min; servir con yuca cocida.,1
+2,299,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:35:53,25,1,DESAYUNO,500,227,"Tazón de frutas (naranja, papaya, fresa)",Cortar frutas y mezclar.,1
+2,299,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:35:53,26,1,ALMUERZO,800,206,Puré de papa con huevo,Puré de papa; servir con huevo sancochado.,1
+2,299,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:35:53,27,1,CENA,600,222,Palta con tomate sobre pan integral,Untar pan; colocar palta y tomate.,1
+2,299,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:35:53,28,2,DESAYUNO,500,216,Papaya con queso fresco,Servir cubos de papaya con queso fresco.,1
+2,299,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:35:53,29,2,ALMUERZO,800,228,Maíz choclo con queso fresco,Servir choclo cocido con queso.,1
+2,299,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:35:53,30,2,CENA,600,204,Avena con yogurt y fresa,Cocer avena; mezclar con yogurt; agregar fresa.,1
+2,299,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:35:53,31,3,DESAYUNO,500,212,Sandwich de pan integral con pollo y palta,"Armar con pan, pollo deshilachado y palta.",1
+2,299,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:35:53,32,3,ALMUERZO,800,213,Arroz con lentejas y plátano salteado,Mezclar arroz/lentejas; servir con plátano salteado.,1
+2,299,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:35:53,33,3,CENA,600,215,Yogurt con mango y avena,"Mezclar yogurt, mango y avena hidratada.",1
+2,299,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:35:53,34,4,DESAYUNO,500,201,Pollo a la plancha con ensalada,"Sellar pollo; acompañar con espinaca, zanahoria y tomate.",1
+2,299,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:35:53,35,4,ALMUERZO,800,211,"Sopa de verduras (brócoli, zanahoria, papa)",Hervir verduras; sazonar suave.,1
+2,299,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:35:53,36,4,CENA,600,219,Hígado de pollo encebollado,Saltear hígado con cebolla; cocción completa.,1
+2,299,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:35:53,37,5,DESAYUNO,500,208,Camote al horno con queso fresco,Hornear camote; coronar con queso fresco.,1
+2,299,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:35:53,38,5,ALMUERZO,800,225,Lentejas con hígado en dados,Agregar dados de hígado a lentejas cocidas.,1
+2,299,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:35:53,39,5,CENA,600,210,Garbanzo salteado con cebolla y tomate,Saltear cebolla/tomate; agregar garbanzo cocido.,1
+2,299,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:35:53,40,6,DESAYUNO,500,207,Ensalada de palta y zanahoria,Mezclar palta en cubos con zanahoria rallada.,1
+2,299,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:35:53,41,6,ALMUERZO,800,217,Ensalada de tomate y cebolla,Cortar y mezclar; aliño suave.,1
+2,299,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:35:53,42,6,CENA,600,218,Quinua salteada con brócoli,Saltear quinua cocida con brócoli.,1
+3,202,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:39:57,43,0,DESAYUNO,500,218,Quinua salteada con brócoli,Saltear quinua cocida con brócoli.,1
+3,202,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:39:57,44,0,ALMUERZO,800,204,Avena con yogurt y fresa,Cocer avena; mezclar con yogurt; agregar fresa.,1
+3,202,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:39:57,45,0,CENA,600,207,Ensalada de palta y zanahoria,Mezclar palta en cubos con zanahoria rallada.,1
+3,202,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:39:57,46,1,DESAYUNO,500,229,Avena con plátano y naranja,Cocer avena en leche; añadir plátano y gajos de naranja.,1
+3,202,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:39:57,47,1,ALMUERZO,800,222,Palta con tomate sobre pan integral,Untar pan; colocar palta y tomate.,1
+3,202,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:39:57,48,1,CENA,600,219,Hígado de pollo encebollado,Saltear hígado con cebolla; cocción completa.,1
+3,202,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:39:57,49,2,DESAYUNO,500,206,Puré de papa con huevo,Puré de papa; servir con huevo sancochado.,1
+3,202,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:39:57,50,2,ALMUERZO,800,225,Lentejas con hígado en dados,Agregar dados de hígado a lentejas cocidas.,1
+3,202,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:39:57,51,2,CENA,600,213,Arroz con lentejas y plátano salteado,Mezclar arroz/lentejas; servir con plátano salteado.,1
+3,202,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:39:57,52,3,DESAYUNO,500,200,Quinua con leche y plátano,Hervir quinua con leche; servir con plátano.,1
+3,202,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:39:57,53,3,ALMUERZO,800,217,Ensalada de tomate y cebolla,Cortar y mezclar; aliño suave.,1
+3,202,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:39:57,54,3,CENA,600,201,Pollo a la plancha con ensalada,"Sellar pollo; acompañar con espinaca, zanahoria y tomate.",1
+3,202,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:39:57,55,4,DESAYUNO,500,215,Yogurt con mango y avena,"Mezclar yogurt, mango y avena hidratada.",1
+3,202,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:39:57,56,4,ALMUERZO,800,216,Papaya con queso fresco,Servir cubos de papaya con queso fresco.,1
+3,202,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:39:57,57,4,CENA,600,224,Arroz con anchoveta y espinaca,Saltear anchoveta; mezclar con arroz y espinaca.,1
+3,202,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:39:57,58,5,DESAYUNO,500,221,Camote con huevo revuelto,Saltear camote en cubos; añadir huevo.,1
+3,202,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:39:57,59,5,ALMUERZO,800,211,"Sopa de verduras (brócoli, zanahoria, papa)",Hervir verduras; sazonar suave.,1
+3,202,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:39:57,60,5,CENA,600,220,Guiso de frejol canario con arroz,Cocer frejol; servir con arroz.,1
+3,202,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:39:57,61,6,DESAYUNO,500,227,"Tazón de frutas (naranja, papaya, fresa)",Cortar frutas y mezclar.,1
+3,202,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:39:57,62,6,ALMUERZO,800,226,Brócoli salteado con queso fresco,Saltear brócoli; finalizar con queso fresco en cubos.,1
+3,202,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:39:57,63,6,CENA,600,210,Garbanzo salteado con cebolla y tomate,Saltear cebolla/tomate; agregar garbanzo cocido.,1
+4,199,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:47:12,64,0,DESAYUNO,500,208,Camote al horno con queso fresco,Hornear camote; coronar con queso fresco.,1
+4,199,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:47:12,65,0,ALMUERZO,800,219,Hígado de pollo encebollado,Saltear hígado con cebolla; cocción completa.,1
+4,199,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:47:12,66,0,CENA,600,201,Pollo a la plancha con ensalada,"Sellar pollo; acompañar con espinaca, zanahoria y tomate.",1
+4,199,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:47:12,67,1,DESAYUNO,500,216,Papaya con queso fresco,Servir cubos de papaya con queso fresco.,1
+4,199,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:47:12,68,1,ALMUERZO,800,212,Sandwich de pan integral con pollo y palta,"Armar con pan, pollo deshilachado y palta.",1
+4,199,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:47:12,69,1,CENA,600,202,Guiso de lentejas con papa,Sofreír; añadir lentejas y papa; hervir 12–15 min.,1
+4,199,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:47:12,70,2,DESAYUNO,500,221,Camote con huevo revuelto,Saltear camote en cubos; añadir huevo.,1
+4,199,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:47:12,71,2,ALMUERZO,800,211,"Sopa de verduras (brócoli, zanahoria, papa)",Hervir verduras; sazonar suave.,1
+4,199,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:47:12,72,2,CENA,600,228,Maíz choclo con queso fresco,Servir choclo cocido con queso.,1
+4,199,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:47:12,73,3,DESAYUNO,500,204,Avena con yogurt y fresa,Cocer avena; mezclar con yogurt; agregar fresa.,1
+4,199,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:47:12,74,3,ALMUERZO,800,218,Quinua salteada con brócoli,Saltear quinua cocida con brócoli.,1
+4,199,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:47:12,75,3,CENA,600,229,Avena con plátano y naranja,Cocer avena en leche; añadir plátano y gajos de naranja.,1
+4,199,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:47:12,76,4,DESAYUNO,500,214,Bonito a la plancha con choclo,Plancha bonito; servir con maíz choclo.,1
+4,199,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:47:12,77,4,ALMUERZO,800,206,Puré de papa con huevo,Puré de papa; servir con huevo sancochado.,1
+4,199,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:47:12,78,4,CENA,600,213,Arroz con lentejas y plátano salteado,Mezclar arroz/lentejas; servir con plátano salteado.,1
+4,199,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:47:12,79,5,DESAYUNO,500,215,Yogurt con mango y avena,"Mezclar yogurt, mango y avena hidratada.",1
+4,199,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:47:12,80,5,ALMUERZO,800,220,Guiso de frejol canario con arroz,Cocer frejol; servir con arroz.,1
+4,199,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:47:12,81,5,CENA,600,225,Lentejas con hígado en dados,Agregar dados de hígado a lentejas cocidas.,1
+4,199,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:47:12,82,6,DESAYUNO,500,203,Anchoveta al horno con yuca,Hornear anchoveta 15 min; servir con yuca cocida.,1
+4,199,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:47:12,83,6,ALMUERZO,800,227,"Tazón de frutas (naranja, papaya, fresa)",Cortar frutas y mezclar.,1
+4,199,IA,2025-10-21,2025-10-27,13300,BORRADOR,2025-10-14 19:47:12,84,6,CENA,600,205,Arroz con pollo y brócoli,Saltear pollo; añadir arroz y brócoli.,1
+6,299,IA,2025-10-21,2025-10-27,6195,BORRADOR,2025-10-14 19:51:10,85,0,DESAYUNO,391,200,Quinua con leche y plátano,Hervir quinua con leche; servir con plátano.,1
+6,299,IA,2025-10-21,2025-10-27,6195,BORRADOR,2025-10-14 19:51:10,86,0,ALMUERZO,387,205,Arroz con pollo y brócoli,Saltear pollo; añadir arroz y brócoli.,1
+6,299,IA,2025-10-21,2025-10-27,6195,BORRADOR,2025-10-14 19:51:10,87,0,CENA,397,203,Anchoveta al horno con yuca,Hornear anchoveta 15 min; servir con yuca cocida.,1
+6,299,IA,2025-10-21,2025-10-27,6195,BORRADOR,2025-10-14 19:51:10,88,1,DESAYUNO,303,204,Avena con yogurt y fresa,Cocer avena; mezclar con yogurt; agregar fresa.,1
+6,299,IA,2025-10-21,2025-10-27,6195,BORRADOR,2025-10-14 19:51:10,89,1,ALMUERZO,243,201,Pollo a la plancha con ensalada,"Sellar pollo; acompañar con espinaca, zanahoria y tomate.",1
+6,299,IA,2025-10-21,2025-10-27,6195,BORRADOR,2025-10-14 19:51:10,90,1,CENA,136,207,Ensalada de palta y zanahoria,Mezclar palta en cubos con zanahoria rallada.,1
+6,299,IA,2025-10-21,2025-10-27,6195,BORRADOR,2025-10-14 19:51:10,91,2,DESAYUNO,450,212,Sandwich de pan integral con pollo y palta,"Armar con pan, pollo deshilachado y palta.",1
+6,299,IA,2025-10-21,2025-10-27,6195,BORRADOR,2025-10-14 19:51:10,92,2,ALMUERZO,384,220,Guiso de frejol canario con arroz,Cocer frejol; servir con arroz.,1
+6,299,IA,2025-10-21,2025-10-27,6195,BORRADOR,2025-10-14 19:51:10,93,2,CENA,243,223,Sopa de pollo con verduras,Hervir pollo con zanahoria y papa.,1
+6,299,IA,2025-10-21,2025-10-27,6195,BORRADOR,2025-10-14 19:51:10,94,3,DESAYUNO,298,215,Yogurt con mango y avena,"Mezclar yogurt, mango y avena hidratada.",1
+6,299,IA,2025-10-21,2025-10-27,6195,BORRADOR,2025-10-14 19:51:10,95,3,ALMUERZO,379,213,Arroz con lentejas y plátano salteado,Mezclar arroz/lentejas; servir con plátano salteado.,1
+6,299,IA,2025-10-21,2025-10-27,6195,BORRADOR,2025-10-14 19:51:10,96,3,CENA,267,206,Puré de papa con huevo,Puré de papa; servir con huevo sancochado.,1
+6,299,IA,2025-10-21,2025-10-27,6195,BORRADOR,2025-10-14 19:51:10,97,4,DESAYUNO,261,221,Camote con huevo revuelto,Saltear camote en cubos; añadir huevo.,1
+6,299,IA,2025-10-21,2025-10-27,6195,BORRADOR,2025-10-14 19:51:10,98,4,ALMUERZO,326,224,Arroz con anchoveta y espinaca,Saltear anchoveta; mezclar con arroz y espinaca.,1
+6,299,IA,2025-10-21,2025-10-27,6195,BORRADOR,2025-10-14 19:51:10,99,4,CENA,329,222,Palta con tomate sobre pan integral,Untar pan; colocar palta y tomate.,1
+6,299,IA,2025-10-21,2025-10-27,6195,BORRADOR,2025-10-14 19:51:10,100,5,DESAYUNO,165,216,Papaya con queso fresco,Servir cubos de papaya con queso fresco.,1
+6,299,IA,2025-10-21,2025-10-27,6195,BORRADOR,2025-10-14 19:51:10,101,5,ALMUERZO,278,202,Guiso de lentejas con papa,Sofreír; añadir lentejas y papa; hervir 12–15 min.,1
+6,299,IA,2025-10-21,2025-10-27,6195,BORRADOR,2025-10-14 19:51:10,102,5,CENA,276,228,Maíz choclo con queso fresco,Servir choclo cocido con queso.,1
+6,299,IA,2025-10-21,2025-10-27,6195,BORRADOR,2025-10-14 19:51:10,103,6,DESAYUNO,303,204,Avena con yogurt y fresa,Cocer avena; mezclar con yogurt; agregar fresa.,1
+6,299,IA,2025-10-21,2025-10-27,6195,BORRADOR,2025-10-14 19:51:10,104,6,ALMUERZO,243,218,Quinua salteada con brócoli,Saltear quinua cocida con brócoli.,1
+6,299,IA,2025-10-21,2025-10-27,6195,BORRADOR,2025-10-14 19:51:10,105,6,CENA,136,207,Ensalada de palta y zanahoria,Mezclar palta en cubos con zanahoria rallada.,1
+7,202,IA,2025-10-21,2025-10-27,5996,BORRADOR,2025-10-14 20:50:16,106,0,DESAYUNO,303,204,Avena con yogurt y fresa,Cocer avena; mezclar con yogurt; agregar fresa.,1
+7,202,IA,2025-10-21,2025-10-27,5996,BORRADOR,2025-10-14 20:50:16,107,0,ALMUERZO,387,205,Arroz con pollo y brócoli,Saltear pollo; añadir arroz y brócoli.,1
+7,202,IA,2025-10-21,2025-10-27,5996,BORRADOR,2025-10-14 20:50:16,108,0,CENA,243,223,Sopa de pollo con verduras,Hervir pollo con zanahoria y papa.,1
+7,202,IA,2025-10-21,2025-10-27,5996,BORRADOR,2025-10-14 20:50:16,109,1,DESAYUNO,298,215,Yogurt con mango y avena,"Mezclar yogurt, mango y avena hidratada.",1
+7,202,IA,2025-10-21,2025-10-27,5996,BORRADOR,2025-10-14 20:50:16,110,1,ALMUERZO,278,202,Guiso de lentejas con papa,Sofreír; añadir lentejas y papa; hervir 12–15 min.,1
+7,202,IA,2025-10-21,2025-10-27,5996,BORRADOR,2025-10-14 20:50:16,111,1,CENA,397,203,Anchoveta al horno con yuca,Hornear anchoveta 15 min; servir con yuca cocida.,1
+7,202,IA,2025-10-21,2025-10-27,5996,BORRADOR,2025-10-14 20:50:16,112,2,DESAYUNO,391,200,Quinua con leche y plátano,Hervir quinua con leche; servir con plátano.,1
+7,202,IA,2025-10-21,2025-10-27,5996,BORRADOR,2025-10-14 20:50:16,113,2,ALMUERZO,384,220,Guiso de frejol canario con arroz,Cocer frejol; servir con arroz.,1
+7,202,IA,2025-10-21,2025-10-27,5996,BORRADOR,2025-10-14 20:50:16,114,2,CENA,267,206,Puré de papa con huevo,Puré de papa; servir con huevo sancochado.,1
+7,202,IA,2025-10-21,2025-10-27,5996,BORRADOR,2025-10-14 20:50:16,115,3,DESAYUNO,450,212,Sandwich de pan integral con pollo y palta,"Armar con pan, pollo deshilachado y palta.",1
+7,202,IA,2025-10-21,2025-10-27,5996,BORRADOR,2025-10-14 20:50:16,116,3,ALMUERZO,379,213,Arroz con lentejas y plátano salteado,Mezclar arroz/lentejas; servir con plátano salteado.,1
+7,202,IA,2025-10-21,2025-10-27,5996,BORRADOR,2025-10-14 20:50:16,117,3,CENA,136,207,Ensalada de palta y zanahoria,Mezclar palta en cubos con zanahoria rallada.,1
+7,202,IA,2025-10-21,2025-10-27,5996,BORRADOR,2025-10-14 20:50:16,118,4,DESAYUNO,165,216,Papaya con queso fresco,Servir cubos de papaya con queso fresco.,1
+7,202,IA,2025-10-21,2025-10-27,5996,BORRADOR,2025-10-14 20:50:16,119,4,ALMUERZO,326,224,Arroz con anchoveta y espinaca,Saltear anchoveta; mezclar con arroz y espinaca.,1
+7,202,IA,2025-10-21,2025-10-27,5996,BORRADOR,2025-10-14 20:50:16,120,4,CENA,97,227,"Tazón de frutas (naranja, papaya, fresa)",Cortar frutas y mezclar.,1
+7,202,IA,2025-10-21,2025-10-27,5996,BORRADOR,2025-10-14 20:50:16,121,5,DESAYUNO,261,221,Camote con huevo revuelto,Saltear camote en cubos; añadir huevo.,1
+7,202,IA,2025-10-21,2025-10-27,5996,BORRADOR,2025-10-14 20:50:16,122,5,ALMUERZO,319,225,Lentejas con hígado en dados,Agregar dados de hígado a lentejas cocidas.,1
+7,202,IA,2025-10-21,2025-10-27,5996,BORRADOR,2025-10-14 20:50:16,123,5,CENA,276,228,Maíz choclo con queso fresco,Servir choclo cocido con queso.,1
+7,202,IA,2025-10-21,2025-10-27,5996,BORRADOR,2025-10-14 20:50:16,124,6,DESAYUNO,282,229,Avena con plátano y naranja,Cocer avena en leche; añadir plátano y gajos de naranja.,1
+7,202,IA,2025-10-21,2025-10-27,5996,BORRADOR,2025-10-14 20:50:16,125,6,ALMUERZO,315,214,Bonito a la plancha con choclo,Plancha bonito; servir con maíz choclo.,1
+7,202,IA,2025-10-21,2025-10-27,5996,BORRADOR,2025-10-14 20:50:16,126,6,CENA,42,217,Ensalada de tomate y cebolla,Cortar y mezclar; aliño suave.,1
+8,202,IA,2025-10-21,2025-10-27,6261,BORRADOR,2025-10-14 21:00:00,127,0,DESAYUNO,391,200,Quinua con leche y plátano,Hervir quinua con leche; servir con plátano.,1
+8,202,IA,2025-10-21,2025-10-27,6261,BORRADOR,2025-10-14 21:00:00,128,0,ALMUERZO,278,202,Guiso de lentejas con papa,Sofreír; añadir lentejas y papa; hervir 12–15 min.,1
+8,202,IA,2025-10-21,2025-10-27,6261,BORRADOR,2025-10-14 21:00:00,129,0,CENA,243,223,Sopa de pollo con verduras,Hervir pollo con zanahoria y papa.,1
+8,202,IA,2025-10-21,2025-10-27,6261,BORRADOR,2025-10-14 21:00:00,130,1,DESAYUNO,303,204,Avena con yogurt y fresa,Cocer avena; mezclar con yogurt; agregar fresa.,1
+8,202,IA,2025-10-21,2025-10-27,6261,BORRADOR,2025-10-14 21:00:00,131,1,ALMUERZO,387,205,Arroz con pollo y brócoli,Saltear pollo; añadir arroz y brócoli.,1
+8,202,IA,2025-10-21,2025-10-27,6261,BORRADOR,2025-10-14 21:00:00,132,1,CENA,136,207,Ensalada de palta y zanahoria,Mezclar palta en cubos con zanahoria rallada.,1
+8,202,IA,2025-10-21,2025-10-27,6261,BORRADOR,2025-10-14 21:00:00,133,2,DESAYUNO,298,215,Yogurt con mango y avena,"Mezclar yogurt, mango y avena hidratada.",1
+8,202,IA,2025-10-21,2025-10-27,6261,BORRADOR,2025-10-14 21:00:00,134,2,ALMUERZO,379,213,Arroz con lentejas y plátano salteado,Mezclar arroz/lentejas; servir con plátano salteado.,1
+8,202,IA,2025-10-21,2025-10-27,6261,BORRADOR,2025-10-14 21:00:00,135,2,CENA,267,206,Puré de papa con huevo,Puré de papa; servir con huevo sancochado.,1
+8,202,IA,2025-10-21,2025-10-27,6261,BORRADOR,2025-10-14 21:00:00,136,3,DESAYUNO,165,216,Papaya con queso fresco,Servir cubos de papaya con queso fresco.,1
+8,202,IA,2025-10-21,2025-10-27,6261,BORRADOR,2025-10-14 21:00:00,137,3,ALMUERZO,384,220,Guiso de frejol canario con arroz,Cocer frejol; servir con arroz.,1
+8,202,IA,2025-10-21,2025-10-27,6261,BORRADOR,2025-10-14 21:00:00,138,3,CENA,276,228,Maíz choclo con queso fresco,Servir choclo cocido con queso.,1
+8,202,IA,2025-10-21,2025-10-27,6261,BORRADOR,2025-10-14 21:00:00,139,4,DESAYUNO,261,221,Camote con huevo revuelto,Saltear camote en cubos; añadir huevo.,1
+8,202,IA,2025-10-21,2025-10-27,6261,BORRADOR,2025-10-14 21:00:00,140,4,ALMUERZO,326,224,Arroz con anchoveta y espinaca,Saltear anchoveta; mezclar con arroz y espinaca.,1
+8,202,IA,2025-10-21,2025-10-27,6261,BORRADOR,2025-10-14 21:00:00,141,4,CENA,397,203,Anchoveta al horno con yuca,Hornear anchoveta 15 min; servir con yuca cocida.,1
+8,202,IA,2025-10-21,2025-10-27,6261,BORRADOR,2025-10-14 21:00:00,142,5,DESAYUNO,282,229,Avena con plátano y naranja,Cocer avena en leche; añadir plátano y gajos de naranja.,1
+8,202,IA,2025-10-21,2025-10-27,6261,BORRADOR,2025-10-14 21:00:00,143,5,ALMUERZO,319,225,Lentejas con hígado en dados,Agregar dados de hígado a lentejas cocidas.,1
+8,202,IA,2025-10-21,2025-10-27,6261,BORRADOR,2025-10-14 21:00:00,144,5,CENA,329,222,Palta con tomate sobre pan integral,Untar pan; colocar palta y tomate.,1
+8,202,IA,2025-10-21,2025-10-27,6261,BORRADOR,2025-10-14 21:00:00,145,6,DESAYUNO,450,212,Sandwich de pan integral con pollo y palta,"Armar con pan, pollo deshilachado y palta.",1
+8,202,IA,2025-10-21,2025-10-27,6261,BORRADOR,2025-10-14 21:00:00,146,6,ALMUERZO,293,210,Garbanzo salteado con cebolla y tomate,Saltear cebolla/tomate; agregar garbanzo cocido.,1
+8,202,IA,2025-10-21,2025-10-27,6261,BORRADOR,2025-10-14 21:00:00,147,6,CENA,97,227,"Tazón de frutas (naranja, papaya, fresa)",Cortar frutas y mezclar.,1
+9,199,IA,2025-10-21,2025-10-27,6109,BORRADOR,2025-10-14 21:00:48,148,0,DESAYUNO,450,212,Sandwich de pan integral con pollo y palta,"Armar con pan, pollo deshilachado y palta.",1
+9,199,IA,2025-10-21,2025-10-27,6109,BORRADOR,2025-10-14 21:00:48,149,0,ALMUERZO,387,205,Arroz con pollo y brócoli,Saltear pollo; añadir arroz y brócoli.,1
+9,199,IA,2025-10-21,2025-10-27,6109,BORRADOR,2025-10-14 21:00:48,150,0,CENA,397,203,Anchoveta al horno con yuca,Hornear anchoveta 15 min; servir con yuca cocida.,1
+9,199,IA,2025-10-21,2025-10-27,6109,BORRADOR,2025-10-14 21:00:48,151,1,DESAYUNO,391,200,Quinua con leche y plátano,Hervir quinua con leche; servir con plátano.,1
+9,199,IA,2025-10-21,2025-10-27,6109,BORRADOR,2025-10-14 21:00:48,152,1,ALMUERZO,278,202,Guiso de lentejas con papa,Sofreír; añadir lentejas y papa; hervir 12–15 min.,1
+9,199,IA,2025-10-21,2025-10-27,6109,BORRADOR,2025-10-14 21:00:48,153,1,CENA,267,206,Puré de papa con huevo,Puré de papa; servir con huevo sancochado.,1
+9,199,IA,2025-10-21,2025-10-27,6109,BORRADOR,2025-10-14 21:00:48,154,2,DESAYUNO,303,204,Avena con yogurt y fresa,Cocer avena; mezclar con yogurt; agregar fresa.,1
+9,199,IA,2025-10-21,2025-10-27,6109,BORRADOR,2025-10-14 21:00:48,155,2,ALMUERZO,379,213,Arroz con lentejas y plátano salteado,Mezclar arroz/lentejas; servir con plátano salteado.,1
+9,199,IA,2025-10-21,2025-10-27,6109,BORRADOR,2025-10-14 21:00:48,156,2,CENA,136,207,Ensalada de palta y zanahoria,Mezclar palta en cubos con zanahoria rallada.,1
+9,199,IA,2025-10-21,2025-10-27,6109,BORRADOR,2025-10-14 21:00:48,157,3,DESAYUNO,298,215,Yogurt con mango y avena,"Mezclar yogurt, mango y avena hidratada.",1
+9,199,IA,2025-10-21,2025-10-27,6109,BORRADOR,2025-10-14 21:00:48,158,3,ALMUERZO,315,214,Bonito a la plancha con choclo,Plancha bonito; servir con maíz choclo.,1
+9,199,IA,2025-10-21,2025-10-27,6109,BORRADOR,2025-10-14 21:00:48,159,3,CENA,329,222,Palta con tomate sobre pan integral,Untar pan; colocar palta y tomate.,1
+9,199,IA,2025-10-21,2025-10-27,6109,BORRADOR,2025-10-14 21:00:48,160,4,DESAYUNO,165,216,Papaya con queso fresco,Servir cubos de papaya con queso fresco.,1
+9,199,IA,2025-10-21,2025-10-27,6109,BORRADOR,2025-10-14 21:00:48,161,4,ALMUERZO,243,218,Quinua salteada con brócoli,Saltear quinua cocida con brócoli.,1
+9,199,IA,2025-10-21,2025-10-27,6109,BORRADOR,2025-10-14 21:00:48,162,4,CENA,243,223,Sopa de pollo con verduras,Hervir pollo con zanahoria y papa.,1
+9,199,IA,2025-10-21,2025-10-27,6109,BORRADOR,2025-10-14 21:00:48,163,5,DESAYUNO,261,221,Camote con huevo revuelto,Saltear camote en cubos; añadir huevo.,1
+9,199,IA,2025-10-21,2025-10-27,6109,BORRADOR,2025-10-14 21:00:48,164,5,ALMUERZO,228,219,Hígado de pollo encebollado,Saltear hígado con cebolla; cocción completa.,1
+9,199,IA,2025-10-21,2025-10-27,6109,BORRADOR,2025-10-14 21:00:48,165,5,CENA,97,227,"Tazón de frutas (naranja, papaya, fresa)",Cortar frutas y mezclar.,1
+9,199,IA,2025-10-21,2025-10-27,6109,BORRADOR,2025-10-14 21:00:48,166,6,DESAYUNO,282,229,Avena con plátano y naranja,Cocer avena en leche; añadir plátano y gajos de naranja.,1
+9,199,IA,2025-10-21,2025-10-27,6109,BORRADOR,2025-10-14 21:00:48,167,6,ALMUERZO,384,220,Guiso de frejol canario con arroz,Cocer frejol; servir con arroz.,1
+9,199,IA,2025-10-21,2025-10-27,6109,BORRADOR,2025-10-14 21:00:48,168,6,CENA,276,228,Maíz choclo con queso fresco,Servir choclo cocido con queso.,1
+10,77,IA,2025-10-21,2025-10-27,6105,BORRADOR,2025-10-14 21:01:50,169,0,DESAYUNO,303,204,Avena con yogurt y fresa,Cocer avena; mezclar con yogurt; agregar fresa.,1
+10,77,IA,2025-10-21,2025-10-27,6105,BORRADOR,2025-10-14 21:01:50,170,0,ALMUERZO,387,205,Arroz con pollo y brócoli,Saltear pollo; añadir arroz y brócoli.,1
+10,77,IA,2025-10-21,2025-10-27,6105,BORRADOR,2025-10-14 21:01:50,171,0,CENA,397,203,Anchoveta al horno con yuca,Hornear anchoveta 15 min; servir con yuca cocida.,1
+10,77,IA,2025-10-21,2025-10-27,6105,BORRADOR,2025-10-14 21:01:50,172,1,DESAYUNO,282,229,Avena con plátano y naranja,Cocer avena en leche; añadir plátano y gajos de naranja.,1
+10,77,IA,2025-10-21,2025-10-27,6105,BORRADOR,2025-10-14 21:01:50,173,1,ALMUERZO,384,220,Guiso de frejol canario con arroz,Cocer frejol; servir con arroz.,1
+10,77,IA,2025-10-21,2025-10-27,6105,BORRADOR,2025-10-14 21:01:50,174,1,CENA,267,206,Puré de papa con huevo,Puré de papa; servir con huevo sancochado.,1
+10,77,IA,2025-10-21,2025-10-27,6105,BORRADOR,2025-10-14 21:01:50,175,2,DESAYUNO,450,212,Sandwich de pan integral con pollo y palta,"Armar con pan, pollo deshilachado y palta.",1
+10,77,IA,2025-10-21,2025-10-27,6105,BORRADOR,2025-10-14 21:01:50,176,2,ALMUERZO,326,224,Arroz con anchoveta y espinaca,Saltear anchoveta; mezclar con arroz y espinaca.,1
+10,77,IA,2025-10-21,2025-10-27,6105,BORRADOR,2025-10-14 21:01:50,177,2,CENA,136,207,Ensalada de palta y zanahoria,Mezclar palta en cubos con zanahoria rallada.,1
+10,77,IA,2025-10-21,2025-10-27,6105,BORRADOR,2025-10-14 21:01:50,178,3,DESAYUNO,298,215,Yogurt con mango y avena,"Mezclar yogurt, mango y avena hidratada.",1
+10,77,IA,2025-10-21,2025-10-27,6105,BORRADOR,2025-10-14 21:01:50,179,3,ALMUERZO,379,213,Arroz con lentejas y plátano salteado,Mezclar arroz/lentejas; servir con plátano salteado.,1
+10,77,IA,2025-10-21,2025-10-27,6105,BORRADOR,2025-10-14 21:01:50,180,3,CENA,329,222,Palta con tomate sobre pan integral,Untar pan; colocar palta y tomate.,1
+10,77,IA,2025-10-21,2025-10-27,6105,BORRADOR,2025-10-14 21:01:50,181,4,DESAYUNO,165,216,Papaya con queso fresco,Servir cubos de papaya con queso fresco.,1
+10,77,IA,2025-10-21,2025-10-27,6105,BORRADOR,2025-10-14 21:01:50,182,4,ALMUERZO,243,201,Pollo a la plancha con ensalada,"Sellar pollo; acompañar con espinaca, zanahoria y tomate.",1
+10,77,IA,2025-10-21,2025-10-27,6105,BORRADOR,2025-10-14 21:01:50,183,4,CENA,243,223,Sopa de pollo con verduras,Hervir pollo con zanahoria y papa.,1
+10,77,IA,2025-10-21,2025-10-27,6105,BORRADOR,2025-10-14 21:01:50,184,5,DESAYUNO,261,221,Camote con huevo revuelto,Saltear camote en cubos; añadir huevo.,1
+10,77,IA,2025-10-21,2025-10-27,6105,BORRADOR,2025-10-14 21:01:50,185,5,ALMUERZO,319,225,Lentejas con hígado en dados,Agregar dados de hígado a lentejas cocidas.,1
+10,77,IA,2025-10-21,2025-10-27,6105,BORRADOR,2025-10-14 21:01:50,186,5,CENA,97,227,"Tazón de frutas (naranja, papaya, fresa)",Cortar frutas y mezclar.,1
+10,77,IA,2025-10-21,2025-10-27,6105,BORRADOR,2025-10-14 21:01:50,187,6,DESAYUNO,391,200,Quinua con leche y plátano,Hervir quinua con leche; servir con plátano.,1
+10,77,IA,2025-10-21,2025-10-27,6105,BORRADOR,2025-10-14 21:01:50,188,6,ALMUERZO,172,226,Brócoli salteado con queso fresco,Saltear brócoli; finalizar con queso fresco en cubos.,1
+10,77,IA,2025-10-21,2025-10-27,6105,BORRADOR,2025-10-14 21:01:50,189,6,CENA,276,228,Maíz choclo con queso fresco,Servir choclo cocido con queso.,1
+11,177,IA,2025-10-21,2025-10-27,6198,BORRADOR,2025-10-14 21:07:00,190,0,DESAYUNO,303,204,Avena con yogurt y fresa,Cocer avena; mezclar con yogurt; agregar fresa.,1
+11,177,IA,2025-10-21,2025-10-27,6198,BORRADOR,2025-10-14 21:07:00,191,0,ALMUERZO,387,205,Arroz con pollo y brócoli,Saltear pollo; añadir arroz y brócoli.,1
+11,177,IA,2025-10-21,2025-10-27,6198,BORRADOR,2025-10-14 21:07:00,192,0,CENA,243,223,Sopa de pollo con verduras,Hervir pollo con zanahoria y papa.,1
+11,177,IA,2025-10-21,2025-10-27,6198,BORRADOR,2025-10-14 21:07:00,193,1,DESAYUNO,450,212,Sandwich de pan integral con pollo y palta,"Armar con pan, pollo deshilachado y palta.",1
+11,177,IA,2025-10-21,2025-10-27,6198,BORRADOR,2025-10-14 21:07:00,194,1,ALMUERZO,379,213,Arroz con lentejas y plátano salteado,Mezclar arroz/lentejas; servir con plátano salteado.,1
+11,177,IA,2025-10-21,2025-10-27,6198,BORRADOR,2025-10-14 21:07:00,195,1,CENA,397,203,Anchoveta al horno con yuca,Hornear anchoveta 15 min; servir con yuca cocida.,1
+11,177,IA,2025-10-21,2025-10-27,6198,BORRADOR,2025-10-14 21:07:00,196,2,DESAYUNO,298,215,Yogurt con mango y avena,"Mezclar yogurt, mango y avena hidratada.",1
+11,177,IA,2025-10-21,2025-10-27,6198,BORRADOR,2025-10-14 21:07:00,197,2,ALMUERZO,326,224,Arroz con anchoveta y espinaca,Saltear anchoveta; mezclar con arroz y espinaca.,1
+11,177,IA,2025-10-21,2025-10-27,6198,BORRADOR,2025-10-14 21:07:00,198,2,CENA,267,206,Puré de papa con huevo,Puré de papa; servir con huevo sancochado.,1
+11,177,IA,2025-10-21,2025-10-27,6198,BORRADOR,2025-10-14 21:07:00,199,3,DESAYUNO,391,200,Quinua con leche y plátano,Hervir quinua con leche; servir con plátano.,1
+11,177,IA,2025-10-21,2025-10-27,6198,BORRADOR,2025-10-14 21:07:00,200,3,ALMUERZO,315,214,Bonito a la plancha con choclo,Plancha bonito; servir con maíz choclo.,1
+11,177,IA,2025-10-21,2025-10-27,6198,BORRADOR,2025-10-14 21:07:00,201,3,CENA,136,207,Ensalada de palta y zanahoria,Mezclar palta en cubos con zanahoria rallada.,1
+11,177,IA,2025-10-21,2025-10-27,6198,BORRADOR,2025-10-14 21:07:00,202,4,DESAYUNO,165,216,Papaya con queso fresco,Servir cubos de papaya con queso fresco.,1
+11,177,IA,2025-10-21,2025-10-27,6198,BORRADOR,2025-10-14 21:07:00,203,4,ALMUERZO,278,202,Guiso de lentejas con papa,Sofreír; añadir lentejas y papa; hervir 12–15 min.,1
+11,177,IA,2025-10-21,2025-10-27,6198,BORRADOR,2025-10-14 21:07:00,204,4,CENA,329,222,Palta con tomate sobre pan integral,Untar pan; colocar palta y tomate.,1
+11,177,IA,2025-10-21,2025-10-27,6198,BORRADOR,2025-10-14 21:07:00,205,5,DESAYUNO,261,221,Camote con huevo revuelto,Saltear camote en cubos; añadir huevo.,1
+11,177,IA,2025-10-21,2025-10-27,6198,BORRADOR,2025-10-14 21:07:00,206,5,ALMUERZO,384,220,Guiso de frejol canario con arroz,Cocer frejol; servir con arroz.,1
+11,177,IA,2025-10-21,2025-10-27,6198,BORRADOR,2025-10-14 21:07:00,207,5,CENA,276,228,Maíz choclo con queso fresco,Servir choclo cocido con queso.,1
+11,177,IA,2025-10-21,2025-10-27,6198,BORRADOR,2025-10-14 21:07:00,208,6,DESAYUNO,303,204,Avena con yogurt y fresa,Cocer avena; mezclar con yogurt; agregar fresa.,1
+11,177,IA,2025-10-21,2025-10-27,6198,BORRADOR,2025-10-14 21:07:00,209,6,ALMUERZO,172,226,Brócoli salteado con queso fresco,Saltear brócoli; finalizar con queso fresco en cubos.,1
+11,177,IA,2025-10-21,2025-10-27,6198,BORRADOR,2025-10-14 21:07:00,210,6,CENA,138,211,"Sopa de verduras (brócoli, zanahoria, papa)",Hervir verduras; sazonar suave.,1
+14,309,IA,2025-10-20,2025-10-26,6207,BORRADOR,2025-10-18 14:07:21,253,0,DESAYUNO,391,200,Quinua con leche y plátano,Hervir quinua con leche; servir con plátano.,1
+14,309,IA,2025-10-20,2025-10-26,6207,BORRADOR,2025-10-18 14:07:21,254,0,ALMUERZO,387,205,Arroz con pollo y brócoli,Saltear pollo; añadir arroz y brócoli.,1
+14,309,IA,2025-10-20,2025-10-26,6207,BORRADOR,2025-10-18 14:07:21,255,0,CENA,243,223,Sopa de pollo con verduras,Hervir pollo con zanahoria y papa.,1
+14,309,IA,2025-10-20,2025-10-26,6207,BORRADOR,2025-10-18 14:07:21,256,1,DESAYUNO,450,212,Sandwich de pan integral con pollo y palta,"Armar con pan, pollo deshilachado y palta.",1
+14,309,IA,2025-10-20,2025-10-26,6207,BORRADOR,2025-10-18 14:07:21,257,1,ALMUERZO,243,201,Pollo a la plancha con ensalada,"Sellar pollo; acompañar con espinaca, zanahoria y tomate.",1
+14,309,IA,2025-10-20,2025-10-26,6207,BORRADOR,2025-10-18 14:07:21,258,1,CENA,136,207,Ensalada de palta y zanahoria,Mezclar palta en cubos con zanahoria rallada.,1
+14,309,IA,2025-10-20,2025-10-26,6207,BORRADOR,2025-10-18 14:07:21,259,2,DESAYUNO,303,204,Avena con yogurt y fresa,Cocer avena; mezclar con yogurt; agregar fresa.,1
+14,309,IA,2025-10-20,2025-10-26,6207,BORRADOR,2025-10-18 14:07:21,260,2,ALMUERZO,278,202,Guiso de lentejas con papa,Sofreír; añadir lentejas y papa; hervir 12–15 min.,1
+14,309,IA,2025-10-20,2025-10-26,6207,BORRADOR,2025-10-18 14:07:21,261,2,CENA,267,206,Puré de papa con huevo,Puré de papa; servir con huevo sancochado.,1
+14,309,IA,2025-10-20,2025-10-26,6207,BORRADOR,2025-10-18 14:07:21,262,3,DESAYUNO,298,215,Yogurt con mango y avena,"Mezclar yogurt, mango y avena hidratada.",1
+14,309,IA,2025-10-20,2025-10-26,6207,BORRADOR,2025-10-18 14:07:21,263,3,ALMUERZO,379,213,Arroz con lentejas y plátano salteado,Mezclar arroz/lentejas; servir con plátano salteado.,1
+14,309,IA,2025-10-20,2025-10-26,6207,BORRADOR,2025-10-18 14:07:21,264,3,CENA,397,203,Anchoveta al horno con yuca,Hornear anchoveta 15 min; servir con yuca cocida.,1
+14,309,IA,2025-10-20,2025-10-26,6207,BORRADOR,2025-10-18 14:07:21,265,4,DESAYUNO,261,221,Camote con huevo revuelto,Saltear camote en cubos; añadir huevo.,1
+14,309,IA,2025-10-20,2025-10-26,6207,BORRADOR,2025-10-18 14:07:21,266,4,ALMUERZO,315,214,Bonito a la plancha con choclo,Plancha bonito; servir con maíz choclo.,1
+14,309,IA,2025-10-20,2025-10-26,6207,BORRADOR,2025-10-18 14:07:21,267,4,CENA,276,228,Maíz choclo con queso fresco,Servir choclo cocido con queso.,1
+14,309,IA,2025-10-20,2025-10-26,6207,BORRADOR,2025-10-18 14:07:21,268,5,DESAYUNO,282,229,Avena con plátano y naranja,Cocer avena en leche; añadir plátano y gajos de naranja.,1
+14,309,IA,2025-10-20,2025-10-26,6207,BORRADOR,2025-10-18 14:07:21,269,5,ALMUERZO,384,220,Guiso de frejol canario con arroz,Cocer frejol; servir con arroz.,1
+14,309,IA,2025-10-20,2025-10-26,6207,BORRADOR,2025-10-18 14:07:21,270,5,CENA,97,227,"Tazón de frutas (naranja, papaya, fresa)",Cortar frutas y mezclar.,1
+14,309,IA,2025-10-20,2025-10-26,6207,BORRADOR,2025-10-18 14:07:21,271,6,DESAYUNO,165,216,Papaya con queso fresco,Servir cubos de papaya con queso fresco.,1
+14,309,IA,2025-10-20,2025-10-26,6207,BORRADOR,2025-10-18 14:07:21,272,6,ALMUERZO,326,224,Arroz con anchoveta y espinaca,Saltear anchoveta; mezclar con arroz y espinaca.,1
+14,309,IA,2025-10-20,2025-10-26,6207,BORRADOR,2025-10-18 14:07:21,273,6,CENA,329,222,Palta con tomate sobre pan integral,Untar pan; colocar palta y tomate.,1
+15,299,IA,2025-10-20,2025-10-26,13300,BORRADOR,2025-10-18 15:09:36,274,0,DESAYUNO,500,216,Papaya con queso fresco,Servir cubos de papaya con queso fresco.,1
+15,299,IA,2025-10-20,2025-10-26,13300,BORRADOR,2025-10-18 15:09:36,275,0,ALMUERZO,800,213,Arroz con lentejas y plátano salteado,Mezclar arroz/lentejas; servir con plátano salteado.,1
+15,299,IA,2025-10-20,2025-10-26,13300,BORRADOR,2025-10-18 15:09:36,276,0,CENA,600,208,Camote al horno con queso fresco,Hornear camote; coronar con queso fresco.,1
+15,299,IA,2025-10-20,2025-10-26,13300,BORRADOR,2025-10-18 15:09:36,277,1,DESAYUNO,500,205,Arroz con pollo y brócoli,Saltear pollo; añadir arroz y brócoli.,1
+15,299,IA,2025-10-20,2025-10-26,13300,BORRADOR,2025-10-18 15:09:36,278,1,ALMUERZO,800,222,Palta con tomate sobre pan integral,Untar pan; colocar palta y tomate.,1
+15,299,IA,2025-10-20,2025-10-26,13300,BORRADOR,2025-10-18 15:09:36,279,1,CENA,600,219,Hígado de pollo encebollado,Saltear hígado con cebolla; cocción completa.,1
+15,299,IA,2025-10-20,2025-10-26,13300,BORRADOR,2025-10-18 15:09:36,280,2,DESAYUNO,500,223,Sopa de pollo con verduras,Hervir pollo con zanahoria y papa.,1
+15,299,IA,2025-10-20,2025-10-26,13300,BORRADOR,2025-10-18 15:09:36,281,2,ALMUERZO,800,203,Anchoveta al horno con yuca,Hornear anchoveta 15 min; servir con yuca cocida.,1
+15,299,IA,2025-10-20,2025-10-26,13300,BORRADOR,2025-10-18 15:09:36,282,2,CENA,600,228,Maíz choclo con queso fresco,Servir choclo cocido con queso.,1
+15,299,IA,2025-10-20,2025-10-26,13300,BORRADOR,2025-10-18 15:09:36,283,3,DESAYUNO,500,221,Camote con huevo revuelto,Saltear camote en cubos; añadir huevo.,1
+15,299,IA,2025-10-20,2025-10-26,13300,BORRADOR,2025-10-18 15:09:36,284,3,ALMUERZO,800,211,"Sopa de verduras (brócoli, zanahoria, papa)",Hervir verduras; sazonar suave.,1
+15,299,IA,2025-10-20,2025-10-26,13300,BORRADOR,2025-10-18 15:09:36,285,3,CENA,600,229,Avena con plátano y naranja,Cocer avena en leche; añadir plátano y gajos de naranja.,1
+15,299,IA,2025-10-20,2025-10-26,13300,BORRADOR,2025-10-18 15:09:36,286,4,DESAYUNO,500,218,Quinua salteada con brócoli,Saltear quinua cocida con brócoli.,1
+15,299,IA,2025-10-20,2025-10-26,13300,BORRADOR,2025-10-18 15:09:36,287,4,ALMUERZO,800,224,Arroz con anchoveta y espinaca,Saltear anchoveta; mezclar con arroz y espinaca.,1
+15,299,IA,2025-10-20,2025-10-26,13300,BORRADOR,2025-10-18 15:09:36,288,4,CENA,600,207,Ensalada de palta y zanahoria,Mezclar palta en cubos con zanahoria rallada.,1
+15,299,IA,2025-10-20,2025-10-26,13300,BORRADOR,2025-10-18 15:09:36,289,5,DESAYUNO,500,217,Ensalada de tomate y cebolla,Cortar y mezclar; aliño suave.,1
+15,299,IA,2025-10-20,2025-10-26,13300,BORRADOR,2025-10-18 15:09:36,290,5,ALMUERZO,800,215,Yogurt con mango y avena,"Mezclar yogurt, mango y avena hidratada.",1
+15,299,IA,2025-10-20,2025-10-26,13300,BORRADOR,2025-10-18 15:09:36,291,5,CENA,600,214,Bonito a la plancha con choclo,Plancha bonito; servir con maíz choclo.,1
+15,299,IA,2025-10-20,2025-10-26,13300,BORRADOR,2025-10-18 15:09:36,292,6,DESAYUNO,500,204,Avena con yogurt y fresa,Cocer avena; mezclar con yogurt; agregar fresa.,1
+15,299,IA,2025-10-20,2025-10-26,13300,BORRADOR,2025-10-18 15:09:36,293,6,ALMUERZO,800,212,Sandwich de pan integral con pollo y palta,"Armar con pan, pollo deshilachado y palta.",1
+15,299,IA,2025-10-20,2025-10-26,13300,BORRADOR,2025-10-18 15:09:36,294,6,CENA,600,227,"Tazón de frutas (naranja, papaya, fresa)",Cortar frutas y mezclar.,1
+16,299,IA,2025-10-20,2025-10-26,6283,BORRADOR,2025-10-18 15:14:00,295,0,DESAYUNO,450,212,Sandwich de pan integral con pollo y palta,"Armar con pan, pollo deshilachado y palta.",1
+16,299,IA,2025-10-20,2025-10-26,6283,BORRADOR,2025-10-18 15:14:00,296,0,ALMUERZO,387,205,Arroz con pollo y brócoli,Saltear pollo; añadir arroz y brócoli.,1
+16,299,IA,2025-10-20,2025-10-26,6283,BORRADOR,2025-10-18 15:14:00,297,0,CENA,397,203,Anchoveta al horno con yuca,Hornear anchoveta 15 min; servir con yuca cocida.,1
+16,299,IA,2025-10-20,2025-10-26,6283,BORRADOR,2025-10-18 15:14:00,298,1,DESAYUNO,391,200,Quinua con leche y plátano,Hervir quinua con leche; servir con plátano.,1
+16,299,IA,2025-10-20,2025-10-26,6283,BORRADOR,2025-10-18 15:14:00,299,1,ALMUERZO,384,220,Guiso de frejol canario con arroz,Cocer frejol; servir con arroz.,1
+16,299,IA,2025-10-20,2025-10-26,6283,BORRADOR,2025-10-18 15:14:00,300,1,CENA,267,206,Puré de papa con huevo,Puré de papa; servir con huevo sancochado.,1
+16,299,IA,2025-10-20,2025-10-26,6283,BORRADOR,2025-10-18 15:14:00,301,2,DESAYUNO,303,204,Avena con yogurt y fresa,Cocer avena; mezclar con yogurt; agregar fresa.,1
+16,299,IA,2025-10-20,2025-10-26,6283,BORRADOR,2025-10-18 15:14:00,302,2,ALMUERZO,379,213,Arroz con lentejas y plátano salteado,Mezclar arroz/lentejas; servir con plátano salteado.,1
+16,299,IA,2025-10-20,2025-10-26,6283,BORRADOR,2025-10-18 15:14:00,303,2,CENA,136,207,Ensalada de palta y zanahoria,Mezclar palta en cubos con zanahoria rallada.,1
+16,299,IA,2025-10-20,2025-10-26,6283,BORRADOR,2025-10-18 15:14:00,304,3,DESAYUNO,298,215,Yogurt con mango y avena,"Mezclar yogurt, mango y avena hidratada.",1
+16,299,IA,2025-10-20,2025-10-26,6283,BORRADOR,2025-10-18 15:14:00,305,3,ALMUERZO,319,225,Lentejas con hígado en dados,Agregar dados de hígado a lentejas cocidas.,1
+16,299,IA,2025-10-20,2025-10-26,6283,BORRADOR,2025-10-18 15:14:00,306,3,CENA,329,222,Palta con tomate sobre pan integral,Untar pan; colocar palta y tomate.,1
+16,299,IA,2025-10-20,2025-10-26,6283,BORRADOR,2025-10-18 15:14:00,307,4,DESAYUNO,165,216,Papaya con queso fresco,Servir cubos de papaya con queso fresco.,1
+16,299,IA,2025-10-20,2025-10-26,6283,BORRADOR,2025-10-18 15:14:00,308,4,ALMUERZO,326,224,Arroz con anchoveta y espinaca,Saltear anchoveta; mezclar con arroz y espinaca.,1
+16,299,IA,2025-10-20,2025-10-26,6283,BORRADOR,2025-10-18 15:14:00,309,4,CENA,243,223,Sopa de pollo con verduras,Hervir pollo con zanahoria y papa.,1
+16,299,IA,2025-10-20,2025-10-26,6283,BORRADOR,2025-10-18 15:14:00,310,5,DESAYUNO,261,221,Camote con huevo revuelto,Saltear camote en cubos; añadir huevo.,1
+16,299,IA,2025-10-20,2025-10-26,6283,BORRADOR,2025-10-18 15:14:00,311,5,ALMUERZO,315,214,Bonito a la plancha con choclo,Plancha bonito; servir con maíz choclo.,1
+16,299,IA,2025-10-20,2025-10-26,6283,BORRADOR,2025-10-18 15:14:00,312,5,CENA,276,228,Maíz choclo con queso fresco,Servir choclo cocido con queso.,1
+16,299,IA,2025-10-20,2025-10-26,6283,BORRADOR,2025-10-18 15:14:00,313,6,DESAYUNO,282,229,Avena con plátano y naranja,Cocer avena en leche; añadir plátano y gajos de naranja.,1
+16,299,IA,2025-10-20,2025-10-26,6283,BORRADOR,2025-10-18 15:14:00,314,6,ALMUERZO,278,202,Guiso de lentejas con papa,Sofreír; añadir lentejas y papa; hervir 12–15 min.,1
+16,299,IA,2025-10-20,2025-10-26,6283,BORRADOR,2025-10-18 15:14:00,315,6,CENA,97,227,"Tazón de frutas (naranja, papaya, fresa)",Cortar frutas y mezclar.,1

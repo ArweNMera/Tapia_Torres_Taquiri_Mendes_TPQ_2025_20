@@ -1,6 +1,3 @@
-/**
- * Modal para ver el plan de comidas semanal en formato grid
- */
 import React, { useState, useEffect } from 'react';
 import {
   Dialog,
@@ -15,7 +12,7 @@ import { obtenerDetalleMenu, generarPlanCompletoConLLM, obtenerDetalleReceta } f
 
 interface VerPlanModalProps {
   open: boolean;
-  onClose: () => void;
+  onClose: (recargar?: boolean) => void;
   ninId: number;
   ninNombre: string;
   menId?: number;
@@ -50,10 +47,12 @@ export const VerPlanModal: React.FC<VerPlanModalProps> = ({
   const [generando, setGenerando] = useState(false);
   const [plan, setPlan] = useState<any>(null);
   const [progreso, setProgreso] = useState<string[]>([]);
+  const [planGenerado, setPlanGenerado] = useState(false);
 
   useEffect(() => {
     if (open && menId) {
       cargarPlan();
+      setPlanGenerado(false);
     }
   }, [open, menId]);
 
@@ -63,23 +62,19 @@ export const VerPlanModal: React.FC<VerPlanModalProps> = ({
     setCargando(true);
     try {
       const data = await obtenerDetalleMenu(menId);
-
-      // Transformar los datos: items[] -> desayuno, almuerzo, cena
       if (data.dias && Array.isArray(data.dias)) {
         data.dias = data.dias.map((dia: any) => {
           const transformed: any = {
             dia_idx: dia.dia_idx,
             dia_nombre: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'][dia.dia_idx] || `Día ${dia.dia_idx + 1}`,
-            fecha: data.men_inicio, // Calcular fecha correcta
+            fecha: data.men_inicio,
             total_dia: 0
           };
 
-          // Calcular fecha del día
           const fechaInicio = new Date(data.men_inicio);
           fechaInicio.setDate(fechaInicio.getDate() + dia.dia_idx);
           transformed.fecha = fechaInicio.toISOString().split('T')[0];
 
-          // Transformar items a desayuno/almuerzo/cena
           if (dia.items && Array.isArray(dia.items)) {
             dia.items.forEach((item: any) => {
               const comida = {
@@ -149,6 +144,7 @@ export const VerPlanModal: React.FC<VerPlanModalProps> = ({
       if (resultado.men_id) {
         const data = await obtenerDetalleMenu(resultado.men_id);
         setPlan(data);
+        setPlanGenerado(true);
       }
 
       toast({
@@ -327,11 +323,10 @@ export const VerPlanModal: React.FC<VerPlanModalProps> = ({
                     key={dia.dia_idx}
                     onClick={() => setDiaSeleccionado(dia.dia_idx)}
                     variant={diaSeleccionado === dia.dia_idx ? 'default' : 'outline'}
-                    className={`${
-                      diaSeleccionado === dia.dia_idx
-                        ? 'bg-green-600 hover:bg-green-700 text-white'
-                        : ''
-                    }`}
+                    className={`${diaSeleccionado === dia.dia_idx
+                      ? 'bg-green-600 hover:bg-green-700 text-white'
+                      : ''
+                      }`}
                   >
                     {dia.dia_nombre}
                   </Button>
@@ -516,7 +511,7 @@ export const VerPlanModal: React.FC<VerPlanModalProps> = ({
               Generar Nuevo
             </Button>
           )}
-          <Button onClick={onClose} variant="outline">
+          <Button onClick={() => onClose(planGenerado)} variant="outline">
             Cerrar
           </Button>
         </div>

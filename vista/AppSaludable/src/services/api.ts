@@ -42,6 +42,14 @@ class ApiService {
     this.baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
     this.apiVersion = import.meta.env.VITE_API_VERSION || 'v1';
     this.tokenKey = import.meta.env.VITE_TOKEN_KEY || 'auth_token';
+
+    // Debug: verificar qué URL se está usando
+    console.log('🔍 API Base URL:', this.baseURL);
+    console.log('🔍 Environment variables:', {
+      VITE_API_BASE_URL: import.meta.env.VITE_API_BASE_URL,
+      NODE_ENV: import.meta.env.NODE_ENV,
+      MODE: import.meta.env.MODE
+    });
   }
 
   private getApiUrl(endpoint: string): string {
@@ -49,8 +57,20 @@ class ApiService {
     const hasApiSegment = /\/api$/i.test(trimmedBase);
     const basePath = hasApiSegment ? trimmedBase : `${trimmedBase}/api`;
     const versionSegment = this.apiVersion ? `/${this.apiVersion}` : '';
+    const finalUrl = `${basePath}${versionSegment}${endpoint}`;
 
-    return `${basePath}${versionSegment}${endpoint}`;
+    // Debug: verificar construcción de URL
+    console.log('🔍 getApiUrl DEBUG:', {
+      endpoint,
+      baseURL: this.baseURL,
+      trimmedBase,
+      hasApiSegment,
+      basePath,
+      versionSegment,
+      finalUrl
+    });
+
+    return finalUrl;
   }
 
   private async makeRequest<T>(
@@ -196,7 +216,7 @@ class ApiService {
   // Crear un nuevo niño
   async createNino(ninoData: NinoCreate): Promise<ApiResponse<NinoResponse>> {
     return this.makeRequest<NinoResponse>(
-      this.getApiUrl('/ninos'),
+      this.getApiUrl('/ninos/'),
       {
         method: 'POST',
         body: JSON.stringify(ninoData),

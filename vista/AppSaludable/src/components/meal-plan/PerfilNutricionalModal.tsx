@@ -1,6 +1,3 @@
-/**
- * Modal para mostrar y calcular perfil nutricional
- */
 import React, { useState, useEffect } from 'react';
 import {
   Dialog,
@@ -20,7 +17,7 @@ import type { PerfilNutricional } from '../../types/mealPlan';
 
 interface PerfilNutricionalModalProps {
   open: boolean;
-  onClose: () => void;
+  onClose: (recargar?: boolean) => void;
   ninId: number;
   ninNombre: string;
 }
@@ -71,6 +68,7 @@ export const PerfilNutricionalModal: React.FC<PerfilNutricionalModalProps> = ({
         description: 'El perfil nutricional se calculó exitosamente',
       });
       await cargarPerfil();
+      onClose(true);
     } catch (error) {
       toast({
         title: 'Error',
