@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Badge } from '../ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { RecetaCompletaResponse } from '../../types/api';
@@ -8,6 +8,49 @@ interface RecetaDetailProps {
 }
 
 const RecetaDetail: React.FC<RecetaDetailProps> = ({ receta }) => {
+  // Calcular información nutricional aproximada basada en ingredientes
+  const nutricionCalculada = useMemo(() => {
+    if (!receta.ingredientes || receta.ingredientes.length === 0) {
+      return null;
+    }
+
+    // Estimación simple basada en promedios
+    // En un sistema real, esto vendría de la base de datos con valores exactos por alimento
+    let totalKcal = 0;
+    let totalProteinas = 0;
+    let totalCarbohidratos = 0;
+    let totalGrasas = 0;
+
+    receta.ingredientes.forEach(ing => {
+      const cantidadEnGramos = ing.ri_cantidad;
+
+      // Valores promedio por 100g (estos son estimaciones)
+      // En producción deberían venir de la tabla alimentos_nutrientes
+      const kcalPor100g = 150; // Promedio
+      const proteinaPor100g = 10; // Promedio
+      const carboPor100g = 20; // Promedio
+      const grasaPor100g = 5; // Promedio
+
+      totalKcal += (cantidadEnGramos / 100) * kcalPor100g;
+      totalProteinas += (cantidadEnGramos / 100) * proteinaPor100g;
+      totalCarbohidratos += (cantidadEnGramos / 100) * carboPor100g;
+      totalGrasas += (cantidadEnGramos / 100) * grasaPor100g;
+    });
+
+    return {
+      'Calorías': `${Math.round(totalKcal)} kcal`,
+      'Proteínas': `${totalProteinas.toFixed(1)} g`,
+      'Carbohidratos': `${totalCarbohidratos.toFixed(1)} g`,
+      'Grasas': `${totalGrasas.toFixed(1)} g`,
+    };
+  }, [receta.ingredientes]);
+
+  // Usar información nutricional del backend si existe y no está vacía, sino usar calculada
+  const informacionNutricional =
+    receta.informacion_nutricional && Object.keys(receta.informacion_nutricional).length > 0
+      ? receta.informacion_nutricional
+      : nutricionCalculada;
+
   return (
     <div className="space-y-6">
       {/* Información básica */}
@@ -83,62 +126,42 @@ const RecetaDetail: React.FC<RecetaDetailProps> = ({ receta }) => {
       )}
 
       {/* Información nutricional */}
-      {receta.informacion_nutricional && Object.keys(receta.informacion_nutricional).length > 0 && (
+      {informacionNutricional && Object.keys(informacionNutricional).length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle>Información Nutricional</CardTitle>
             <p className="text-sm text-gray-600">
-              Valores aproximados por porción
+              Valores aproximados por receta completa {!receta.informacion_nutricional && '(estimación)'}
             </p>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {Object.entries(receta.informacion_nutricional).map(([nutriente, valor]) => (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {Object.entries(informacionNutricional).map(([nutriente, valor]) => (
                 <div
                   key={nutriente}
-                  className="p-3 border rounded-lg bg-gray-50"
+                  className="p-4 border rounded-lg bg-gradient-to-br from-green-50 to-white text-center"
                 >
-                  <h4 className="font-medium text-sm capitalize">
-                    {nutriente.replace('_', ' ')}
+                  <h4 className="font-medium text-xs text-gray-600 uppercase mb-1">
+                    {nutriente}
                   </h4>
-                  <p className="text-lg font-semibold text-green-600">
-                    {typeof valor === 'number' ? valor.toFixed(2) : valor}
+                  <p className="text-xl font-bold text-green-600">
+                    {valor}
                   </p>
                 </div>
               ))}
             </div>
+            {!receta.informacion_nutricional && (
+              <p className="text-xs text-gray-500 mt-4 text-center">
+                * Valores calculados automáticamente basados en promedios. Para información precisa, consulte con un nutricionista.
+              </p>
+            )}
           </CardContent>
         </Card>
       )}
 
-      {/* Mensajes si no hay datos */}
-      {(!receta.ingredientes || receta.ingredientes.length === 0) && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Ingredientes</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-gray-500 text-center py-8">
-              No hay ingredientes registrados para esta receta.
-            </p>
-          </CardContent>
-        </Card>
-      )}
-
-      {(!receta.informacion_nutricional || Object.keys(receta.informacion_nutricional).length === 0) && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Información Nutricional</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-gray-500 text-center py-8">
-              No hay información nutricional disponible para esta receta.
-            </p>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 };
+
 
 export default RecetaDetail;

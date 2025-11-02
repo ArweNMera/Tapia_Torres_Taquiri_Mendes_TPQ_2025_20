@@ -155,35 +155,52 @@ class FeatureEngineer:
             r.rec_nombre as nombre,
             -- Tipos de comida para esta receta
             GROUP_CONCAT(DISTINCT rc.rc_comida) as tipos_comida,
-            -- Nutrientes calculados desde ingredientes
-            COALESCE(SUM(CASE WHEN n.nutri_codigo = 'KCAL' THEN an.aln_cantidad * ri.ri_cantidad ELSE 0 END), 0) as kcal_total,
-            COALESCE(SUM(CASE WHEN n.nutri_codigo = 'PROT' THEN an.aln_cantidad * ri.ri_cantidad ELSE 0 END), 0) as proteina_g,
-            COALESCE(SUM(CASE WHEN n.nutri_codigo = 'CARB' THEN an.aln_cantidad * ri.ri_cantidad ELSE 0 END), 0) as carbohidratos_g,
-            COALESCE(SUM(CASE WHEN n.nutri_codigo = 'FAT' THEN an.aln_cantidad * ri.ri_cantidad ELSE 0 END), 0) as grasas_g,
-            COALESCE(SUM(CASE WHEN n.nutri_codigo = 'FIBER' THEN an.aln_cantidad * ri.ri_cantidad ELSE 0 END), 0) as fibra_g,
-            COALESCE(SUM(CASE WHEN n.nutri_codigo = 'IRON' THEN an.aln_cantidad * ri.ri_cantidad ELSE 0 END), 0) as hierro_mg,
-            COALESCE(SUM(CASE WHEN n.nutri_codigo = 'CALC' THEN an.aln_cantidad * ri.ri_cantidad ELSE 0 END), 0) as calcio_mg,
-            COALESCE(SUM(CASE WHEN n.nutri_codigo = 'VITA' THEN an.aln_cantidad * ri.ri_cantidad ELSE 0 END), 0) as vitamina_a_ug,
-            COALESCE(SUM(CASE WHEN n.nutri_codigo = 'VITC' THEN an.aln_cantidad * ri.ri_cantidad ELSE 0 END), 0) as vitamina_c_mg,
-            COALESCE(SUM(CASE WHEN n.nutri_codigo = 'ZINC' THEN an.aln_cantidad * ri.ri_cantidad ELSE 0 END), 0) as zinc_mg,
+            -- Nutrientes calculados desde ingredientes (usar códigos correctos de la BD)
+            -- Códigos correctos: EN=Energía, PRO=Proteína, CHO=Carbohidratos, GRA=Grasa, FIB=Fibra, FE=Hierro, CA=Calcio, VA=Vit A, VC=Vit C, ZN=Zinc
+            COALESCE(SUM(CASE WHEN n.nutri_codigo = 'EN' THEN an.an_cantidad_100 * ri.ri_cantidad / 100.0 ELSE 0 END), 0) as kcal_total,
+            COALESCE(SUM(CASE WHEN n.nutri_codigo = 'PRO' THEN an.an_cantidad_100 * ri.ri_cantidad / 100.0 ELSE 0 END), 0) as proteina_g,
+            COALESCE(SUM(CASE WHEN n.nutri_codigo = 'CHO' THEN an.an_cantidad_100 * ri.ri_cantidad / 100.0 ELSE 0 END), 0) as carbohidratos_g,
+            COALESCE(SUM(CASE WHEN n.nutri_codigo = 'GRA' THEN an.an_cantidad_100 * ri.ri_cantidad / 100.0 ELSE 0 END), 0) as grasas_g,
+            COALESCE(SUM(CASE WHEN n.nutri_codigo = 'FIB' THEN an.an_cantidad_100 * ri.ri_cantidad / 100.0 ELSE 0 END), 0) as fibra_g,
+            COALESCE(SUM(CASE WHEN n.nutri_codigo = 'FE' THEN an.an_cantidad_100 * ri.ri_cantidad / 100.0 ELSE 0 END), 0) as hierro_mg,
+            COALESCE(SUM(CASE WHEN n.nutri_codigo = 'CA' THEN an.an_cantidad_100 * ri.ri_cantidad / 100.0 ELSE 0 END), 0) as calcio_mg,
+            COALESCE(SUM(CASE WHEN n.nutri_codigo = 'VA' THEN an.an_cantidad_100 * ri.ri_cantidad / 100.0 ELSE 0 END), 0) as vitamina_a_ug,
+            COALESCE(SUM(CASE WHEN n.nutri_codigo = 'VC' THEN an.an_cantidad_100 * ri.ri_cantidad / 100.0 ELSE 0 END), 0) as vitamina_c_mg,
+            COALESCE(SUM(CASE WHEN n.nutri_codigo = 'ZN' THEN an.an_cantidad_100 * ri.ri_cantidad / 100.0 ELSE 0 END), 0) as zinc_mg,
             -- Diversidad de ingredientes
             COUNT(DISTINCT ri.ali_id) as num_ingredientes,
-            -- Popularidad basada en feedback
-            COALESCE(AVG(mf.mf_rating), 3.0) as aceptacion_promedio,
-            COALESCE(COUNT(DISTINCT mf.mf_id), 0) as num_evaluaciones,
+            -- Popularidad basada en feedback (usando subconsultas para evitar duplicación de filas)
+            COALESCE((
+                SELECT AVG(mf_inner.mf_rating)
+                FROM menus_items mi_inner
+                LEFT JOIN menus_feedback mf_inner ON mi_inner.mei_id = mf_inner.mei_id
+                WHERE mi_inner.rec_id = r.rec_id
+            ), 3.0) as aceptacion_promedio,
+            COALESCE((
+                SELECT COUNT(DISTINCT mf_inner.mf_id)
+                FROM menus_items mi_inner
+                LEFT JOIN menus_feedback mf_inner ON mi_inner.mei_id = mf_inner.mei_id
+                WHERE mi_inner.rec_id = r.rec_id
+            ), 0) as num_evaluaciones,
             -- Porcentaje de completado promedio
-            COALESCE(AVG(mf.mf_porcentaje_consumido), 50) as porcentaje_consumido_promedio,
+            COALESCE((
+                SELECT AVG(mf_inner.mf_porcentaje_consumido)
+                FROM menus_items mi_inner
+                LEFT JOIN menus_feedback mf_inner ON mi_inner.mei_id = mf_inner.mei_id
+                WHERE mi_inner.rec_id = r.rec_id
+            ), 50) as porcentaje_consumido_promedio,
             -- Número de veces que aparece en favoritas
-            COALESCE(COUNT(DISTINCT ncf.ncf_id), 0) as veces_favorita
+            COALESCE((
+                SELECT COUNT(DISTINCT ncf_inner.ncf_id)
+                FROM ninos_comidas_favoritas ncf_inner
+                WHERE ncf_inner.rec_id = r.rec_id
+            ), 0) as veces_favorita
         FROM recetas r
         LEFT JOIN recetas_comidas rc ON r.rec_id = rc.rec_id
         LEFT JOIN recetas_ingredientes ri ON r.rec_id = ri.rec_id
         LEFT JOIN alimentos a ON ri.ali_id = a.ali_id AND a.ali_activo = 1
         LEFT JOIN alimentos_nutrientes an ON a.ali_id = an.ali_id
         LEFT JOIN nutrientes n ON an.nutri_id = n.nutri_id
-        LEFT JOIN menus_items mi ON r.rec_id = mi.rec_id
-        LEFT JOIN menus_feedback mf ON mi.mei_id = mf.mei_id
-        LEFT JOIN ninos_comidas_favoritas ncf ON r.rec_id = ncf.rec_id
         WHERE r.rec_activo = 1
         """
 
@@ -284,11 +301,16 @@ class FeatureEngineer:
         """
         df = df.copy()
 
+        # Usar kcal_total (nombre correcto de la columna SQL)
+        # Crear alias para compatibilidad con código legacy
+        if "kcal_total" in df.columns and "energia_kcal" not in df.columns:
+            df["energia_kcal"] = df["kcal_total"]
+
         # Densidad nutricional (usando columnas reales)
-        df["densidad_proteina"] = df["proteina_g"] / (df["energia_kcal"] + 1)
-        df["densidad_fibra"] = df["fibra_g"] / (df["energia_kcal"] + 1)
-        df["densidad_hierro"] = df["hierro_mg"] / (df["energia_kcal"] + 1)
-        df["densidad_calcio"] = df["calcio_mg"] / (df["energia_kcal"] + 1)
+        df["densidad_proteina"] = df["proteina_g"] / (df["kcal_total"] + 1)
+        df["densidad_fibra"] = df["fibra_g"] / (df["kcal_total"] + 1)
+        df["densidad_hierro"] = df["hierro_mg"] / (df["kcal_total"] + 1)
+        df["densidad_calcio"] = df["calcio_mg"] / (df["kcal_total"] + 1)
 
         # Balance de macronutrientes
         total_macros = df["proteina_g"] + df["carbohidratos_g"] + df["grasas_g"]
@@ -298,15 +320,22 @@ class FeatureEngineer:
 
         # Categorías de calorías
         df["categoria_calorias"] = pd.cut(
-            df["energia_kcal"],
+            df["kcal_total"],
             bins=[0, 100, 200, 400, 600, float("inf")],
             labels=["muy_bajo", "bajo", "medio", "alto", "muy_alto"],
         )
 
-        # Score de popularidad basado en feedback
-        df["popularidad_score"] = df["avg_rating"].fillna(2.5) / 5.0
+        # Score de popularidad basado en feedback (aceptacion_promedio es el nombre en SQL)
+        # Crear alias si no existe
+        if "aceptacion_promedio" in df.columns and "avg_rating" not in df.columns:
+            df["avg_rating"] = df["aceptacion_promedio"]
 
-        # Complejidad de preparación
+        df["popularidad_score"] = df.get("avg_rating", pd.Series([3.0] * len(df))).fillna(2.5) / 5.0
+
+        # Complejidad de preparación (usar valor default si no existe tiempo_preparacion)
+        if "tiempo_preparacion" not in df.columns:
+            df["tiempo_preparacion"] = 30  # Default 30 minutos
+
         df["complejidad_preparacion"] = df["tiempo_preparacion"].apply(
             lambda x: "alta" if x > 60 else "media" if x > 30 else "baja"
         )

@@ -1,0 +1,34 @@
+# Backend - FastAPI (Producción)
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Instalar dependencias del sistema
+RUN apt-get update && apt-get install -y \
+    gcc \
+    default-libmysqlclient-dev \
+    pkg-config \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copiar requirements
+COPY nutricion-api/requirements.txt .
+
+# Instalar dependencias Python
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copiar código
+COPY nutricion-api/ .
+
+# Crear usuario no-root para seguridad
+RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
+USER appuser
+
+# Exponer puerto
+EXPOSE 8080
+
+# Variable de entorno para Cloud Run
+ENV PORT=8080
+
+# Comando para producción (sin --reload)
+# Cloud Run proporciona PORT dinámicamente
+CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080} --workers 2

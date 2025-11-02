@@ -83,6 +83,121 @@ def calcular_perfil_nutricional(
         )
 
 
+@router.post("/generar-ml")
+async def generar_plan_semanal_ml(
+    request: GenerarPlanRequest,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    """
+    🤖 Genera un plan de comidas semanal usando Machine Learning
+
+    Este endpoint utiliza el modelo LightGBM entrenado para generar
+    recomendaciones personalizadas de comidas basadas en:
+    - Perfil nutricional del niño
+    - Estado nutricional (NORMAL, DESNUTRICION, etc.)
+    - Alergias activas
+    - Preferencias de comidas
+    - Modelo ML entrenado con datos reales
+
+    El modelo alcanza:
+    - NDCG@5: 89% (muy bueno prediciendo las top 5 recetas)
+    - NDCG@10: 85% (muy bueno prediciendo las top 10 recetas)
+    - Accuracy ±1: 76% (3 de cada 4 predicciones exactas)
+
+    Args:
+        request: Datos para generar plan (nin_id, fecha_inicio, días)
+
+    Returns:
+        Plan semanal generado con ML y guardado en la base de datos
+    """
+    import logging
+
+    logger = logging.getLogger(__name__)
+
+    from app.application.services.ml_menu_service import MLMenuService
+
+    # Instanciar servicios siguiendo arquitectura hexagonal
+    planes_repo = PlanesComidasRepository(db)
+    ninos_repo = NinosRepository(db)
+    prefs_repo = PreferenciasRepository(db)
+
+    ml_service = MLMenuService(
+        planes_repo=planes_repo, ninos_repo=ninos_repo, prefs_repo=prefs_repo
+    )
+
+    try:
+        logger.info(f"🤖 Generando plan ML para niño {request.nin_id}")
+
+        resultado = await ml_service.generar_plan_semanal_con_ml(
+            nin_id=request.nin_id,
+            fecha_inicio=request.fecha_inicio,
+            incluir_refacciones=request.incluir_refacciones,
+            dias=7,  # Siempre 7 días por ahora
+        )
+
+        if not resultado.get("exito"):
+            logger.warning(
+                f"⚠️ Plan generado pero no persistido: {resultado.get('error_persistencia')}"
+            )
+
+        # Convertir el plan ML al formato esperado por el frontend
+        plan_ml = resultado.get("plan_ml", {})
+        weekly_plan = plan_ml.get("weekly_plan", [])
+
+        return {
+            "mensaje": "Plan semanal generado exitosamente con Machine Learning",
+            "men_id": resultado.get("men_id"),
+            "nin_id": request.nin_id,
+            "generado_por": "IA_ML",
+            "modelo_version": "LightGBM_v1.0",
+            "metricas_modelo": {
+                "ndcg_at_5": 0.89,
+                "ndcg_at_10": 0.85,
+                "accuracy_tolerance_1": 0.76,
+            },
+            "plan_semanal": weekly_plan,
+            "total_dias": plan_ml.get("total_days", 0),
+            "total_comidas": plan_ml.get("total_meals", 0),
+            "perfil_nutricional": resultado.get("perfil", {}),
+            "alergias_consideradas": resultado.get("alergias", []),
+        }
+
+    except ValueError as e:
+        logger.error(f"❌ Error de validación: {str(e)}")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        logger.error(f"❌ Error generando plan ML: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error generando plan con ML: {str(e)}",
+        )
+
+
+@router.get("/ml/salud")
+async def verificar_servidor_ml(current_user=Depends(get_current_user)):
+    """
+    Verifica el estado del servidor ML de recomendaciones
+
+    Returns:
+        Estado de conexión con el servidor ML
+    """
+    from app.application.services.ml_menu_service import MLMenuService
+
+    # No necesita DB para verificar salud
+    ml_service = MLMenuService(planes_repo=None, ninos_repo=None, prefs_repo=None)
+
+    try:
+        estado = await ml_service.verificar_servidor_ml()
+        return estado
+    except Exception as e:
+        return {
+            "servidor_ml_disponible": False,
+            "error": str(e),
+            "estado": "error",
+        }
+
+
 @router.post("/generar", response_model=PlanSemanalResponse)
 async def generar_plan_semanal(
     request: GenerarPlanRequest,
@@ -293,6 +408,41 @@ def obtener_comidas_favoritas_nino(
     return {"favoritas": favoritas}
 
 
+@router.post("/ninos/{nin_id}/favoritas/toggle")
+def toggle_comida_favorita_nino(
+    nin_id: int,
+    favorita_data: dict,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    """
+    Agrega o quita una comida favorita (toggle) usando SP.
+    Si ya está en favoritas, la quita. Si no está, la agrega.
+    """
+    repo = PlanesComidasRepository(db)
+
+    rec_id = favorita_data.get("rec_id")
+    if not rec_id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="rec_id es requerido")
+
+    try:
+        accion = repo.toggle_comida_favorita(nin_id, rec_id)
+        return {
+            "mensaje": f"Comida favorita {accion.lower()}",
+            "accion": accion,
+            "es_favorita": accion == "AGREGADA",
+        }
+    except Exception as exc:
+        import logging
+
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error en toggle favorita: {exc}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error al procesar favorita: {str(exc)}",
+        ) from exc
+
+
 @router.post("/ninos/{nin_id}/favoritas")
 def agregar_comida_favorita_nino(
     nin_id: int,
@@ -300,7 +450,7 @@ def agregar_comida_favorita_nino(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
-    """Agrega una comida favorita para un niño"""
+    """Agrega una comida favorita para un niño (usa el toggle interno)"""
     repo = PlanesComidasRepository(db)
 
     rec_id = favorita_data.get("rec_id")
@@ -373,3 +523,268 @@ def obtener_detalle_receta(
             "hierro_mg": detalle.get("nutrientes", {}).get("hierro_mg", 0.0),
         },
     }
+
+
+# ============================================================================
+# ENDPOINTS DE FEEDBACK Y CALIFICACIONES
+# ============================================================================
+
+
+@router.get("/ninos/{nin_id}/recetas-plan")
+def obtener_recetas_plan_actual(
+    nin_id: int,
+    q: Optional[str] = "",
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    """
+    Obtiene todas las recetas del plan de comidas activo/aprobado del niño
+    Permite búsqueda por nombre para el autocompletado del modal de favoritos
+    """
+    repo = PlanesComidasRepository(db)
+
+    try:
+        recetas = repo.obtener_recetas_plan_actual(nin_id, busqueda=q)
+        return {"recetas": recetas, "total": len(recetas)}
+    except Exception as e:
+        import logging
+
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error obteniendo recetas del plan: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error obteniendo recetas del plan: {str(e)}",
+        )
+
+
+@router.post("/menus-feedback")
+def registrar_feedback_comida(
+    feedback_data: dict,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    """
+    Registra o actualiza el feedback de una comida (rating, porcentaje consumido, notas)
+    Body esperado:
+    {
+        "mei_id": 123,          # ID del item del menú
+        "nin_id": 456,          # ID del niño
+        "mf_rating": 4,         # Rating 1-5 estrellas
+        "mf_porcentaje_consumido": 80,  # 0-100%
+        "mf_completado": true,  # ¿Se consumió?
+        "mf_notas": "Le gustó mucho",
+        "mf_fecha_consumo": "2025-11-01"
+    }
+    """
+    repo = PlanesComidasRepository(db)
+
+    mei_id = feedback_data.get("mei_id")
+    nin_id = feedback_data.get("nin_id")
+
+    if not mei_id or not nin_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="mei_id y nin_id son requeridos"
+        )
+
+    try:
+        # Obtener usr_id del current_user (puede ser objeto o dict)
+        registrado_por = None
+        if current_user:
+            registrado_por = (
+                current_user.usr_id
+                if hasattr(current_user, "usr_id")
+                else current_user.get("usr_id")
+                if isinstance(current_user, dict)
+                else None
+            )
+
+        feedback_id = repo.registrar_feedback_comida(
+            mei_id=mei_id,
+            nin_id=nin_id,
+            mf_rating=feedback_data.get("mf_rating"),
+            mf_porcentaje_consumido=feedback_data.get("mf_porcentaje_consumido"),
+            mf_completado=feedback_data.get("mf_completado", False),
+            mf_notas=feedback_data.get("mf_notas"),
+            mf_fecha_consumo=feedback_data.get("mf_fecha_consumo"),
+            mf_registrado_por=registrado_por,
+        )
+
+        return {"mensaje": "Feedback registrado exitosamente", "mf_id": feedback_id}
+    except Exception as e:
+        import logging
+
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error registrando feedback: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error registrando feedback: {str(e)}",
+        )
+
+
+@router.get("/ninos/{nin_id}/feedback")
+def listar_feedback_nino(
+    nin_id: int,
+    fecha_desde: Optional[str] = None,
+    fecha_hasta: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    """
+    Lista todo el feedback (calificaciones) del niño.
+    Útil para ver el historial de ratings y generar reportes.
+    """
+    repo = PlanesComidasRepository(db)
+
+    try:
+        feedback_list = repo.listar_feedback_nino(nin_id, fecha_desde, fecha_hasta)
+        return {"feedback": feedback_list, "total": len(feedback_list)}
+    except Exception as e:
+        import logging
+
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error listando feedback: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error listando feedback: {str(e)}",
+        )
+
+
+@router.get("/ninos/{nin_id}/planes/{men_id}/pdf")
+def descargar_plan_pdf(
+    nin_id: int,
+    men_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user),
+):
+    """
+    Descarga el plan de comidas semanal en formato PDF.
+    Incluye 7 días con desayuno, almuerzo y cena, más resumen nutricional.
+    """
+    import logging
+    from datetime import datetime
+
+    from fastapi.responses import StreamingResponse
+
+    from app.services.pdf_generator import PlanComidasPDFGenerator
+
+    logger = logging.getLogger(__name__)
+
+    try:
+        # Obtener datos del menú
+        repo = PlanesComidasRepository(db)
+        menu = repo.obtener_detalle_menu(men_id)
+
+        if not menu:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"No se encontró el plan de comidas {men_id}",
+            )
+
+        # Verificar que el menú pertenezca al niño
+        if menu.get("nin_id") != nin_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Este menú no pertenece al niño especificado",
+            )
+
+        # Obtener items del menú con información nutricional para PDF
+        items = repo.obtener_items_menu_para_pdf(men_id)
+
+        if not items:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="El menú no tiene comidas asignadas"
+            )
+
+        # Obtener datos del niño
+        ninos_repo = NinosRepository(db)
+        nino = ninos_repo.obtener_nino(nin_id)
+
+        if not nino:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail=f"No se encontró el niño {nin_id}"
+            )
+
+        # Obtener perfil nutricional
+        perfil = repo.obtener_perfil_nutricional(nin_id)
+
+        # Calcular edad en años desde edad_meses
+        edad_meses = nino.get("edad_meses", 0)
+        edad_anos = round(edad_meses / 12, 1) if edad_meses else 0
+
+        # Preparar datos del niño para el PDF
+        nino_data = {
+            "nombre": nino.get("nin_nombres", "Sin nombre"),
+            "edad": edad_anos,
+            "clasificacion": perfil.get("clasificacion", "Normal") if perfil else "Normal",
+        }
+
+        # Formatear datos del plan
+        plan_data = {
+            "periodo": f"{menu.get('men_inicio', 'N/A')} - {menu.get('men_fin', 'N/A')}",
+            "dias": [],
+            "total_semanal": 0,
+            "promedio_diario": 0,
+        }
+
+        # Agrupar comidas por día
+        dias_dict = {}
+        tipos_comida_orden = {"Desayuno": 1, "Almuerzo": 2, "Cena": 3}
+
+        for item in items:
+            dia_idx = item.get("mei_dia_idx", 0)
+            if dia_idx not in dias_dict:
+                dias_dict[dia_idx] = {"comidas": [], "total_kcal": 0}
+
+            # Calcular calorías y proteínas
+            kcal = item.get("kcal", 0) or item.get("rec_kcal_100g", 0)
+            proteina_g = item.get("proteina_g", 0) or item.get("rec_proteina_g_100g", 0)
+
+            dias_dict[dia_idx]["comidas"].append(
+                {
+                    "tipo_comida": item.get("mei_tipo_comida", "N/A"),
+                    "nombre": item.get("rec_nombre", "N/A"),
+                    "kcal": kcal,
+                    "proteina_g": proteina_g,
+                    "orden": tipos_comida_orden.get(item.get("mei_tipo_comida", ""), 99),
+                }
+            )
+            dias_dict[dia_idx]["total_kcal"] += kcal
+
+        # Convertir a lista ordenada por día (1-7)
+        for dia_idx in sorted(dias_dict.keys()):
+            # Ordenar comidas dentro del día (Desayuno -> Almuerzo -> Cena)
+            dias_dict[dia_idx]["comidas"].sort(key=lambda x: x["orden"])
+            # Remover campo 'orden' antes de agregar a plan_data
+            for comida in dias_dict[dia_idx]["comidas"]:
+                comida.pop("orden", None)
+
+            plan_data["dias"].append(dias_dict[dia_idx])
+            plan_data["total_semanal"] += dias_dict[dia_idx]["total_kcal"]
+
+        if len(plan_data["dias"]) > 0:
+            plan_data["promedio_diario"] = plan_data["total_semanal"] / len(plan_data["dias"])
+
+        # Generar PDF
+        generator = PlanComidasPDFGenerator()
+        pdf_buffer = generator.generar_pdf_plan_semanal(plan_data, nino_data)
+
+        # Preparar nombre del archivo
+        nino_nombre_limpio = nino_data["nombre"].replace(" ", "_")
+        fecha_str = datetime.now().strftime("%Y%m%d")
+        filename = f"plan_comidas_{nino_nombre_limpio}_{fecha_str}.pdf"
+
+        # Retornar como stream
+        return StreamingResponse(
+            pdf_buffer,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename={filename}"},
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error generando PDF: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error generando PDF: {str(e)}",
+        )

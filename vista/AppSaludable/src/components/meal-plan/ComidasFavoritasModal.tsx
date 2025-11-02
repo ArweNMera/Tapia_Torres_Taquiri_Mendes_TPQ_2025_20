@@ -14,7 +14,11 @@ import {
   agregarComidaFavorita,
   eliminarComidaFavorita,
   buscarRecetas,
+  obtenerRecetasPlanActual,
+  registrarFeedbackComida,
+  toggleComidaFavorita,
 } from '../../services/mealPlanApi';
+import { RatingStars } from './RatingStars';
 
 interface ComidasFavoritasModalProps {
   open: boolean;
@@ -34,8 +38,11 @@ interface ComidaFavorita {
 interface Receta {
   rec_id: number;
   rec_nombre: string;
-  rec_tipo_comida: string;
-  rec_kcal?: number;
+  tipo_comida: string;
+  kcal?: number;
+  mei_id: number;
+  es_favorita?: boolean;
+  rating_actual?: number;
 }
 
 export const ComidasFavoritasModal: React.FC<ComidasFavoritasModalProps> = ({
@@ -59,6 +66,20 @@ export const ComidasFavoritasModal: React.FC<ComidasFavoritasModalProps> = ({
       setCambiosRealizados(false);
     }
   }, [open, ninId]);
+
+  // Búsqueda automática con debounce (como Gmail)
+  useEffect(() => {
+    if (!busqueda.trim()) {
+      setRecetasEncontradas([]);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      handleBuscar();
+    }, 500); // Espera 500ms después de que el usuario deja de escribir
+
+    return () => clearTimeout(timer);
+  }, [busqueda]);
 
   const cargarFavoritas = async () => {
     setLoading(true);
@@ -84,7 +105,7 @@ export const ComidasFavoritasModal: React.FC<ComidasFavoritasModalProps> = ({
 
     setBuscando(true);
     try {
-      const data = await buscarRecetas(busqueda.trim());
+      const data = await obtenerRecetasPlanActual(ninId, busqueda.trim());
       setRecetasEncontradas(data.recetas || []);
     } catch (error) {
       toast({
@@ -95,6 +116,53 @@ export const ComidasFavoritasModal: React.FC<ComidasFavoritasModalProps> = ({
       setRecetasEncontradas([]);
     } finally {
       setBuscando(false);
+    }
+  };
+
+  const handleToggleFavorita = async (recId: number, recNombre: string) => {
+    setAgregando(true);
+    try {
+      const result = await toggleComidaFavorita(ninId, recId);
+      toast({
+        title: result.accion === 'AGREGADA' ? 'Favorita agregada' : 'Favorita eliminada',
+        description: `${recNombre} ${
+          result.accion === 'AGREGADA' ? 'agregada a' : 'eliminada de'
+        } favoritas`,
+      });
+      await cargarFavoritas();
+      if (recetasEncontradas.length > 0) {
+        await handleBuscar();
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'No se pudo actualizar la favorita',
+        variant: 'destructive',
+      });
+    } finally {
+      setAgregando(false);
+    }
+  };
+
+  const handleRating = async (receta: Receta, rating: number) => {
+    try {
+      await registrarFeedbackComida({
+        mei_id: receta.mei_id,
+        nin_id: ninId,
+        mf_rating: rating,
+        mf_completado: rating >= 3,
+      });
+      toast({
+        title: 'Calificación guardada',
+        description: `${receta.rec_nombre} calificada con ${rating} estrellas`,
+      });
+      await handleBuscar();
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'No se pudo guardar la calificación',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -166,56 +234,67 @@ export const ComidasFavoritasModal: React.FC<ComidasFavoritasModalProps> = ({
             {/* Buscador de recetas */}
             <div className="border rounded-lg p-4 bg-gray-50">
               <h3 className="font-semibold text-gray-900 mb-3">Buscar Recetas</h3>
-              <div className="flex gap-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <Input
-                  placeholder="Buscar por nombre de receta..."
+                  placeholder="Escribe para buscar recetas en tiempo real..."
                   value={busqueda}
                   onChange={(e) => setBusqueda(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleBuscar()}
-                  className="flex-1"
+                  className="pl-10 pr-10"
                 />
-                <Button
-                  onClick={handleBuscar}
-                  disabled={buscando || !busqueda.trim()}
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  {buscando ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Search className="w-4 h-4" />
-                  )}
-                </Button>
+                {buscando && (
+                  <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 animate-spin text-blue-600" />
+                )}
               </div>
 
               {/* Resultados de búsqueda */}
+              {/* Resultados de búsqueda */}
+              {busqueda.trim() && !buscando && recetasEncontradas.length === 0 && (
+                <div className="mt-4 text-center py-8 text-gray-500">
+                  <Search className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                  <p>No se encontraron recetas con "{busqueda}"</p>
+                  <p className="text-sm mt-1">Intenta con otro término de búsqueda</p>
+                </div>
+              )}
+
               {recetasEncontradas.length > 0 && (
                 <div className="mt-4 space-y-2 max-h-60 overflow-y-auto">
+                  <p className="text-sm text-gray-600 mb-2">
+                    {recetasEncontradas.length} receta{recetasEncontradas.length !== 1 ? 's' : ''} encontrada{recetasEncontradas.length !== 1 ? 's' : ''}
+                  </p>
                   {recetasEncontradas.map((receta) => (
                     <div
-                      key={receta.rec_id}
-                      className="flex items-center justify-between p-3 bg-white rounded-lg border"
+                      key={`${receta.mei_id}-${receta.rec_id}`}
+                      className="flex items-center justify-between p-3 bg-white rounded-lg border hover:border-blue-300 transition-colors"
                     >
                       <div className="flex-1">
                         <p className="font-medium text-gray-900">{receta.rec_nombre}</p>
                         <p className="text-sm text-gray-600">
-                          {receta.rec_tipo_comida}
-                          {receta.rec_kcal && ` • ${receta.rec_kcal} kcal`}
+                          {receta.tipo_comida}
+                          {receta.kcal && ` • ${receta.kcal} kcal`}
                         </p>
+                        <div className="mt-2 flex items-center gap-2">
+                          <RatingStars
+                            rating={receta.rating_actual || 0}
+                            onChange={(rating) => handleRating(receta, rating)}
+                            size="sm"
+                          />
+                          {(receta.rating_actual ?? 0) > 0 && (
+                            <span className="text-xs text-gray-500">
+                              ({(receta.rating_actual ?? 0).toFixed(1)})
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      {esFavorita(receta.rec_id) ? (
-                        <span className="text-sm text-green-600 font-medium">
-                          ✓ Ya es favorita
-                        </span>
-                      ) : (
-                        <Button
-                          size="sm"
-                          onClick={() => handleAgregar(receta.rec_id, receta.rec_nombre)}
-                          disabled={agregando}
-                          className="bg-green-600 hover:bg-green-700"
-                        >
-                          <Plus className="w-4 h-4" />
-                        </Button>
-                      )}
+                      <Button
+                        size="sm"
+                        onClick={() => handleToggleFavorita(receta.rec_id, receta.rec_nombre)}
+                        disabled={agregando}
+                        className={receta.es_favorita ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'}
+                        title={receta.es_favorita ? 'Quitar de favoritas' : 'Agregar a favoritas'}
+                      >
+                        <Heart className={receta.es_favorita ? 'w-4 h-4 fill-current' : 'w-4 h-4'} />
+                      </Button>
                     </div>
                   ))}
                 </div>

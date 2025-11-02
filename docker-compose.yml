@@ -11,7 +11,8 @@ services:
       # Hot-reload: monta el código fuente
       - ./control/Nutricion-api/nutricion-api:/app
       # Credenciales de Firebase (solo lectura dentro del contenedor)
-      - ./control/Nutricion-api/nutricion-api/nutricion-dd80c-firebase-adminsdk-fbsvc-356ee61526.json:/secrets/firebase_credentials.json:ro
+      # ✅ Usa ${FIREBASE_CREDENTIALS_FILE} del .env o un nombre genérico
+      - ${FIREBASE_CREDENTIALS_FILE:-./control/Nutricion-api/nutricion-api/firebase-credentials.json}:/secrets/firebase_credentials.json:ro
       # Variables de entorno de la API (reutilizamos el .env local)
       - ./control/Nutricion-api/nutricion-api/.env:/app/.env:ro
     environment:
@@ -87,6 +88,7 @@ services:
       - DB_USER=root
       - DB_PASSWORD=root123456
       - DB_NAME=nutricion
+      - DATABASE_URL=mysql+pymysql://root:root123456@host.docker.internal:3306/nutricion
     extra_hosts:
       - "host.docker.internal:host-gateway"
     networks:

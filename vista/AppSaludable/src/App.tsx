@@ -17,8 +17,7 @@ import { SettingsScreen } from './components/screens/SettingsScreen';
 import SelfAnthropometry from './components/SelfAnthropometry';
 import ProfileHubScreen from './components/screens/ProfileHubScreen';
 import { AdminUsersPage } from './pages/AdminUsersPage';
-import AlimentosPage from './pages/AlimentosPage';
-import RecetasPage from './pages/RecetasPage';
+import ComidasPage from './pages/ComidasPage';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Toaster } from './components/ui/toaster';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
@@ -26,7 +25,7 @@ import TermsPage from './pages/TermsPage';
 import DeleteDataPage from './pages/DeleteDataPage';
 
 type AppState = 'login' | 'register' | 'onboarding' | 'main';
-type ActiveTab = 'home' | 'meal-plan' | 'alimentos' | 'recetas' | 'scan' | 'risk-prediction' | 'progress' | 'community' | 'gamification' | 'profile' | 'clinical' | 'admin';
+type ActiveTab = 'home' | 'meal-plan' | 'comidas' | 'scan' | 'risk-prediction' | 'progress' | 'community' | 'gamification' | 'profile' | 'clinical' | 'admin';
 
 const STATIC_PAGES: Record<string, React.ReactElement> = {
   '/privacy': <PrivacyPolicyPage />,
@@ -146,11 +145,8 @@ function AppContent() {
         {activeTab === 'meal-plan' && (
           <MealPlanScreen onRecipeClick={handleRecipeClick} />
         )}
-        {activeTab === 'alimentos' && (
-          <AlimentosPage />
-        )}
-        {activeTab === 'recetas' && (
-          <RecetasPage />
+        {activeTab === 'comidas' && (
+          <ComidasPage />
         )}
         {activeTab === 'scan' && (
           <ScanScreen />

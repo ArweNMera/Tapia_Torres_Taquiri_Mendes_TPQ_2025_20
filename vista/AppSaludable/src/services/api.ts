@@ -33,22 +33,25 @@ import {
   ResetPasswordResponse
 } from '../types/api';
 
+import { getConfig } from '../config/environment';
+
 class ApiService {
   private baseURL: string;
   private apiVersion: string;
   private tokenKey: string;
 
   constructor() {
-    this.baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
-    this.apiVersion = import.meta.env.VITE_API_VERSION || 'v1';
-    this.tokenKey = import.meta.env.VITE_TOKEN_KEY || 'auth_token';
+    const config = getConfig();
+    this.baseURL = config.API_BASE_URL;
+    this.apiVersion = config.API_VERSION;
+    this.tokenKey = config.TOKEN_KEY;
 
     // Debug: verificar qué URL se está usando
     console.log('🔍 API Base URL:', this.baseURL);
-    console.log('🔍 Environment variables:', {
-      VITE_API_BASE_URL: import.meta.env.VITE_API_BASE_URL,
-      NODE_ENV: import.meta.env.NODE_ENV,
-      MODE: import.meta.env.MODE
+    console.log('🔍 Configuration:', {
+      baseURL: this.baseURL,
+      apiVersion: this.apiVersion,
+      environment: import.meta.env.MODE
     });
   }
 
@@ -553,7 +556,8 @@ class ApiService {
     tipoComida: string,
     preguntaUsuario?: string
   ): Promise<ApiResponse<import('../types/api').ChatBotResponse>> {
-    const mlBaseUrl = import.meta.env.VITE_ML_API_BASE_URL || 'http://localhost:8003';
+    const config = getConfig();
+    const mlBaseUrl = config.ML_API_BASE_URL;
     const url = `${mlBaseUrl}/ml/recomendacion_personalizada`;
 
     return this.makeRequest<import('../types/api').ChatBotResponse>(url, {

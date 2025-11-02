@@ -20,8 +20,13 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copiar código
 COPY . .
 
-# Exponer puerto
-EXPOSE 8001
+# Configurar PYTHONPATH para que Python encuentre el módulo src
+# Como WORKDIR es /app y el código está en /app/src, usamos /app como base
+ENV PYTHONPATH=/app
 
-# Comando para desarrollo con hot-reload
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8001", "--reload"]
+# Exponer puerto (Cloud Run asigna dinámicamente)
+EXPOSE 8080
+
+# Comando para producción (sin --reload para Cloud Run)
+# Usa la variable $PORT de Cloud Run, por defecto 8080
+CMD exec uvicorn src.api.main:app --host 0.0.0.0 --port ${PORT:-8080}

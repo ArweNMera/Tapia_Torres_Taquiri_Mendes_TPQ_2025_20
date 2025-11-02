@@ -193,39 +193,40 @@ class MealPlanOptimizer:
         for d in range(num_days):
             # Calorías diarias
             daily_calories = sum(
-                candidate_menus[i].get("calories", 0) * x[i, d, m]
+                int(candidate_menus[i].get("calories", 0)) * x[i, d, m]
                 for i in range(num_menus)
                 for m in range(num_meals)
             )
-            model.Add(daily_calories >= self.nutritional_constraints.min_calories)
-            model.Add(daily_calories <= self.nutritional_constraints.max_calories)
+            # Convertir a enteros para OR-Tools (no acepta floats)
+            model.Add(daily_calories >= int(self.nutritional_constraints.min_calories))
+            model.Add(daily_calories <= int(self.nutritional_constraints.max_calories))
 
             # Proteínas diarias
             daily_protein = sum(
-                candidate_menus[i].get("protein", 0) * x[i, d, m]
+                int(candidate_menus[i].get("protein", 0)) * x[i, d, m]
                 for i in range(num_menus)
                 for m in range(num_meals)
             )
-            model.Add(daily_protein >= self.nutritional_constraints.min_protein)
-            model.Add(daily_protein <= self.nutritional_constraints.max_protein)
+            model.Add(daily_protein >= int(self.nutritional_constraints.min_protein))
+            model.Add(daily_protein <= int(self.nutritional_constraints.max_protein))
 
             # Carbohidratos diarios
             daily_carbs = sum(
-                candidate_menus[i].get("carbs", 0) * x[i, d, m]
+                int(candidate_menus[i].get("carbs", 0)) * x[i, d, m]
                 for i in range(num_menus)
                 for m in range(num_meals)
             )
-            model.Add(daily_carbs >= self.nutritional_constraints.min_carbs)
-            model.Add(daily_carbs <= self.nutritional_constraints.max_carbs)
+            model.Add(daily_carbs >= int(self.nutritional_constraints.min_carbs))
+            model.Add(daily_carbs <= int(self.nutritional_constraints.max_carbs))
 
             # Grasas diarias
             daily_fat = sum(
-                candidate_menus[i].get("fat", 0) * x[i, d, m]
+                int(candidate_menus[i].get("fat", 0)) * x[i, d, m]
                 for i in range(num_menus)
                 for m in range(num_meals)
             )
-            model.Add(daily_fat >= self.nutritional_constraints.min_fat)
-            model.Add(daily_fat <= self.nutritional_constraints.max_fat)
+            model.Add(daily_fat >= int(self.nutritional_constraints.min_fat))
+            model.Add(daily_fat <= int(self.nutritional_constraints.max_fat))
 
         # Restricciones de alérgenos
         for i in range(num_menus):

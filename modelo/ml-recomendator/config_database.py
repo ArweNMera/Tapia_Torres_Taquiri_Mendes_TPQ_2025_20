@@ -9,6 +9,11 @@ para el sistema de recomendación de menús con datos reales.
 import os
 from typing import Any, Dict
 
+from dotenv import load_dotenv
+
+# Cargar variables de entorno desde .env
+load_dotenv()
+
 
 def get_default_config() -> Dict[str, Any]:
     """Configuración por defecto para desarrollo local"""

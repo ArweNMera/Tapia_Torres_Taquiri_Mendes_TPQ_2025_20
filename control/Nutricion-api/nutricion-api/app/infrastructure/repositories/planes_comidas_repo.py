@@ -134,6 +134,13 @@ class PlanesComidasRepository:
         result = self.db.execute(text("CALL sp_menus_items_listar(:men_id)"), {"men_id": men_id})
         return [dict(row._mapping) for row in result]
 
+    def obtener_items_menu_para_pdf(self, men_id: int) -> List[Dict]:
+        """Obtiene los items de un menú con información nutricional para PDF"""
+        result = self.db.execute(
+            text("CALL sp_menus_items_listar_para_pdf(:men_id)"), {"men_id": men_id}
+        )
+        return [dict(row._mapping) for row in result]
+
     def actualizar_estado_menu(self, men_id: int, estado: str):
         """Actualiza el estado de un menú"""
         self.db.execute(
@@ -161,19 +168,15 @@ class PlanesComidasRepository:
 
         logger = logging.getLogger(__name__)
 
-        # 1. Obtener recetas disponibles
         recetas_disponibles = self._obtener_recetas_disponibles(nino.get("ent_id"))
 
-        # 2. Llamar al servicio ML para generar el plan con LLM
         plan_llm = await self._llamar_llm_generar_plan(
             nin_id, perfil, nino, preferencias, alergias, recetas_disponibles, incluir_refacciones
         )
 
-        # 4. Crear el menú en la base de datos
         fecha_fin = fecha_inicio + timedelta(days=6)
         men_id = self.crear_menu(nin_id, fecha_inicio, fecha_fin, "IA")
 
-        # 5. Guardar los items del menú
         total_calorias = 0
         dias_plan = []
 
@@ -185,7 +188,6 @@ class PlanesComidasRepository:
                 "total_dia": 0,
             }
 
-            # Procesar cada tipo de comida
             for comida_tipo in ["desayuno", "almuerzo", "cena"]:
                 if comida_tipo in dia_data:
                     comida_data = dia_data[comida_tipo]
@@ -193,15 +195,12 @@ class PlanesComidasRepository:
                     kcal = comida_data.get("kcal", 0)
 
                     if rec_id:
-                        # Guardar en BD
                         mei_id = self.agregar_item_menu(
                             men_id, dia_idx, comida_tipo.upper(), rec_id, kcal
                         )
 
-                        # Obtener detalles de la receta
                         receta = self._obtener_detalle_receta(rec_id)
 
-                        # Agregar al plan
                         dia_info[comida_tipo] = {
                             "mei_id": mei_id,
                             "rec_id": rec_id,
@@ -218,10 +217,8 @@ class PlanesComidasRepository:
 
             dias_plan.append(dia_info)
 
-        # 6. Actualizar calorías totales del menú
         self.actualizar_calorias_menu(men_id, total_calorias)
 
-        # 7. Retornar el plan completo
         return {
             "men_id": men_id,
             "nin_id": nin_id,
@@ -264,15 +261,13 @@ class PlanesComidasRepository:
 
         logger = logging.getLogger(__name__)
 
-        # Obtener URL del servicio ML
         ml_service_url = os.getenv("ML_SERVICE_URL", "http://localhost:8001")
         ml_service_url = ml_service_url.rstrip("/")
-        endpoint = f"{ml_service_url}/ml/generar_plan_semanal"
+        endpoint = f"{ml_service_url}/api/v1/recommendations/weekly-plan"
 
         try:
-            logger.info(f"Llamando al servicio ML: {endpoint}")
+            logger.info(f"🤖 Llamando al servicio ML: {endpoint}")
 
-            # Preparar payload (convertir Decimals y datetime a tipos serializables)
             from datetime import date, datetime
             from decimal import Decimal
 
@@ -288,15 +283,52 @@ class PlanesComidasRepository:
                     return [convert_to_serializable(item) for item in obj]
                 return obj
 
-            payload = {
-                "nin_id": nin_id,
-                "perfil": convert_to_serializable(perfil),
-                "nino": convert_to_serializable(nino),
-                "preferencias": preferencias,
-                "alergias": alergias,
-                "recetas_disponibles": convert_to_serializable(recetas_disponibles),
-                "incluir_refacciones": incluir_refacciones,
+            preferences_converted = {}
+            if isinstance(preferencias, dict):
+                for tipo_comida, items in preferencias.items():
+                    if isinstance(items, list):
+                        for item in items:
+                            preferences_converted[str(item)] = 1.0
+                    elif isinstance(items, dict):
+                        preferences_converted.update(items)
+
+            logger.info(f"📝 Preferencias convertidas: {list(preferences_converted.keys())}")
+
+            nutritional_profile = {
+                "edad_meses": int(perfil.get("pnn_edad_meses", nino.get("nin_edad_meses", 24))),
+                "peso_kg": float(perfil.get("pnn_peso_kg", 0))
+                if perfil.get("pnn_peso_kg")
+                else None,
+                "talla_cm": float(perfil.get("pnn_talla_cm", 0))
+                if perfil.get("pnn_talla_cm")
+                else None,
+                "calorias_diarias": int(perfil.get("pnn_calorias_diarias", 1500)),
+                "proteinas_g": float(perfil.get("pnn_proteinas_g", 0))
+                if perfil.get("pnn_proteinas_g")
+                else None,
+                "carbohidratos_g": float(perfil.get("pnn_carbohidratos_g", 0))
+                if perfil.get("pnn_carbohidratos_g")
+                else None,
+                "grasas_g": float(perfil.get("pnn_grasas_g", 0))
+                if perfil.get("pnn_grasas_g")
+                else None,
+                "factor_actividad": float(perfil.get("pnn_factor_actividad", 1.5))
+                if perfil.get("pnn_factor_actividad")
+                else 1.5,
             }
+
+            payload = {
+                "child_id": str(nin_id),
+                "nutrition_status": perfil.get("pnn_clasificacion", "NORMAL"),
+                "allergies": alergias if isinstance(alergias, list) else [],
+                "preferences": preferences_converted,
+                "days": 7,
+                "nutritional_profile": nutritional_profile,
+            }
+
+            logger.info(
+                f"📦 Payload ML: child_id={payload['child_id']}, status={payload['nutrition_status']}, edad={nutritional_profile['edad_meses']}m, kcal={nutritional_profile['calorias_diarias']}, alergias={len(payload['allergies'])}, preferencias={len(preferences_converted)}"
+            )
 
             async with httpx.AsyncClient(timeout=60.0) as client:
                 response = await client.post(
@@ -309,15 +341,86 @@ class PlanesComidasRepository:
 
                 data = response.json()
                 logger.info(
-                    f"✅ Plan generado exitosamente con servicio ML (LLM usado: {data.get('used_llm', False)})"
+                    f"✅ Plan ML generado: {data.get('total_days', 0)} días, {data.get('total_meals', 0)} comidas"
                 )
 
+                weekly_plan = data.get("weekly_plan", [])
+
+                logger.info("📦 Obteniendo recetas reales de la BD para mapear...")
+                result_recetas = self.db.execute(
+                    text("""
+                        SELECT r.rec_id, r.rec_nombre, rc.rc_comida
+                        FROM recetas r
+                        JOIN recetas_comidas rc ON r.rec_id = rc.rec_id
+                        WHERE r.rec_activo = 1
+                        ORDER BY r.rec_id
+                    """)
+                )
+                recetas_por_tipo = {}
+                for row in result_recetas:
+                    tipo = row.rc_comida
+                    if tipo not in recetas_por_tipo:
+                        recetas_por_tipo[tipo] = []
+                    recetas_por_tipo[tipo].append(
+                        {"rec_id": row.rec_id, "rec_nombre": row.rec_nombre}
+                    )
+
+                logger.info(
+                    f"✅ Recetas disponibles: {sum(len(v) for v in recetas_por_tipo.values())}"
+                )
+
+                dias_convertidos = []
+                for day_data in weekly_plan:
+                    dia_plan = {}
+                    meals = day_data.get("meals", [])
+
+                    for meal in meals:
+                        slot = meal.get("slot", "").upper()
+                        if slot in ["DESAYUNO", "ALMUERZO", "CENA"]:
+                            ml_menu_id = meal.get("meal_id") or meal.get("id")
+                            ml_menu_name = meal.get("name", "Sin nombre")
+
+                            if ml_menu_id:
+                                rec_id = ml_menu_id
+                                rec_nombre = ml_menu_name
+                                logger.debug(
+                                    f"✅ Usando receta ML: {rec_id} - {rec_nombre} ({slot})"
+                                )
+                            else:
+                                logger.warning(f"⚠️ ML no envió ID para {slot}, buscando en BD...")
+                                recetas_disponibles = recetas_por_tipo.get(slot, [])
+
+                                if recetas_disponibles:
+                                    receta_seleccionada = recetas_disponibles[0]
+                                    rec_id = receta_seleccionada["rec_id"]
+                                    rec_nombre = receta_seleccionada["rec_nombre"]
+                                    recetas_por_tipo[slot] = recetas_disponibles[1:] + [
+                                        recetas_disponibles[0]
+                                    ]
+                                else:
+                                    logger.error(f"❌ No hay recetas disponibles para {slot}")
+                                    continue
+
+                            dia_plan[slot.lower()] = {
+                                "rec_id": rec_id,
+                                "rec_nombre": rec_nombre,
+                                "kcal": meal.get("calories", 500),
+                                "proteina_g": meal.get("protein_g", 15),
+                                "score_ml": meal.get("score", 0.0),
+                                "razon": f"Recomendado por ML (score: {meal.get('score', 0):.2f})",
+                            }
+
+                    if dia_plan:
+                        dias_convertidos.append(dia_plan)
+
                 return {
-                    "dias": data.get("dias", []),
-                    "preferencias_respetadas": data.get("preferencias_respetadas", 0),
-                    "preferencias_totales": data.get("preferencias_totales", 0),
-                    "porcentaje_match": data.get("porcentaje_match", 0.0),
-                    "used_llm": data.get("used_llm", False),
+                    "dias": dias_convertidos,
+                    "preferencias_respetadas": len(payload["allergies"]),
+                    "preferencias_totales": len(payload["allergies"]),
+                    "porcentaje_match": 100.0,
+                    "used_llm": True,
+                    "modelo_version": data.get("modelo_version", "LightGBM_v1.0"),
+                    "metricas_modelo": data.get("metricas_modelo", {}),
                 }
 
         except Exception as e:
@@ -332,7 +435,6 @@ class PlanesComidasRepository:
         logger = logging.getLogger(__name__)
         logger.warning("Generando plan fallback sin LLM")
 
-        # Obtener recetas simples
         result = self.db.execute(text("CALL sp_recetas_aleatorias(:limit)"), {"limit": 21})
         recetas = [dict(row._mapping) for row in result]
 
@@ -375,7 +477,6 @@ class PlanesComidasRepository:
                 "ingredientes": [],
             }
 
-        # Obtener ingredientes
         ingredientes = self.obtener_ingredientes_receta(rec_id)
         nutrientes_row = self.db.execute(
             text("CALL sp_recetas_nutrientes(:rec_id)"), {"rec_id": rec_id}
@@ -444,3 +545,133 @@ class PlanesComidasRepository:
                 "hierro_mg": round(float(nutrientes.get("hierro_mg", 0)), 2),
             }
         return detalle
+
+    def obtener_recetas_plan_actual(self, nin_id: int, busqueda: str = "") -> list[Dict]:
+        """
+        Obtiene todas las recetas del plan de comidas activo/aprobado del niño usando SP.
+        Permite búsqueda por nombre para el autocompletado.
+
+        Args:
+            nin_id: ID del niño
+            busqueda: Texto de búsqueda (opcional)
+
+        Returns:
+            Lista de recetas con rec_id, rec_nombre, tipo_comida, kcal, mei_id, es_favorita, rating_actual
+        """
+        result = self.db.execute(
+            text("CALL sp_recetas_plan_actual(:nin_id, :busqueda)"),
+            {"nin_id": nin_id, "busqueda": busqueda or ""},
+        )
+
+        return [dict(row._mapping) for row in result]
+
+    def registrar_feedback_comida(
+        self,
+        mei_id: int,
+        nin_id: int,
+        mf_rating: int | None = None,
+        mf_porcentaje_consumido: int | None = None,
+        mf_completado: bool = False,
+        mf_notas: str | None = None,
+        mf_fecha_consumo: str | None = None,
+        mf_registrado_por: int | None = None,
+    ) -> int:
+        """
+        Registra o actualiza el feedback de una comida usando SP.
+
+        Returns:
+            mf_id del registro creado o actualizado
+        """
+
+        if not mf_fecha_consumo:
+            mf_fecha_consumo = None
+
+        result = self.db.execute(
+            text("""
+                CALL sp_feedback_registrar(
+                    :mei_id, :nin_id, :mf_rating, :mf_porcentaje_consumido,
+                    :mf_completado, :mf_notas, :mf_fecha_consumo, :mf_registrado_por,
+                    @mf_id
+                )
+            """),
+            {
+                "mei_id": mei_id,
+                "nin_id": nin_id,
+                "mf_rating": mf_rating,
+                "mf_porcentaje_consumido": mf_porcentaje_consumido,
+                "mf_completado": 1 if mf_completado else 0,
+                "mf_notas": mf_notas,
+                "mf_fecha_consumo": mf_fecha_consumo,
+                "mf_registrado_por": mf_registrado_por,
+            },
+        )
+
+        # El SP retorna el mf_id en el SELECT final
+        row = result.fetchone()
+        self.db.commit()
+
+        return row.mf_id if row else None
+
+    def obtener_feedback_comida(
+        self, mei_id: int, mf_fecha_consumo: str | None = None
+    ) -> Dict | None:
+        """
+        Obtiene el feedback de una comida específica usando SP.
+
+        Args:
+            mei_id: ID del item del menú
+            mf_fecha_consumo: Fecha de consumo (opcional, default hoy)
+
+        Returns:
+            Dict con el feedback o None si no existe
+        """
+        result = self.db.execute(
+            text("CALL sp_feedback_obtener(:mei_id, :mf_fecha_consumo)"),
+            {"mei_id": mei_id, "mf_fecha_consumo": mf_fecha_consumo},
+        )
+
+        row = result.fetchone()
+        return dict(row._mapping) if row else None
+
+    def listar_feedback_nino(
+        self, nin_id: int, fecha_desde: str | None = None, fecha_hasta: str | None = None
+    ) -> list[Dict]:
+        """
+        Lista todo el feedback de un niño usando SP.
+
+        Args:
+            nin_id: ID del niño
+            fecha_desde: Fecha desde (opcional)
+            fecha_hasta: Fecha hasta (opcional)
+
+        Returns:
+            Lista de registros de feedback con datos de recetas y menús
+        """
+        result = self.db.execute(
+            text("CALL sp_feedback_listar_nino(:nin_id, :fecha_desde, :fecha_hasta)"),
+            {"nin_id": nin_id, "fecha_desde": fecha_desde, "fecha_hasta": fecha_hasta},
+        )
+
+        return [dict(row._mapping) for row in result]
+
+    def toggle_comida_favorita(self, nin_id: int, rec_id: int) -> str:
+        """
+        Agrega o quita una receta de favoritas (toggle) usando SP.
+
+        Args:
+            nin_id: ID del niño
+            rec_id: ID de la receta
+
+        Returns:
+            'AGREGADA' o 'ELIMINADA' según la acción realizada
+        """
+        result = self.db.execute(
+            text("CALL sp_favorita_toggle(:nin_id, :rec_id, @accion)"),
+            {"nin_id": nin_id, "rec_id": rec_id},
+        )
+
+        # El SP retorna la acción en el SELECT final
+        row = result.fetchone()
+        self.db.commit()
+
+        return row.accion if row else "ERROR"

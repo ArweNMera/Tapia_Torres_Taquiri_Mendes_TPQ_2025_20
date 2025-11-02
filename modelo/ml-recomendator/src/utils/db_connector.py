@@ -66,8 +66,21 @@ class DatabaseConnector:
                 f"mysql+pymysql://{self.user}:{self.password}"
                 f"@{self.host}:{self.port}/{self.database}"
             )
-            self.engine = create_engine(connection_string)
-            print(f"✅ Conectado a {self.database} (SQLAlchemy)")
+            # Configuración optimizada para alta latencia (220ms)
+            self.engine = create_engine(
+                connection_string,
+                pool_pre_ping=True,  # Verifica conexiones antes de usarlas
+                pool_size=15,  # Pool más grande para concurrencia
+                max_overflow=25,  # Conexiones temporales adicionales
+                pool_timeout=45,  # Mayor timeout por latencia
+                pool_recycle=1800,  # Reciclar cada 30min
+                connect_args={
+                    "connect_timeout": 15,
+                    "read_timeout": 45,
+                    "write_timeout": 45,
+                },
+            )
+            print(f"✅ Conectado a {self.database} (SQLAlchemy con pooling optimizado)")
 
         elif PYMYSQL_AVAILABLE:
             self.connection = pymysql.connect(

@@ -387,3 +387,143 @@ export const obtenerDetalleReceta = async (recId: number): Promise<any> => {
 
   return response.data!;
 };
+
+// ============================================================================
+// RECETAS DEL PLAN ACTUAL (para búsqueda y calificación)
+// ============================================================================
+
+export const obtenerRecetasPlanActual = async (
+  ninId: number,
+  busqueda: string = ''
+): Promise<{ recetas: any[]; total: number }> => {
+  const query = busqueda ? `?q=${encodeURIComponent(busqueda)}` : '';
+  const response = await apiService['makeRequest']<{ recetas: any[]; total: number }>(
+    `${(apiService as any).getApiUrl(`/planes-comidas/ninos/${ninId}/recetas-plan${query}`)}`,
+    { method: 'GET' }
+  );
+
+  if (!response.success) {
+    throw new Error(response.error || 'Error obteniendo recetas del plan');
+  }
+
+  return response.data!;
+};
+
+// ============================================================================
+// FEEDBACK Y CALIFICACIONES
+// ============================================================================
+
+export const registrarFeedbackComida = async (feedbackData: {
+  mei_id: number;
+  nin_id: number;
+  mf_rating?: number;
+  mf_porcentaje_consumido?: number;
+  mf_completado?: boolean;
+  mf_notas?: string;
+  mf_fecha_consumo?: string;
+}): Promise<{ mensaje: string; mf_id: number }> => {
+  const response = await apiService['makeRequest']<{ mensaje: string; mf_id: number }>(
+    `${(apiService as any).getApiUrl('/planes-comidas/menus-feedback')}`,
+    {
+      method: 'POST',
+      body: JSON.stringify(feedbackData),
+    }
+  );
+
+  if (!response.success) {
+    throw new Error(response.error || 'Error registrando feedback');
+  }
+
+  return response.data!;
+};
+
+export const listarFeedbackNino = async (
+  ninId: number,
+  fechaDesde?: string,
+  fechaHasta?: string
+): Promise<{ feedback: any[]; total: number }> => {
+  let query = '';
+  const params: string[] = [];
+  if (fechaDesde) params.push(`fecha_desde=${fechaDesde}`);
+  if (fechaHasta) params.push(`fecha_hasta=${fechaHasta}`);
+  if (params.length > 0) query = '?' + params.join('&');
+
+  const response = await apiService['makeRequest']<{ feedback: any[]; total: number }>(
+    `${(apiService as any).getApiUrl(`/planes-comidas/ninos/${ninId}/feedback${query}`)}`,
+    { method: 'GET' }
+  );
+
+  if (!response.success) {
+    throw new Error(response.error || 'Error listando feedback');
+  }
+
+  return response.data!;
+};
+
+// ============================================================================
+// TOGGLE FAVORITA
+// ============================================================================
+
+export const toggleComidaFavorita = async (
+  ninId: number,
+  recId: number
+): Promise<{ mensaje: string; accion: string; es_favorita: boolean }> => {
+  const response = await apiService['makeRequest']<{
+    mensaje: string;
+    accion: string;
+    es_favorita: boolean;
+  }>(
+    `${(apiService as any).getApiUrl(`/planes-comidas/ninos/${ninId}/favoritas/toggle`)}`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ rec_id: recId }),
+    }
+  );
+
+  if (!response.success) {
+    throw new Error(response.error || 'Error en toggle favorita');
+  }
+
+  return response.data!;
+};
+
+/**
+ * Descarga el plan de comidas en formato PDF
+ */
+export const descargarPlanPdf = async (
+  ninId: number,
+  menId: number
+): Promise<Blob> => {
+  // Usar el método del servicio para obtener el token correctamente
+  const token = apiService.getToken();
+
+  if (!token) {
+    throw new Error('No se encontró token de autenticación. Por favor, inicia sesión nuevamente.');
+  }
+
+  const url = `${(apiService as any).getApiUrl(`/planes-comidas/ninos/${ninId}/planes/${menId}/pdf`)}`;
+
+  console.log('🔍 Descargando PDF desde:', url);
+  console.log('✅ Token encontrado:', !!token);
+
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Accept': 'application/pdf',
+    },
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('❌ Error en descarga PDF:', response.status, errorText);
+
+    if (response.status === 401) {
+      throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+    }
+    throw new Error(`Error al descargar el PDF: ${response.status}`);
+  }
+
+  console.log('✅ PDF descargado correctamente');
+  return await response.blob();
+};

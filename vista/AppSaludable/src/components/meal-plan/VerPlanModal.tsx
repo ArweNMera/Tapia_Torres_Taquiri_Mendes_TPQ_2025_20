@@ -7,8 +7,13 @@ import {
 } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { useToast } from '../ui/use-toast';
-import { Loader2, Calendar, Sparkles, RefreshCw } from 'lucide-react';
-import { obtenerDetalleMenu, generarPlanCompletoConLLM, obtenerDetalleReceta } from '../../services/mealPlanApi';
+import { Loader2, Calendar, Sparkles, RefreshCw, FileDown } from 'lucide-react';
+import {
+  obtenerDetalleMenu,
+  generarPlanCompletoConLLM,
+  obtenerDetalleReceta,
+  descargarPlanPdf
+} from '../../services/mealPlanApi';
 
 interface VerPlanModalProps {
   open: boolean;
@@ -53,8 +58,17 @@ export const VerPlanModal: React.FC<VerPlanModalProps> = ({
     if (open && menId) {
       cargarPlan();
       setPlanGenerado(false);
+      setDiaSeleccionado(0); // Reset día seleccionado al abrir
     }
-  }, [open, menId]);
+  }, [open, menId, ninId]); // Agregar ninId como dependencia
+
+  // Resetear estado cuando cambia el niño
+  useEffect(() => {
+    if (open) {
+      setPlan(null); // Limpiar plan anterior
+      setDiaSeleccionado(0); // Resetear día
+    }
+  }, [ninId, open]);
 
   const cargarPlan = async () => {
     if (!menId) return;
@@ -140,11 +154,57 @@ export const VerPlanModal: React.FC<VerPlanModalProps> = ({
 
       setProgreso((prev) => [...prev, '✅ Plan generado exitosamente']);
 
-      // Recargar el plan
+      // Recargar el plan inmediatamente
       if (resultado.men_id) {
+        setProgreso((prev) => [...prev, '📥 Cargando plan generado...']);
         const data = await obtenerDetalleMenu(resultado.men_id);
+
+        // Transformar datos igual que en cargarPlan
+        if (data.dias && Array.isArray(data.dias)) {
+          data.dias = data.dias.map((dia: any) => {
+            const transformed: any = {
+              dia_idx: dia.dia_idx,
+              dia_nombre: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'][dia.dia_idx] || `Día ${dia.dia_idx + 1}`,
+              fecha: data.men_inicio,
+              total_dia: 0
+            };
+
+            const fechaInicio = new Date(data.men_inicio);
+            fechaInicio.setDate(fechaInicio.getDate() + dia.dia_idx);
+            transformed.fecha = fechaInicio.toISOString().split('T')[0];
+
+            if (dia.items && Array.isArray(dia.items)) {
+              dia.items.forEach((item: any) => {
+                const comida = {
+                  rec_id: item.rec_id,
+                  rec_nombre: item.rec_nombre,
+                  mei_kcal: item.mei_kcal,
+                  rec_instrucciones: item.rec_instrucciones || '',
+                  ingredientes: []
+                };
+
+                transformed.total_dia += item.mei_kcal;
+
+                if (item.mei_comida === 'DESAYUNO') {
+                  transformed.desayuno = comida;
+                } else if (item.mei_comida === 'ALMUERZO') {
+                  transformed.almuerzo = comida;
+                } else if (item.mei_comida === 'CENA') {
+                  transformed.cena = comida;
+                }
+              });
+            }
+
+            return transformed;
+          });
+        }
+
         setPlan(data);
         setPlanGenerado(true);
+        setDiaSeleccionado(0); // Resetear a lunes
+        setProgreso((prev) => [...prev, '🎉 Plan listo para visualizar']);
+
+        console.log('✅ Plan generado y cargado:', data);
       }
 
       toast({
@@ -166,6 +226,7 @@ export const VerPlanModal: React.FC<VerPlanModalProps> = ({
   const [diaSeleccionado, setDiaSeleccionado] = useState(0);
   const [recetaDetalle, setRecetaDetalle] = useState<any | null>(null);
   const [cargandoReceta, setCargandoReceta] = useState(false);
+  const [descargandoPdf, setDescargandoPdf] = useState(false);
 
   const cargarDetalleReceta = async (comida: Comida) => {
     setCargandoReceta(true);
@@ -183,6 +244,40 @@ export const VerPlanModal: React.FC<VerPlanModalProps> = ({
       });
     } finally {
       setCargandoReceta(false);
+    }
+  };
+
+  const descargarPlanPdfHandler = async () => {
+    if (!menId || !plan) return;
+
+    setDescargandoPdf(true);
+    try {
+      // Usar el servicio de API que maneja automáticamente la autenticación
+      const blob = await descargarPlanPdf(ninId, menId);
+
+      // Crear URL temporal y descargar
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = `plan_comidas_${ninNombre.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+
+      toast({
+        title: '✅ PDF descargado',
+        description: 'El plan de comidas se ha descargado correctamente',
+      });
+    } catch (error: any) {
+      console.error('❌ Error descargando PDF:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'No se pudo descargar el PDF',
+        variant: 'destructive',
+      });
+    } finally {
+      setDescargandoPdf(false);
     }
   };
 
@@ -503,13 +598,37 @@ export const VerPlanModal: React.FC<VerPlanModalProps> = ({
         {/* Botones footer */}
         <div className="flex justify-center items-center gap-4 pt-4 border-t">
           {plan && !generando && (
-            <Button
-              onClick={handleGenerarNuevo}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Generar Nuevo
-            </Button>
+            <>
+              <Button
+                onClick={descargarPlanPdfHandler}
+                disabled={descargandoPdf}
+                style={{
+                  backgroundColor: '#2563eb',
+                  color: 'white',
+                  borderColor: '#2563eb'
+                }}
+                className="hover:opacity-90"
+              >
+                {descargandoPdf ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <FileDown className="w-4 h-4 mr-2" />
+                )}
+                Descargar PDF
+              </Button>
+              <Button
+                onClick={handleGenerarNuevo}
+                style={{
+                  backgroundColor: '#16a34a',
+                  color: 'white',
+                  borderColor: '#16a34a'
+                }}
+                className="hover:opacity-90"
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Generar Nuevo
+              </Button>
+            </>
           )}
           <Button onClick={() => onClose(planGenerado)} variant="outline">
             Cerrar

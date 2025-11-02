@@ -26,7 +26,6 @@ class GoogleOAuthClient:
         self.redirect_uri = settings.GOOGLE_REDIRECT_URI
         self.token_url = "https://oauth2.googleapis.com/token"
         self.userinfo_url = "https://www.googleapis.com/oauth2/v2/userinfo"
-        # Ya no necesitamos almacenamiento en memoria, usamos JWT
 
     def verify_id_token(self, id_token_value: str) -> dict[str, any]:
         """
@@ -56,12 +55,10 @@ class GoogleOAuthClient:
             self.logger.error("Error verificando id_token de Google: %s", exc)
             raise HTTPException(status_code=400, detail="Token de Google inválido") from exc
 
-        # Validar emisor
         issuer = id_info.get("iss")
         if issuer not in {"accounts.google.com", "https://accounts.google.com"}:
             raise HTTPException(status_code=400, detail="Token de Google con emisor no válido")
 
-        # Validar que el email esté verificado
         if not id_info.get("email_verified", False):
             raise HTTPException(status_code=400, detail="El correo de Google no está verificado")
 
@@ -80,7 +77,6 @@ class GoogleOAuthClient:
         if not self.client_id or not self.redirect_uri:
             raise HTTPException(status_code=500, detail="Credenciales de Google no configuradas")
 
-        # Generar estado JWT con expiración de 10 minutos
         expires = datetime.utcnow() + timedelta(minutes=10)
         state_payload = {"redirect_to": redirect_target, "exp": expires}
         state = jwt.encode(state_payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
@@ -166,7 +162,6 @@ class GoogleOAuthClient:
             HTTPException: Si el estado es inválido o expirado
         """
         try:
-            # Decodificar el JWT state
             payload = jwt.decode(state, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
             redirect_target = payload.get("redirect_to")
 

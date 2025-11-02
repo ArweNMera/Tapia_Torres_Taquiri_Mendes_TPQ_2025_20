@@ -4,7 +4,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { useToast } from '../components/ui/use-toast';
 import { alimentosRecetasApi } from '../services/alimentosRecetasApi';
@@ -12,7 +12,11 @@ import { AlimentoResponse, AlimentoCreate, AlimentoUpdate, AlimentoConNutrientes
 import AlimentoForm from '../components/alimentos/AlimentoForm';
 import AlimentoDetail from '../components/alimentos/AlimentoDetail';
 
-const AlimentosPage: React.FC = () => {
+interface AlimentosPageProps {
+  embedded?: boolean;
+}
+
+const AlimentosPage: React.FC<AlimentosPageProps> = ({ embedded = false }) => {
   const [alimentos, setAlimentos] = useState<AlimentoResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -242,28 +246,57 @@ const AlimentosPage: React.FC = () => {
   });
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className={embedded ? "space-y-6" : "container mx-auto p-6 space-y-6"}>
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Gestión de Alimentos</h1>
-          <p className="text-gray-600 mt-1">Administra el catálogo de alimentos del sistema</p>
+      {/* Header */}
+      {!embedded && (
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Gestión de Alimentos</h1>
+            <p className="text-gray-600 mt-1">Administra el catálogo de alimentos del sistema</p>
+          </div>
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Nuevo Alimento
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Crear Nuevo Alimento</DialogTitle>
+                <DialogDescription>
+                  Completa la información del nuevo alimento y agrega sus valores nutricionales
+                </DialogDescription>
+              </DialogHeader>
+              <AlimentoForm onSubmit={handleCreateAlimentoWrapper} />
+            </DialogContent>
+          </Dialog>
         </div>
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Nuevo Alimento
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Crear Nuevo Alimento</DialogTitle>
-            </DialogHeader>
-            <AlimentoForm onSubmit={handleCreateAlimentoWrapper} />
-          </DialogContent>
-        </Dialog>
-      </div>
+      )}
+
+      {/* Botón de crear en modo embebido */}
+      {embedded && (
+        <div className="flex justify-end">
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="flex items-center gap-2 bg-green-600 hover:bg-green-700">
+                <Plus className="h-4 w-4" />
+                Nuevo Alimento
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Crear Nuevo Alimento</DialogTitle>
+                <DialogDescription>
+                  Completa la información del nuevo alimento y agrega sus valores nutricionales
+                </DialogDescription>
+              </DialogHeader>
+              <AlimentoForm onSubmit={handleCreateAlimentoWrapper} />
+            </DialogContent>
+          </Dialog>
+        </div>
+      )}
 
       {/* Filtros y búsqueda */}
       <Card>
@@ -401,6 +434,9 @@ const AlimentosPage: React.FC = () => {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Editar Alimento</DialogTitle>
+            <DialogDescription>
+              Modifica la información del alimento y sus valores nutricionales
+            </DialogDescription>
           </DialogHeader>
           {selectedAlimento && (
             <AlimentoForm
@@ -418,6 +454,9 @@ const AlimentosPage: React.FC = () => {
         <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle>Detalle del Alimento</DialogTitle>
+            <DialogDescription>
+              Visualiza toda la información y valores nutricionales del alimento
+            </DialogDescription>
           </DialogHeader>
           {alimentoDetalle && (
             <AlimentoDetail alimento={alimentoDetalle} />

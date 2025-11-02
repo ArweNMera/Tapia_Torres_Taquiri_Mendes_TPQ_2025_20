@@ -1,0 +1,54 @@
+# Git
+.git/
+.gitignore
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Modelos entrenados pesados (solo archivos binarios grandes)
+*.pkl
+*.joblib
+*.h5
+*.pt
+*.pth
+
+# Datos grandes
+*.csv
+*.parquet
+
+# Notebooks
+*.ipynb
+.ipynb_checkpoints/
+
+# Entornos virtuales
+venv/
+env/
+.venv
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+
+# Logs
+*.log
+logs/
+
+# Tests
+*_test.py
+
+# Documentación markdown (excepto README si existe)
+*.md
+!README.md
+
+# Cache
+.cache/
+.pytest_cache/
+.mypy_cache/

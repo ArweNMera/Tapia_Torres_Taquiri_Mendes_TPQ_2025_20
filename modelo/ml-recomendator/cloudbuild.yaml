@@ -1,0 +1,5 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'europe-west1-docker.pkg.dev/restaurante-b2fd2/nutricion/modelo-ml:latest', '-f', 'Dockerfile.prod', '.']
+images:
+  - 'europe-west1-docker.pkg.dev/restaurante-b2fd2/nutricion/modelo-ml:latest'

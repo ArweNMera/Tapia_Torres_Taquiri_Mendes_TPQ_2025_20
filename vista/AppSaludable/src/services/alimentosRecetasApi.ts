@@ -13,15 +13,21 @@ import {
   ApiResponse,
 } from '../types/api';
 
+import { getConfig } from '../config/environment';
+
 class AlimentosRecetasApiService {
   private baseURL: string;
   private apiVersion: string;
   private tokenKey: string;
 
   constructor() {
-    this.baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
-    this.apiVersion = import.meta.env.VITE_API_VERSION || 'v1';
-    this.tokenKey = import.meta.env.VITE_TOKEN_KEY || 'auth_token';
+    const config = getConfig();
+    this.baseURL = config.API_BASE_URL;
+    this.apiVersion = config.API_VERSION;
+    this.tokenKey = config.TOKEN_KEY;
+
+    // Debug: verificar qué URL se está usando
+    console.log('🍔 Alimentos/Recetas API Base URL:', this.baseURL);
   }
 
   private getApiUrl(endpoint: string): string {
