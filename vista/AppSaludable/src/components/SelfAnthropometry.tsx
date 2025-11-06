@@ -117,7 +117,11 @@ export default function SelfAnthropometry() {
   const fetchEntities = searchEntities.execute;
 
   useEffect(() => {
-    getNinos.execute();
+    // OPTIMIZACIÓN: Defer la carga de niños para no bloquear render inicial
+    const timeoutId = setTimeout(() => {
+      getNinos.execute();
+    }, 0);
+    return () => clearTimeout(timeoutId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -176,7 +180,12 @@ export default function SelfAnthropometry() {
     if (!selectedChildId) {
       return;
     }
-    fetchChildDetail(selectedChildId);
+    // OPTIMIZACIÓN: Usar requestIdleCallback para cargar datos sin bloquear UI
+    const timeoutId = setTimeout(() => {
+      fetchChildDetail(selectedChildId);
+    }, 0); // Defer para siguiente tick
+
+    return () => clearTimeout(timeoutId);
   }, [selectedChildId, fetchChildDetail]);
 
   useEffect(() => {
@@ -198,10 +207,11 @@ export default function SelfAnthropometry() {
       setAllergyOptions([]);
       return;
     }
+    // OPTIMIZACIÓN: Aumentar debounce a 500ms para reducir llamadas API
     const handler = setTimeout(async () => {
       const options = await fetchAllergyCatalog(allergySearch.trim());
       setAllergyOptions(options || []);
-    }, 300);
+    }, 500);
     return () => clearTimeout(handler);
   }, [allergySearch, fetchAllergyCatalog]);
 
@@ -210,10 +220,11 @@ export default function SelfAnthropometry() {
       setEntityResults([]);
       return;
     }
+    // OPTIMIZACIÓN: Aumentar debounce a 500ms para reducir llamadas API
     const handler = setTimeout(async () => {
       const results = await fetchEntities(entityQuery.trim());
       setEntityResults(results || []);
-    }, 300);
+    }, 500);
     return () => clearTimeout(handler);
   }, [entityQuery, fetchEntities]);
 

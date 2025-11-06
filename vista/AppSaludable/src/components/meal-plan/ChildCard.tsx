@@ -1,7 +1,8 @@
 /**
  * Tarjeta de niño con botones de acción
+ * OPTIMIZADO con React.memo para evitar re-renders innecesarios
  */
-import React from 'react';
+import React, { memo } from 'react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -17,7 +18,7 @@ interface ChildCardProps {
   onGenerarPlan: () => void;
 }
 
-export const ChildCard: React.FC<ChildCardProps> = ({
+const ChildCardComponent: React.FC<ChildCardProps> = ({
   nino,
   onPreferencias,
   onPerfil,
@@ -153,3 +154,6 @@ export const ChildCard: React.FC<ChildCardProps> = ({
     </Card>
   );
 };
+
+// Exportar componente memoizado para evitar re-renders innecesarios
+export const ChildCard = memo(ChildCardComponent);

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo, useCallback, useMemo } from 'react';
 import { Star } from 'lucide-react';
 import { cn } from '../ui/utils';
 
@@ -9,23 +9,25 @@ interface RatingStarsProps {
   size?: 'sm' | 'md' | 'lg';
 }
 
-export const RatingStars: React.FC<RatingStarsProps> = ({
+const RatingStarsComponent: React.FC<RatingStarsProps> = ({
   rating,
   onChange,
   readonly = false,
   size = 'md',
 }) => {
-  const sizeClasses = {
+  // Memoizar el objeto de clases para evitar recrearlo en cada render
+  const sizeClasses = useMemo(() => ({
     sm: 'w-4 h-4',
     md: 'w-5 h-5',
     lg: 'w-6 h-6',
-  };
+  }), []);
 
-  const handleClick = (value: number) => {
+  // Memoizar el handler para evitar recrearlo en cada render
+  const handleClick = useCallback((value: number) => {
     if (!readonly && onChange) {
       onChange(value);
     }
-  };
+  }, [readonly, onChange]);
 
   return (
     <div className="flex items-center gap-1">
@@ -55,3 +57,6 @@ export const RatingStars: React.FC<RatingStarsProps> = ({
     </div>
   );
 };
+
+// Exportar componente memoizado
+export const RatingStars = memo(RatingStarsComponent);
