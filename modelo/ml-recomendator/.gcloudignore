@@ -13,7 +13,8 @@ dist/
 build/
 
 # Modelos entrenados pesados (solo archivos binarios grandes)
-*.pkl
+# NOTA: Los modelos .pkl SON necesarios en producción para el ranker ML
+# *.pkl  # ← COMENTADO para permitir modelos en producción
 *.joblib
 *.h5
 *.pt

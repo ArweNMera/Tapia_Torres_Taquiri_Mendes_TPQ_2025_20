@@ -7,16 +7,32 @@ __pycache__/
 *.egg-info/
 dist/
 build/
-.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
 venv/
+env/
 ENV/
 
-# IDEs
+# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
-*~
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+
+# Database
+*.db
+*.sqlite
 
 # OS
 .DS_Store
@@ -26,14 +42,14 @@ Thumbs.db
 .git/
 .gitignore
 
-# Logs
-*.log
+# Documentation
+*.md
+docs/
 
 # Tests
-.pytest_cache/
-.coverage
-htmlcov/
+tests/
+test_*.py
+*_test.py
 
-# Env files (se pasan por docker-compose)
-.env
-.env.local
+# Firebase credentials (se montan como volumen)
+firebase-credentials.json

@@ -230,6 +230,7 @@ CREATE TABLE "menus_items" (
   "mei_comida" enum('DESAYUNO','ALMUERZO','CENA','REFACCION') NOT NULL,
   "rec_id" int unsigned NOT NULL,
   "mei_kcal" int DEFAULT NULL,
+  "mei_score_ml" decimal(5,4) DEFAULT NULL COMMENT 'Score de confianza del modelo ML (0.0-1.0)',
   PRIMARY KEY ("mei_id"),
   KEY "fk_mei_menu" ("men_id"),
   KEY "fk_mei_receta" ("rec_id"),

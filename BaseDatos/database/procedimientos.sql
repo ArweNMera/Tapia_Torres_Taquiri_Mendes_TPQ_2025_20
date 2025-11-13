@@ -1530,10 +1530,10 @@ DROP PROCEDURE IF EXISTS sp_menus_items_agregar;
 create
     procedure sp_menus_items_agregar(IN p_men_id bigint unsigned, IN p_dia_idx tinyint unsigned,
                                                         IN p_comida enum ('DESAYUNO', 'ALMUERZO', 'CENA', 'REFACCION'),
-                                                        IN p_rec_id int unsigned, IN p_kcal int)
+                                                        IN p_rec_id int unsigned, IN p_kcal int, IN p_score_ml decimal(5,4))
 BEGIN
-  INSERT INTO menus_items (men_id, mei_dia_idx, mei_comida, rec_id, mei_kcal)
-  VALUES (p_men_id, p_dia_idx, p_comida, p_rec_id, p_kcal);
+  INSERT INTO menus_items (men_id, mei_dia_idx, mei_comida, rec_id, mei_kcal, mei_score_ml)
+  VALUES (p_men_id, p_dia_idx, p_comida, p_rec_id, p_kcal, p_score_ml);
 
   SELECT LAST_INSERT_ID() AS mei_id;
 END;
@@ -1544,7 +1544,13 @@ create
     procedure sp_menus_items_listar(IN p_men_id bigint unsigned)
 BEGIN
   SELECT
-    mi.*,
+    mi.mei_id,
+    mi.men_id,
+    mi.mei_dia_idx,
+    mi.mei_comida,
+    mi.rec_id,
+    mi.mei_kcal,
+    mi.mei_score_ml,
     r.rec_nombre,
     r.rec_instrucciones
   FROM menus_items mi

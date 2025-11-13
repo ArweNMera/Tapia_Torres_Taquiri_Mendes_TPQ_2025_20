@@ -1,0 +1,161 @@
+# Docker Compose para PRODUCCIÓN
+# Uso: docker-compose -f docker-compose.prod.yml up -d
+
+services:
+  # Backend - API de Nutrición
+  backend:
+    build:
+      context: ./control/Nutricion-api
+      dockerfile: Dockerfile
+      target: production  # Usa stage de producción
+    container_name: nutricion-backend-prod
+    ports:
+      - "8000:8000"
+    volumes:
+      # Solo credenciales (sin código fuente)
+      - ${FIREBASE_CREDENTIALS_FILE:-./control/Nutricion-api/nutricion-api/firebase-credentials.json}:/secrets/firebase_credentials.json:ro
+    environment:
+      - DATABASE_URL=mysql+pymysql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}
+      - SECRET_KEY=${SECRET_KEY}
+      - ALGORITHM=HS256
+      - ACCESS_TOKEN_EXPIRE_MINUTES=30
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI}
+      - GOOGLE_POST_LOGIN_REDIRECT=${GOOGLE_POST_LOGIN_REDIRECT}
+      - GOOGLE_ALLOWED_REDIRECTS=${GOOGLE_ALLOWED_REDIRECTS}
+      - ML_API_URL=http://modelo-ml:8080
+      - FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID}
+      - FIREBASE_CREDENTIALS_PATH=/secrets/firebase_credentials.json
+      - FRONTEND_ORIGINS=${FRONTEND_ORIGINS}
+      - ML_SERVICE_URL=http://modelo-ml:8080
+      - PYTHONUNBUFFERED=1
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - app-network
+    depends_on:
+      modelo-ml:
+        condition: service_healthy
+    restart: always
+    # Límites de recursos (producción)
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    # Logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  # Frontend - React + Vite (Nginx)
+  frontend:
+    build:
+      context: ./vista/AppSaludable
+      dockerfile: Dockerfile
+      target: production  # Usa stage de producción (nginx)
+    container_name: nutricion-frontend-prod
+    ports:
+      - "80:80"
+    networks:
+      - app-network
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: always
+    # Límites de recursos (producción)
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    # Health check
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    # Logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  # Modelo ML - API de Machine Learning
+  modelo-ml:
+    build:
+      context: ./modelo/ml-recomendator
+      dockerfile: Dockerfile
+      target: production  # Usa stage de producción
+    container_name: nutricion-modelo-ml-prod
+    ports:
+      - "8001:8080"
+    volumes:
+      # Solo persiste modelos y datos (sin código fuente)
+      - ml-models:/app/models
+      - ml-data:/app/data
+    environment:
+      - PORT=8080
+      - DB_HOST=host.docker.internal
+      - DB_PORT=3306
+      - DB_USER=root
+      - DB_PASSWORD=root123456
+      - DB_NAME=nutricion
+      - DATABASE_URL=mysql+pymysql://root:root123456@host.docker.internal:3306/nutricion
+      - PYTHONUNBUFFERED=1
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - app-network
+    restart: always
+    # Límites de recursos (producción - ML necesita más)
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '1.0'
+          memory: 1G
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    # Logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+networks:
+  app-network:
+    driver: bridge
+
+# Volúmenes persistentes para producción
+volumes:
+  ml-models:
+    driver: local
+  ml-data:
+    driver: local

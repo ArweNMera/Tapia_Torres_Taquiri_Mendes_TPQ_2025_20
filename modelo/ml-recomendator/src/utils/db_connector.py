@@ -230,15 +230,16 @@ class DatabaseConnector:
         WHERE a.ant_peso_kg > 0
           AND a.ant_talla_cm > 0
           AND TIMESTAMPDIFF(MONTH, n.nin_fecha_nac, a.ant_fecha) BETWEEN 0 AND 228
-          -- Solo la última antropometría por niño
-          AND a.ant_id = (
+          -- EXTRAE TODAS LAS ANTROPOMETRÍAS HISTÓRICAS (más datos = mejor modelo)
+          -- Comentado el límite de última antropometría para obtener más muestras
+          /* AND a.ant_id = (
               SELECT ant_id
               FROM antropometrias
               WHERE nin_id = n.nin_id
               ORDER BY ant_fecha DESC, creado_en DESC
               LIMIT 1
-          )
-        ORDER BY n.nin_id
+          ) */
+        ORDER BY n.nin_id, a.ant_fecha DESC
         """
 
         print("📊 Extrayendo datos de entrenamiento...")

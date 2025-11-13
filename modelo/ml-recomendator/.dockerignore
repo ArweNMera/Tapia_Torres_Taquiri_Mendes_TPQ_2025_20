@@ -7,16 +7,32 @@ __pycache__/
 *.egg-info/
 dist/
 build/
-.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
 venv/
+env/
 ENV/
 
-# IDEs
+# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
-*~
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+
+# Database
+*.db
+*.sqlite
 
 # OS
 .DS_Store
@@ -26,21 +42,22 @@ Thumbs.db
 .git/
 .gitignore
 
-# Logs
-*.log
+# Documentation
+*.md
+docs/
+examples/
 
 # Tests
-.pytest_cache/
-.coverage
-htmlcov/
+tests/
+test_*.py
+*_test.py
 
-# Env files (se pasan por docker-compose)
-.env
-.env.local
+# Notebooks
+*.ipynb
+.ipynb_checkpoints/
 
-# Reports (se generan en runtime)
-reports/
-
-# Datos temporales
-data/processed/
-data/interim/
+# Large data files (se montan como volumen)
+data/*.csv
+data/*.json
+models/*.pkl
+models/*.joblib

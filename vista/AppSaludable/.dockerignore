@@ -5,17 +5,25 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# Build
+# Build output
 dist/
 build/
-.vite/
+.next/
+out/
 
-# IDEs
+# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
-*~
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
 
 # OS
 .DS_Store
@@ -25,11 +33,23 @@ Thumbs.db
 .git/
 .gitignore
 
-# Env files (se pasan por docker-compose)
-.env
-.env.local
-.env.production
+# Documentation
+*.md
+docs/
 
 # Tests
+tests/
+test/
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+
+# Coverage
 coverage/
 .nyc_output/
+
+# Cache
+.cache/
+.parcel-cache/
+.eslintcache

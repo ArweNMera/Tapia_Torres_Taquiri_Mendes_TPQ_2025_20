@@ -1,10 +1,12 @@
-# Modelo ML - FastAPI
-FROM python:3.11-slim
+# ============================================
+# Stage 1: Builder - Instalar dependencias Python
+# ============================================
+FROM python:3.11-slim AS builder
 
 WORKDIR /app
 
 # Instalar dependencias del sistema
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     g++ \
     default-libmysqlclient-dev \
@@ -14,19 +16,61 @@ RUN apt-get update && apt-get install -y \
 # Copiar requirements
 COPY requirements.txt .
 
-# Instalar dependencias Python
-RUN pip install --no-cache-dir -r requirements.txt
+# Instalar dependencias
+RUN pip install --no-cache-dir --user -r requirements.txt
+
+# ============================================
+# Stage 2: Development - Para desarrollo local
+# ============================================
+FROM python:3.11-slim AS development
+
+WORKDIR /app
+
+# Instalar dependencias del sistema
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    default-libmysqlclient-dev \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copiar dependencias instaladas
+COPY --from=builder /root/.local /root/.local
+ENV PATH=/root/.local/bin:$PATH
+ENV PYTHONPATH=/app
 
 # Copiar código
 COPY . .
 
-# Configurar PYTHONPATH para que Python encuentre el módulo src
-# Como WORKDIR es /app y el código está en /app/src, usamos /app como base
-ENV PYTHONPATH=/app
-
-# Exponer puerto (Cloud Run asigna dinámicamente)
+# Exponer puerto
 EXPOSE 8080
 
-# Comando para producción (sin --reload para Cloud Run)
-# Usa la variable $PORT de Cloud Run, por defecto 8080
-CMD exec uvicorn src.api.main:app --host 0.0.0.0 --port ${PORT:-8080}
+# Comando para desarrollo con hot-reload
+CMD ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8080", "--reload"]
+
+# ============================================
+# Stage 3: Production - Para producción
+# ============================================
+FROM python:3.11-slim AS production
+
+WORKDIR /app
+
+# Instalar dependencias del sistema
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    default-libmysqlclient-dev \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copiar dependencias instaladas
+COPY --from=builder /root/.local /root/.local
+ENV PATH=/root/.local/bin:$PATH
+ENV PYTHONPATH=/app
+
+# Copiar código
+COPY src/ ./src/
+COPY models/ ./models/
+COPY data/ ./data/
+
+# Exponer puerto
+EXPOSE 8080
+
+# Comando para producción
+CMD ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8080", "--workers", "2"]

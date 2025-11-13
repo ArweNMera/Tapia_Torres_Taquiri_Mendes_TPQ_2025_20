@@ -25,11 +25,11 @@ services:
       - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI}
       - GOOGLE_POST_LOGIN_REDIRECT=${GOOGLE_POST_LOGIN_REDIRECT}
       - GOOGLE_ALLOWED_REDIRECTS=${GOOGLE_ALLOWED_REDIRECTS}
-      - ML_API_URL=http://modelo-ml:8001
+      - ML_API_URL=http://modelo-ml:8080
       - FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID}
       - FIREBASE_CREDENTIALS_PATH=/secrets/firebase_credentials.json
       - FRONTEND_ORIGINS=${FRONTEND_ORIGINS}
-      - ML_SERVICE_URL=http://modelo-ml:8001
+      - ML_SERVICE_URL=http://modelo-ml:8080
     extra_hosts:
       - "host.docker.internal:host-gateway"
     networks:
@@ -75,7 +75,7 @@ services:
       dockerfile: Dockerfile
     container_name: nutricion-modelo-ml
     ports:
-      - "8001:8001"
+      - "8001:8080"  # Mapea puerto 8001 del host al 8080 del contenedor
     volumes:
       # Hot-reload: monta el código fuente
       - ./modelo/ml-recomendator:/app
@@ -83,6 +83,7 @@ services:
       - ./modelo/ml-recomendator/models:/app/models
       - ./modelo/ml-recomendator/data:/app/data
     environment:
+      - PORT=8080  # Puerto interno del contenedor
       - DB_HOST=host.docker.internal
       - DB_PORT=3306
       - DB_USER=root

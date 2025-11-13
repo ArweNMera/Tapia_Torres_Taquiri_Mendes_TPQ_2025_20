@@ -77,17 +77,26 @@ class PlanesComidasRepository:
         return int(row.men_id) if row and hasattr(row, "men_id") else 0
 
     def agregar_item_menu(
-        self, men_id: int, dia_idx: int, tipo_comida: str, rec_id: int, kcal: int
+        self,
+        men_id: int,
+        dia_idx: int,
+        tipo_comida: str,
+        rec_id: int,
+        kcal: int,
+        score_ml: float = 0.0,
     ) -> int:
-        """Agrega un item al menú"""
+        """Agrega un item al menú con su score ML"""
         result = self.db.execute(
-            text("CALL sp_menus_items_agregar(:men_id, :dia_idx, :comida, :rec_id, :kcal)"),
+            text(
+                "CALL sp_menus_items_agregar(:men_id, :dia_idx, :comida, :rec_id, :kcal, :score_ml)"
+            ),
             {
                 "men_id": men_id,
                 "dia_idx": dia_idx,
                 "comida": tipo_comida,
                 "rec_id": rec_id,
                 "kcal": kcal,
+                "score_ml": score_ml,
             },
         )
         self.db.commit()
@@ -132,7 +141,16 @@ class PlanesComidasRepository:
     def obtener_items_menu(self, men_id: int) -> List[Dict]:
         """Obtiene los items de un menú"""
         result = self.db.execute(text("CALL sp_menus_items_listar(:men_id)"), {"men_id": men_id})
-        return [dict(row._mapping) for row in result]
+        items = []
+        for row in result:
+            item = dict(row._mapping)
+            # Convertir mei_score_ml de Decimal a float
+            if item.get("mei_score_ml") is not None:
+                item["mei_score_ml"] = float(item["mei_score_ml"])
+            else:
+                item["mei_score_ml"] = 0.0
+            items.append(item)
+        return items
 
     def obtener_items_menu_para_pdf(self, men_id: int) -> List[Dict]:
         """Obtiene los items de un menú con información nutricional para PDF"""
@@ -193,10 +211,11 @@ class PlanesComidasRepository:
                     comida_data = dia_data[comida_tipo]
                     rec_id = comida_data.get("rec_id")
                     kcal = comida_data.get("kcal", 0)
+                    score_ml = comida_data.get("score_ml", 0.0)
 
                     if rec_id:
                         mei_id = self.agregar_item_menu(
-                            men_id, dia_idx, comida_tipo.upper(), rec_id, kcal
+                            men_id, dia_idx, comida_tipo.upper(), rec_id, kcal, score_ml
                         )
 
                         receta = self._obtener_detalle_receta(rec_id)
@@ -209,6 +228,7 @@ class PlanesComidasRepository:
                             ),
                             "rec_instrucciones": receta.get("rec_instrucciones", ""),
                             "mei_kcal": kcal,
+                            "score_ml": score_ml,
                             "ingredientes": receta.get("ingredientes", []),
                             "match_preferencias": [],
                         }
@@ -379,12 +399,13 @@ class PlanesComidasRepository:
                         if slot in ["DESAYUNO", "ALMUERZO", "CENA"]:
                             ml_menu_id = meal.get("meal_id") or meal.get("id")
                             ml_menu_name = meal.get("name", "Sin nombre")
+                            ml_score = meal.get("score", 0.0)
 
                             if ml_menu_id:
                                 rec_id = ml_menu_id
                                 rec_nombre = ml_menu_name
-                                logger.debug(
-                                    f"✅ Usando receta ML: {rec_id} - {rec_nombre} ({slot})"
+                                logger.info(
+                                    f"✅ Usando receta ML: {rec_id} - {rec_nombre} ({slot}) - Score: {ml_score:.4f}"
                                 )
                             else:
                                 logger.warning(f"⚠️ ML no envió ID para {slot}, buscando en BD...")
@@ -449,6 +470,7 @@ class PlanesComidasRepository:
                         "rec_id": rec["rec_id"],
                         "rec_nombre": rec["rec_nombre"],
                         "kcal": 500 if tipo == "DESAYUNO" else (800 if tipo == "ALMUERZO" else 600),
+                        "score_ml": 0.0,  # Plan fallback sin ML
                     }
                     idx += 1
             dias.append(dia_plan)

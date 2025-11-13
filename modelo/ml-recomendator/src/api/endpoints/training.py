@@ -200,6 +200,28 @@ async def get_training_status() -> TrainingStatusResponse:
         )
 
 
+@router.get("/models/list-files")
+async def list_model_files():
+    """Endpoint temporal para ver qué archivos existen"""
+    from pathlib import Path
+
+    models_dir = Path(__file__).parent.parent.parent.parent / "models"
+
+    if not models_dir.exists():
+        return {"error": "Directorio no existe", "path": str(models_dir)}
+
+    pkl_files = [f.name for f in models_dir.glob("*.pkl")]
+    meta_files = [f.name for f in models_dir.glob("*_meta.json")]
+
+    return {
+        "models_dir": str(models_dir),
+        "pkl_files": pkl_files,
+        "meta_files": meta_files,
+        "pkl_count": len(pkl_files),
+        "meta_count": len(meta_files),
+    }
+
+
 @router.post("/train/quick", response_model=TrainingResponse)
 async def quick_train() -> TrainingResponse:
     """
@@ -226,4 +248,126 @@ async def quick_train() -> TrainingResponse:
         raise HTTPException(
             status_code=500,
             detail=f"Error en entrenamiento rápido: {str(e)}",
+        )
+
+
+class DeleteModelsRequest(BaseModel):
+    """Request para eliminar modelos por timestamps"""
+
+    timestamps: List[str] = Field(
+        ...,
+        description="Lista de timestamps de modelos a eliminar (formato: YYYY-MM-DDTHH:MM:SS)",
+        example=["2025-11-06T05:23:06", "2025-11-06T05:39:04"],
+    )
+
+
+class DeleteModelsResponse(BaseModel):
+    """Response de eliminación de modelos"""
+
+    success: bool = Field(..., description="¿Fue exitoso?")
+    deleted_count: int = Field(..., description="Cantidad de modelos eliminados")
+    remaining_count: int = Field(..., description="Cantidad de modelos restantes")
+    deleted_models: List[str] = Field(default_factory=list, description="Modelos eliminados")
+    message: str = Field(..., description="Mensaje de resultado")
+
+
+@router.delete("/models/delete", response_model=DeleteModelsResponse)
+async def delete_models(
+    request: DeleteModelsRequest,
+) -> DeleteModelsResponse:
+    """
+    Eliminar modelos específicos por timestamp
+
+    Permite eliminar modelos defectuosos o no deseados.
+
+    ⚠️ PRECAUCIÓN: Esta acción es irreversible
+
+    Ejemplo:
+        DELETE /api/v1/models/models/delete
+        {
+            "timestamps": [
+                "2025-11-06T05:23:06",
+                "2025-11-06T05:39:04",
+                "2025-11-06T05:44:56"
+            ]
+        }
+    """
+    try:
+        from datetime import datetime
+        from pathlib import Path
+
+        logger.info(f"🗑️  Iniciando eliminación de {len(request.timestamps)} modelo(s)")
+        logger.info(f"📋 Timestamps a eliminar: {request.timestamps}")
+
+        models_dir = Path(__file__).parent.parent.parent.parent / "models"
+
+        if not models_dir.exists():
+            raise HTTPException(
+                status_code=404,
+                detail="Directorio de modelos no encontrado",
+            )
+
+        # Obtener todos los archivos .pkl y _meta.json
+        all_models = list(models_dir.glob("*.pkl"))
+        all_metadata = list(models_dir.glob("*_meta.json"))
+        initial_count = len(all_metadata)
+
+        # LOG: Mostrar archivos encontrados
+        logger.info(f"📂 Archivos .pkl encontrados: {[f.name for f in all_models]}")
+        logger.info(f"📂 Archivos _meta.json encontrados: {[f.name for f in all_metadata]}")
+
+        deleted_models = []
+        deleted_count = 0
+
+        # Para cada timestamp, buscar y eliminar el modelo Y su metadata
+        for timestamp in request.timestamps:
+            try:
+                # Convertir timestamp a formato de archivo: 20251106_052306
+                dt = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+                file_pattern = dt.strftime("%Y%m%d_%H%M%S")
+
+                # Buscar archivos .pkl que coincidan
+                matching_models = [f for f in all_models if file_pattern in f.name]
+
+                # Buscar archivos _meta.json que coincidan
+                matching_metadata = [f for f in all_metadata if file_pattern in f.name]
+
+                # Eliminar modelos .pkl
+                for model_file in matching_models:
+                    logger.info(f"🗑️  Eliminando modelo: {model_file.name}")
+                    model_file.unlink()
+                    deleted_models.append(model_file.name)
+                    deleted_count += 1
+
+                # Eliminar archivos metadata _meta.json
+                for meta_file in matching_metadata:
+                    logger.info(f"🗑️  Eliminando metadata: {meta_file.name}")
+                    meta_file.unlink()
+                    deleted_models.append(meta_file.name)
+                    deleted_count += 1
+
+            except Exception as e:
+                logger.warning(f"⚠️  No se pudo eliminar modelo con timestamp {timestamp}: {e}")
+
+        # Contar modelos restantes (basado en metadata)
+        remaining_models = list(models_dir.glob("*_meta.json"))
+        remaining_count = len(remaining_models)
+
+        logger.info(f"✅ Eliminación completada: {deleted_count} modelo(s) eliminado(s)")
+
+        return DeleteModelsResponse(
+            success=True,
+            deleted_count=deleted_count,
+            remaining_count=remaining_count,
+            deleted_models=deleted_models,
+            message=f"✅ {deleted_count} modelo(s) eliminado(s). {remaining_count} modelo(s) restante(s)",
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Error en delete_models: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error eliminando modelos: {str(e)}",
         )

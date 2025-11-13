@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 def get_latest_model_path(models_dir: str = "models") -> Optional[str]:
     """
-    Busca y retorna la ruta del modelo MÁS RECIENTE entrenado.
+    Busca el modelo más reciente en el directorio especificado.
 
     Args:
         models_dir: Directorio donde buscar modelos
@@ -40,16 +40,31 @@ def get_latest_model_path(models_dir: str = "models") -> Optional[str]:
         Ruta al modelo más reciente o None si no hay modelos
     """
     try:
-        models_path = Path(models_dir)
+        # Si es una ruta relativa, hacerla absoluta desde la raíz del proyecto
+        if not Path(models_dir).is_absolute():
+            # En producción (Cloud Run): /app/models
+            # En local: relativo al directorio actual del proyecto
+            project_root = Path(__file__).parent.parent.parent
+            models_path = project_root / models_dir
+        else:
+            models_path = Path(models_dir)
+
         if not models_path.exists():
-            logger.warning(f"Directorio de modelos no existe: {models_dir}")
+            logger.warning(f"Directorio de modelos no existe: {models_path}")
+            logger.info(f"Ruta absoluta intentada: {models_path.absolute()}")
             return None
 
         # Buscar archivos .pkl (excluyendo _meta.json)
         model_files = list(models_path.glob("production_menu_recommender_*.pkl"))
 
+        logger.info(f"🔍 Buscando en: {models_path.absolute()}")
+        logger.info(f"📂 Archivos encontrados: {len(model_files)}")
+
         if not model_files:
-            logger.warning(f"No se encontraron modelos en {models_dir}")
+            logger.warning(f"No se encontraron modelos en {models_path}")
+            # Listar qué archivos hay en el directorio para debug
+            all_files = list(models_path.glob("*"))
+            logger.info(f"Archivos en el directorio: {[f.name for f in all_files]}")
             return None
 
         # Ordenar por fecha de modificación (más reciente primero)

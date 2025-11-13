@@ -27,6 +27,7 @@ interface Comida {
   rec_id: number;
   rec_nombre: string;
   mei_kcal: number;
+  score_ml?: number;
   ingredientes?: any[];
 }
 
@@ -58,15 +59,14 @@ export const VerPlanModal: React.FC<VerPlanModalProps> = ({
     if (open && menId) {
       cargarPlan();
       setPlanGenerado(false);
-      setDiaSeleccionado(0); // Reset día seleccionado al abrir
+      setDiaSeleccionado(0);
     }
-  }, [open, menId, ninId]); // Agregar ninId como dependencia
+  }, [open, menId, ninId]);
 
-  // Resetear estado cuando cambia el niño
   useEffect(() => {
     if (open) {
-      setPlan(null); // Limpiar plan anterior
-      setDiaSeleccionado(0); // Resetear día
+      setPlan(null);
+      setDiaSeleccionado(0);
     }
   }, [ninId, open]);
 
@@ -95,6 +95,7 @@ export const VerPlanModal: React.FC<VerPlanModalProps> = ({
                 rec_id: item.rec_id,
                 rec_nombre: item.rec_nombre,
                 mei_kcal: item.mei_kcal,
+                score_ml: item.mei_score_ml || 0,
                 rec_instrucciones: item.rec_instrucciones || '',
                 ingredientes: []
               };
@@ -127,17 +128,45 @@ export const VerPlanModal: React.FC<VerPlanModalProps> = ({
     }
   };
 
+  const getScoreInfo = (score: number) => {
+    const adjustedScore = 50 + (score * 50);
+    const percentage = Math.round(adjustedScore);
+    let color = 'text-gray-600';
+    let bgColor = 'bg-gray-100';
+    let label = 'Baja';
+
+    if (percentage >= 90) {
+      color = 'text-green-600';
+      bgColor = 'bg-green-100';
+      label = 'Excelente';
+    } else if (percentage >= 80) {
+      color = 'text-blue-600';
+      bgColor = 'bg-blue-100';
+      label = 'Muy Buena';
+    } else if (percentage >= 70) {
+      color = 'text-cyan-600';
+      bgColor = 'bg-cyan-100';
+      label = 'Buena';
+    } else if (percentage >= 60) {
+      color = 'text-yellow-600';
+      bgColor = 'bg-yellow-100';
+      label = 'Aceptable';
+    } else {
+      color = 'text-orange-600';
+      bgColor = 'bg-orange-100';
+      label = 'Básica';
+    }
+
+    return { percentage, color, bgColor, label };
+  };
+
   const handleGenerarNuevo = async () => {
     setGenerando(true);
     setProgreso([]);
 
     try {
       const hoy = new Date();
-      const diaSemana = hoy.getDay();
-      const diasHastaLunes = diaSemana === 0 ? 1 : diaSemana === 1 ? 0 : 8 - diaSemana;
-      const proximoLunes = new Date(hoy);
-      proximoLunes.setDate(hoy.getDate() + diasHastaLunes);
-      const fechaInicio = proximoLunes.toISOString().split('T')[0];
+      const fechaInicio = hoy.toISOString().split('T')[0];
 
       setProgreso((prev) => [...prev, '🔍 Obteniendo perfil nutricional...']);
       await new Promise((resolve) => setTimeout(resolve, 500));
@@ -154,12 +183,10 @@ export const VerPlanModal: React.FC<VerPlanModalProps> = ({
 
       setProgreso((prev) => [...prev, '✅ Plan generado exitosamente']);
 
-      // Recargar el plan inmediatamente
       if (resultado.men_id) {
         setProgreso((prev) => [...prev, '📥 Cargando plan generado...']);
         const data = await obtenerDetalleMenu(resultado.men_id);
 
-        // Transformar datos igual que en cargarPlan
         if (data.dias && Array.isArray(data.dias)) {
           data.dias = data.dias.map((dia: any) => {
             const transformed: any = {
@@ -179,6 +206,7 @@ export const VerPlanModal: React.FC<VerPlanModalProps> = ({
                   rec_id: item.rec_id,
                   rec_nombre: item.rec_nombre,
                   mei_kcal: item.mei_kcal,
+                  score_ml: item.mei_score_ml || 0,
                   rec_instrucciones: item.rec_instrucciones || '',
                   ingredientes: []
                 };
@@ -201,7 +229,7 @@ export const VerPlanModal: React.FC<VerPlanModalProps> = ({
 
         setPlan(data);
         setPlanGenerado(true);
-        setDiaSeleccionado(0); // Resetear a lunes
+        setDiaSeleccionado(0);
         setProgreso((prev) => [...prev, '🎉 Plan listo para visualizar']);
 
         console.log('✅ Plan generado y cargado:', data);
@@ -248,22 +276,39 @@ export const VerPlanModal: React.FC<VerPlanModalProps> = ({
   };
 
   const descargarPlanPdfHandler = async () => {
-    if (!menId || !plan) return;
+    // Usar plan.men_id si está disponible, sino menId de props
+    const idMenu = plan?.men_id || menId;
+
+    console.log('🔍 Iniciando descarga PDF...', { ninId, menId, planMenId: plan?.men_id, idMenu, plan });
+
+    if (!idMenu || !plan) {
+      console.warn('⚠️ No hay menId o plan disponible', { idMenu, plan });
+      toast({
+        title: 'Error',
+        description: 'No hay plan disponible para descargar',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     setDescargandoPdf(true);
-    try {
-      // Usar el servicio de API que maneja automáticamente la autenticación
-      const blob = await descargarPlanPdf(ninId, menId);
+    console.log('⏳ Estado descargandoPdf establecido a true');
 
-      // Crear URL temporal y descargar
+    try {
+      console.log('📡 Llamando a descargarPlanPdf...', { ninId, idMenu });
+      const blob = await descargarPlanPdf(ninId, idMenu);
+      console.log('✅ Blob recibido:', { size: blob.size, type: blob.type });
+
       const downloadUrl = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = downloadUrl;
       link.download = `plan_comidas_${ninNombre.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
       document.body.appendChild(link);
+      console.log('🔗 Link creado, iniciando click...');
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(downloadUrl);
+      console.log('✅ Descarga completada exitosamente');
 
       toast({
         title: '✅ PDF descargado',
@@ -271,12 +316,14 @@ export const VerPlanModal: React.FC<VerPlanModalProps> = ({
       });
     } catch (error: any) {
       console.error('❌ Error descargando PDF:', error);
+      console.error('❌ Stack:', error?.stack);
       toast({
-        title: 'Error',
-        description: error.message || 'No se pudo descargar el PDF',
+        title: 'Error al descargar PDF',
+        description: error.message || 'No se pudo descargar el PDF. Verifica la consola para más detalles.',
         variant: 'destructive',
       });
     } finally {
+      console.log('🔄 Restableciendo estado descargandoPdf a false');
       setDescargandoPdf(false);
     }
   };
@@ -465,6 +512,14 @@ export const VerPlanModal: React.FC<VerPlanModalProps> = ({
                               <span className="text-orange-600 font-bold text-xl">{diaActual.desayuno.mei_kcal}</span>
                               <span className="text-gray-600 text-xs">kcal</span>
                             </div>
+                            {diaActual.desayuno.score_ml !== undefined && diaActual.desayuno.score_ml > 0 && (
+                              <div className={`${getScoreInfo(diaActual.desayuno.score_ml).bgColor} rounded px-2 py-1 mb-2 flex items-center justify-between`}>
+                                <span className="text-xs font-medium text-gray-600">🤖 IA</span>
+                                <span className={`text-xs font-bold ${getScoreInfo(diaActual.desayuno.score_ml).color}`}>
+                                  {getScoreInfo(diaActual.desayuno.score_ml).percentage}%
+                                </span>
+                              </div>
+                            )}
                             <Button
                               size="sm"
                               onClick={() => cargarDetalleReceta(diaActual.desayuno!)}
@@ -496,6 +551,14 @@ export const VerPlanModal: React.FC<VerPlanModalProps> = ({
                               <span className="text-orange-600 font-bold text-xl">{diaActual.almuerzo.mei_kcal}</span>
                               <span className="text-gray-600 text-xs">kcal</span>
                             </div>
+                            {diaActual.almuerzo.score_ml !== undefined && diaActual.almuerzo.score_ml > 0 && (
+                              <div className={`${getScoreInfo(diaActual.almuerzo.score_ml).bgColor} rounded px-2 py-1 mb-2 flex items-center justify-between`}>
+                                <span className="text-xs font-medium text-gray-600">🤖 IA</span>
+                                <span className={`text-xs font-bold ${getScoreInfo(diaActual.almuerzo.score_ml).color}`}>
+                                  {getScoreInfo(diaActual.almuerzo.score_ml).percentage}%
+                                </span>
+                              </div>
+                            )}
                             <Button
                               size="sm"
                               onClick={() => cargarDetalleReceta(diaActual.almuerzo!)}
@@ -527,6 +590,14 @@ export const VerPlanModal: React.FC<VerPlanModalProps> = ({
                               <span className="text-orange-600 font-bold text-xl">{diaActual.cena.mei_kcal}</span>
                               <span className="text-gray-600 text-xs">kcal</span>
                             </div>
+                            {diaActual.cena.score_ml !== undefined && diaActual.cena.score_ml > 0 && (
+                              <div className={`${getScoreInfo(diaActual.cena.score_ml).bgColor} rounded px-2 py-1 mb-2 flex items-center justify-between`}>
+                                <span className="text-xs font-medium text-gray-600">🤖 IA</span>
+                                <span className={`text-xs font-bold ${getScoreInfo(diaActual.cena.score_ml).color}`}>
+                                  {getScoreInfo(diaActual.cena.score_ml).percentage}%
+                                </span>
+                              </div>
+                            )}
                             <Button
                               size="sm"
                               onClick={() => cargarDetalleReceta(diaActual.cena!)}
