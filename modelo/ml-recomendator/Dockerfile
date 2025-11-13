@@ -66,8 +66,9 @@ ENV PYTHONPATH=/app
 
 # Copiar código
 COPY src/ ./src/
-COPY models/ ./models/
-COPY data/ ./data/
+
+# Crear directorios para modelos y datos (se montarán como volúmenes)
+RUN mkdir -p ./models ./data
 
 # Exponer puerto
 EXPOSE 8080
