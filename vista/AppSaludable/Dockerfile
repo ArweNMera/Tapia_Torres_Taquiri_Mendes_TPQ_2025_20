@@ -34,36 +34,23 @@ EXPOSE 5175
 CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
 
 # ============================================
-# Stage 3: Builder - Construir para producción
+# Stage 3: Production - Modo desarrollo (sin build)
 # ============================================
-FROM node:20-alpine AS builder
+FROM node:20-alpine AS production
 
 WORKDIR /app
 
 # Copiar dependencias instaladas
 COPY --from=dependencies /app/node_modules ./node_modules
 
+# Copiar package files
+COPY package*.json ./
+
 # Copiar código fuente
 COPY . .
-
-# Build de producción
-RUN npm run build
-
-# ============================================
-# Stage 4: Production - Servir con Node (sin nginx)
-# ============================================
-FROM node:20-alpine AS production
-
-WORKDIR /app
-
-# Instalar serve para servir archivos estáticos
-RUN npm install -g serve
-
-# Copiar build desde builder
-COPY --from=builder /app/dist ./dist
 
 # Exponer puerto
 EXPOSE 5175
 
-# Servir con serve
-CMD ["serve", "-s", "dist", "-l", "5175"]
+# Comando para producción (usa dev server, más confiable)
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
