@@ -4,6 +4,7 @@ services:
     build:
       context: ./control/Nutricion-api
       dockerfile: Dockerfile
+      target: development  # Usa stage de desarrollo
     container_name: nutricion-backend
     ports:
       - "8000:8000"
@@ -11,7 +12,6 @@ services:
       # Hot-reload: monta el código fuente
       - ./control/Nutricion-api/nutricion-api:/app
       # Credenciales de Firebase (solo lectura dentro del contenedor)
-      # ✅ Usa ${FIREBASE_CREDENTIALS_FILE} del .env o un nombre genérico
       - ${FIREBASE_CREDENTIALS_FILE:-./control/Nutricion-api/nutricion-api/firebase-credentials.json}:/secrets/firebase_credentials.json:ro
       # Variables de entorno de la API (reutilizamos el .env local)
       - ./control/Nutricion-api/nutricion-api/.env:/app/.env:ro
@@ -30,22 +30,47 @@ services:
       - FIREBASE_CREDENTIALS_PATH=/secrets/firebase_credentials.json
       - FRONTEND_ORIGINS=${FRONTEND_ORIGINS}
       - ML_SERVICE_URL=http://modelo-ml:8080
+      - PYTHONUNBUFFERED=1  # Logs en tiempo real
     extra_hosts:
       - "host.docker.internal:host-gateway"
     networks:
       - app-network
     depends_on:
-      - modelo-ml
+      modelo-ml:
+        condition: service_healthy
     restart: unless-stopped
+    # Límites de recursos
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    # Logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   # Frontend - React + Vite
   frontend:
     build:
       context: ./vista/AppSaludable
       dockerfile: Dockerfile
+      target: development  # Usa stage de desarrollo
     container_name: nutricion-frontend
     ports:
-      - "5173:5173"
+      - "5175:5175"
     volumes:
       # Hot-reload: monta el código fuente
       - ./vista/AppSaludable:/app
@@ -60,19 +85,44 @@ services:
       - VITE_DEV_PORT=5173
       - VITE_DEV_HOST=0.0.0.0
       - VITE_OPEN_BROWSER=false
+      - NODE_ENV=development
     stdin_open: true
     tty: true
     networks:
       - app-network
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     restart: unless-stopped
+    # Límites de recursos
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 512M
+    # Health check
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5175"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    # Logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   # Modelo ML - API de Machine Learning
   modelo-ml:
     build:
       context: ./modelo/ml-recomendator
       dockerfile: Dockerfile
+      target: development  # Usa stage de desarrollo
     container_name: nutricion-modelo-ml
     ports:
       - "8001:8080"  # Mapea puerto 8001 del host al 8080 del contenedor
@@ -84,17 +134,40 @@ services:
       - ./modelo/ml-recomendator/data:/app/data
     environment:
       - PORT=8080  # Puerto interno del contenedor
-      - DB_HOST=host.docker.internal
-      - DB_PORT=3306
-      - DB_USER=root
-      - DB_PASSWORD=root123456
-      - DB_NAME=nutricion
-      - DATABASE_URL=mysql+pymysql://root:root123456@host.docker.internal:3306/nutricion
+      - DB_HOST=${DB_HOST:-host.docker.internal}
+      - DB_PORT=${DB_PORT:-3306}
+      - DB_USER=${DB_USER:-root}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME:-nutricion}
+      - DATABASE_URL=mysql+pymysql://${DB_USER:-root}:${DB_PASSWORD}@${DB_HOST:-host.docker.internal}:${DB_PORT:-3306}/${DB_NAME:-nutricion}
+      - PYTHONUNBUFFERED=1  # Logs en tiempo real
     extra_hosts:
       - "host.docker.internal:host-gateway"
     networks:
       - app-network
     restart: unless-stopped
+    # Límites de recursos (ML necesita más memoria)
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    # Logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 networks:
   app-network:

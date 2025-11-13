@@ -114,12 +114,12 @@ services:
       - ml-data:/app/data
     environment:
       - PORT=8080
-      - DB_HOST=host.docker.internal
-      - DB_PORT=3306
-      - DB_USER=root
-      - DB_PASSWORD=root123456
-      - DB_NAME=nutricion
-      - DATABASE_URL=mysql+pymysql://root:root123456@host.docker.internal:3306/nutricion
+      - DB_HOST=${DB_HOST_PROD}
+      - DB_PORT=${DB_PORT_PROD}
+      - DB_USER=${DB_USER_PROD}
+      - DB_PASSWORD=${DB_PASSWORD_PROD}
+      - DB_NAME=${DB_NAME_PROD}
+      - DATABASE_URL=mysql+pymysql://${DB_USER_PROD}:${DB_PASSWORD_PROD}@${DB_HOST_PROD}:${DB_PORT_PROD}/${DB_NAME_PROD}
       - PYTHONUNBUFFERED=1
     extra_hosts:
       - "host.docker.internal:host-gateway"
