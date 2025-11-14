@@ -70,5 +70,5 @@ COPY . .
 # Exponer puerto
 EXPOSE 8080
 
-# Comando para producción
-CMD ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8080", "--workers", "2"]
+# Comando para producción (sin workers por ahora, para debug)
+CMD ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8080"]
