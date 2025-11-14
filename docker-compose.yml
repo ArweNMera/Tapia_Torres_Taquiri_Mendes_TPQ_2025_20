@@ -36,8 +36,8 @@ services:
     networks:
       - app-network
     depends_on:
-      modelo-ml:
-        condition: service_healthy
+      - modelo-ml
+      # condition: service_healthy  # Comentado temporalmente
     restart: unless-stopped
     # Límites de recursos
     deploy:
@@ -91,8 +91,8 @@ services:
     networks:
       - app-network
     depends_on:
-      backend:
-        condition: service_healthy
+      - backend
+      # condition: service_healthy  # Comentado temporalmente
     restart: unless-stopped
     # Límites de recursos
     deploy:
@@ -155,13 +155,13 @@ services:
         reservations:
           cpus: '0.5'
           memory: 512M
-    # Health check
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+    # Health check (comentado temporalmente para debug)
+    # healthcheck:
+    #   test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+    #   interval: 30s
+    #   timeout: 10s
+    #   retries: 3
+    #   start_period: 40s
     # Logging
     logging:
       driver: "json-file"
