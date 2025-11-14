@@ -64,11 +64,8 @@ COPY --from=builder /root/.local /root/.local
 ENV PATH=/root/.local/bin:$PATH
 ENV PYTHONPATH=/app
 
-# Copiar código
-COPY src/ ./src/
-
-# Crear directorios para modelos y datos (se montarán como volúmenes)
-RUN mkdir -p ./models ./data
+# Copiar todo el código (más simple y seguro)
+COPY . .
 
 # Exponer puerto
 EXPOSE 8080
