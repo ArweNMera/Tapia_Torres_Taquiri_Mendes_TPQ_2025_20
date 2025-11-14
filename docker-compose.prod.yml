@@ -69,7 +69,7 @@ services:
       target: production  # Usa stage de producción (nginx)
     container_name: nutricion-frontend-prod
     ports:
-      - "80:80"
+      - "5175:5175"
     networks:
       - app-network
     depends_on:
