@@ -18,8 +18,8 @@ class Settings(BaseSettings):
     FIREBASE_CREDENTIALS_JSON: str | None = None
     FIREBASE_PROJECT_ID: str | None = None
 
-    ML_API_URL: str = "http://localhost:8080"
-    ML_SERVICE_URL: str = "http://localhost:8080"
+    ML_API_URL: str = "http://localhost:8001"
+    ML_SERVICE_URL: str = "http://localhost:8001"
 
     class Config:
         env_file = ".env"
