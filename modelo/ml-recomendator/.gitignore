@@ -1,9 +1,13 @@
 # Local environment
 .env
 
-# Generated artifacts
-models/
+# Generated artifacts (modelos entrenados, NO código fuente)
+/models/
 reports/
 data/interim/
 data/processed/
 __pycache__/
+
+# Permitir src/domain/models/ (código fuente)
+!src/domain/models/
+!src/models/
