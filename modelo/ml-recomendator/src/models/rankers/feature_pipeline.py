@@ -91,7 +91,7 @@ class RankerFeatureBuilder:
         }
 
         for col, default in default_cats.items():
-            values = df_processed.get(col, pd.Series([default])).fillna(default).astype(str)
+            values = self._get_column(df_processed, col, default).fillna(default).astype(str)
             df_processed[col] = values
             encoded = self._encode_column(col, values, fit, default)
             df_processed[f"{col}_enc"] = encoded

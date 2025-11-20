@@ -32,11 +32,11 @@ def get_default_config() -> Dict[str, Any]:
 def get_production_config() -> Dict[str, Any]:
     """Configuración para producción (DigitalOcean Database)"""
     return {
-        "host": os.getenv("DB_HOST_PROD", ""),
-        "port": int(os.getenv("DB_PORT_PROD", "25060")),
-        "user": os.getenv("DB_USER_PROD", ""),
-        "password": os.getenv("DB_PASSWORD_PROD", ""),
-        "database": os.getenv("DB_NAME_PROD", "nutricion"),
+        "host": os.getenv("DB_HOST_PROD", os.getenv("DB_HOST", "")),
+        "port": int(os.getenv("DB_PORT_PROD", os.getenv("DB_PORT", "25060"))),
+        "user": os.getenv("DB_USER_PROD", os.getenv("DB_USER", "")),
+        "password": os.getenv("DB_PASSWORD_PROD", os.getenv("DB_PASSWORD", "")),
+        "database": os.getenv("DB_NAME_PROD", os.getenv("DB_NAME", "nutricion")),
         "charset": "utf8mb4",
         "autocommit": True,
         "raise_on_warnings": True,
