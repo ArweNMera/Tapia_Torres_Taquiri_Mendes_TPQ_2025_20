@@ -13,6 +13,7 @@ import numpy as np
 import pandas as pd
 
 from src.database.schema_adapter import SchemaValidator
+from src.models.rankers.feature_pipeline import RankerFeatureBuilder
 from src.optimization.meal_optimizer import (
     MealPlanConstraints,
     MealPlanOptimizer,
@@ -153,6 +154,7 @@ class HybridMealPlanner(MealPlanner):
 
         # Inicializar ranker con modelo más reciente si está disponible
         self.ranker = None
+        self.feature_builder: Optional[RankerFeatureBuilder] = None
 
         # Si no se especifica modelo, buscar el más reciente automáticamente
         if ranker_model_path is None:
@@ -161,12 +163,24 @@ class HybridMealPlanner(MealPlanner):
 
         if ranker_model_path:
             try:
-                # Cargar el modelo LightGBM directamente desde el pickle
+                # Cargar el modelo LightGBM junto con metadata
                 import pickle
 
                 with open(ranker_model_path, "rb") as f:
-                    self.ranker = pickle.load(f)
-                logger.info(f"✅ Ranker LightGBM cargado directamente desde: {ranker_model_path}")
+                    payload = pickle.load(f)
+
+                if isinstance(payload, dict) and "model" in payload:
+                    self.ranker = payload.get("model")
+                    self.feature_builder = payload.get("feature_builder")
+                    logger.info(
+                        f"✅ Ranker LightGBM (con metadata) cargado desde: {ranker_model_path}"
+                    )
+                else:
+                    self.ranker = payload
+                    self.feature_builder = None
+                    logger.info(
+                        f"✅ Ranker LightGBM cargado sin metadata desde: {ranker_model_path}"
+                    )
             except Exception as e:
                 logger.warning(f"⚠️ No se pudo cargar el ranker: {e}")
                 self.ranker = None
@@ -402,161 +416,17 @@ class HybridMealPlanner(MealPlanner):
             return [0.5] * len(menu_candidates)
 
         try:
-            # Preparar datos para el ranker usando el perfil nutricional completo
-            ranker_data = []
-            for menu in menu_candidates:
-                # Crear features para el ranker - USANDO DATOS REALES DEL PERFIL
-                features = {
-                    "child_id": child_profile.child_id,
-                    "menu_id": menu["menu_id"],
-                    # ✅ DATOS DEL PERFIL NUTRICIONAL
-                    "child_age_months": child_profile.age_months,  # Edad real del perfil
-                    "child_weight_kg": child_profile.weight_kg
-                    if child_profile.weight_kg
-                    else 35.0,  # Peso real
-                    "child_height_cm": child_profile.height_cm
-                    if child_profile.height_cm
-                    else 140.0,  # Talla real
-                    "nutritional_status": child_profile.nutritional_status,
-                    # Datos del menú
-                    "menu_calories": menu["calories"],
-                    "menu_protein": menu["protein"],
-                    "menu_carbs": menu.get("carbs", 0),
-                    "menu_fat": menu.get("fat", 0),
-                    "meal_type": menu.get(
-                        "meal_type", menu.get("slot", "ALMUERZO")
-                    ),  # ✅ AGREGADO: tipo de comida
-                    # ✅ ADECUACIÓN basada en REQUERIMIENTOS REALES del perfil
-                    "calorie_adequacy": menu["calories"] / (child_profile.daily_calories / 3),
-                    "protein_adequacy": menu["protein"] / (child_profile.daily_protein / 3),
-                    "allergy_compatible": 1.0
-                    if not any(
-                        allergen in menu.get("allergens", [])
-                        for allergen in child_profile.allergies
-                    )
-                    else 0.0,
-                    "nutritional_status_compatible": 1.0
-                    if (
-                        child_profile.nutritional_status in ["SEVERO", "MODERADO"]
-                        and "proteico" in menu.get("categories", [])
-                    )
-                    else 0.5,
-                }
-                ranker_data.append(features)
-
-            # Convertir a DataFrame
-            df = pd.DataFrame(ranker_data)
-
-            # El modelo LightGBM necesita features numéricas
-            # Mapear nutritional_status a numérico
-            status_map = {
-                "DESNUTRICION_SEVERA": 0,
-                "DESNUTRICION": 1,
-                "RIESGO": 2,
-                "NORMAL": 3,
-                "SOBREPESO": 4,
-                "OBESIDAD": 5,
-            }
-
-            # Preparar features numéricas para el modelo (14 features en orden de entrenamiento)
-            # El modelo fue entrenado con estas 14 features en este orden exacto:
-            # 1. edad_meses, 2. ant_peso_kg, 3. ant_talla_cm, 4. en_imc, 5. en_zscore_imc,
-            # 6. pnn_calorias_diarias, 7. mei_kcal, 8. caloric_compatibility_score,
-            # 9. age_compatibility_score, 10. nutritional_balance_score, 11. age_group,
-            # 12. nin_sexo_encoded, 13. pnn_clasificacion_encoded, 14. mei_comida_encoded
-
-            import numpy as np
-
-            numeric_features = []
-
-            for _, row in df.iterrows():
-                # 1-3: Datos básicos del niño
-                edad_meses = row["child_age_months"]
-                peso_kg = row["child_weight_kg"]
-                talla_cm = row["child_height_cm"]
-
-                # 4-5: Calcular IMC y Z-score
-                talla_m = talla_cm / 100.0
-                en_imc = peso_kg / (talla_m**2) if talla_m > 0 else 18.5
-                en_zscore_imc = (en_imc - 18.5) / 3.0  # Aproximación simplificada
-
-                # 6-7: Calorías diarias y del menú
-                pnn_calorias_diarias = child_profile.daily_calories
-                mei_kcal = row["menu_calories"]
-
-                # 8: Caloric compatibility score
-                caloric_compatibility_score = row["calorie_adequacy"]
-
-                # 9: Age compatibility score (simplificado)
-                age_compatibility_score = 0.8  # Default moderado
-
-                # 10: Nutritional balance score (basado en proteína y calorías)
-                target_protein = pnn_calorias_diarias * 0.15 / 4  # 15% de calorías
-                protein_balance = max(
-                    0,
-                    min(
-                        1,
-                        1
-                        - abs(row["menu_protein"] - target_protein / 3)
-                        / (target_protein / 3 + 1e-6),
-                    ),
+            if self.feature_builder:
+                ranker_df = self._build_ranker_dataframe(child_profile, menu_candidates)
+                X = self.feature_builder.transform(ranker_df)
+                logger.info(
+                    f"📊 Ranker input shape: {X.shape} "
+                    f"(features: {len(self.feature_builder.feature_names)})"
                 )
-                nutritional_balance_score = (caloric_compatibility_score + protein_balance) / 2
-
-                # 11: Age group (0-4 según edad en meses)
-                if edad_meses < 24:
-                    age_group = 0
-                elif edad_meses < 60:
-                    age_group = 1
-                elif edad_meses < 120:
-                    age_group = 2
-                elif edad_meses < 180:
-                    age_group = 3
-                else:
-                    age_group = 4
-
-                # 12: nin_sexo_encoded (por ahora asumimos M=1, idealmente debería venir del perfil)
-                nin_sexo_encoded = 1
-
-                # 13: pnn_clasificacion_encoded (estado nutricional)
-                pnn_clasificacion_encoded = status_map.get(
-                    row.get("nutritional_status", "NORMAL"), 3
-                )
-
-                # 14: mei_comida_encoded (tipo de comida: 0=DESAYUNO, 1=ALMUERZO, 2=CENA)
-                meal_type_map = {
-                    "Desayuno": 0,
-                    "DESAYUNO": 0,
-                    "Almuerzo": 1,
-                    "ALMUERZO": 1,
-                    "Cena": 2,
-                    "CENA": 2,
-                }
-                meal_type = row.get("meal_type", "ALMUERZO")
-                mei_comida_encoded = meal_type_map.get(meal_type, 1)
-
-                # Construir feature vector en el orden EXACTO del entrenamiento
-                features_row = [
-                    edad_meses,  # 1
-                    peso_kg,  # 2
-                    talla_cm,  # 3
-                    en_imc,  # 4
-                    en_zscore_imc,  # 5
-                    pnn_calorias_diarias,  # 6
-                    mei_kcal,  # 7
-                    caloric_compatibility_score,  # 8
-                    age_compatibility_score,  # 9
-                    nutritional_balance_score,  # 10
-                    age_group,  # 11
-                    nin_sexo_encoded,  # 12
-                    pnn_clasificacion_encoded,  # 13
-                    mei_comida_encoded,  # 14
-                ]
-                numeric_features.append(features_row)
-
-            # Obtener predicciones del ranker LightGBM
-            X = np.array(numeric_features, dtype=np.float32)
-            logger.info(f"📊 Ranker input shape: {X.shape} (esperado: (N, 14))")
+            else:
+                # Fallback legacy
+                X = self._build_legacy_ranker_features(child_profile, menu_candidates)
+                logger.info(f"📊 Ranker input shape (legacy): {X.shape}")
             scores = self.ranker.predict(X)
 
             # Normalizar scores entre 0 y 1 (con manejo de casos edge)
@@ -582,6 +452,112 @@ class HybridMealPlanner(MealPlanner):
             logger.error(f"❌ Error en ranker: {e}", exc_info=True)
             # Fallback al scoring original
             return [0.5] * len(menu_candidates)
+
+    def _build_ranker_dataframe(
+        self, child_profile: ChildProfile, menu_candidates: List[Dict]
+    ) -> pd.DataFrame:
+        """Construye el DataFrame crudo esperado por RankerFeatureBuilder."""
+        rows = []
+        preferences = child_profile.preferences or {}
+
+        for menu in menu_candidates:
+            calories = menu.get("calories", 400)
+            meal_type = menu.get("meal_type", menu.get("slot", "ALMUERZO"))
+            peso = child_profile.weight_kg or 35.0
+            talla = child_profile.height_cm or 140.0
+            talla_m = talla / 100.0 if talla else 1.4
+            bmi = peso / (talla_m**2) if talla_m else 18.5
+            zscore = (bmi - 18.5) / 3.0
+
+            row = {
+                "edad_meses": child_profile.age_months,
+                "pnn_edad_meses": child_profile.age_months,
+                "ant_peso_kg": peso,
+                "ant_talla_cm": talla,
+                "en_zscore_imc": zscore,
+                "pnn_calorias_diarias": child_profile.daily_calories,
+                "pnn_proteinas_g": child_profile.daily_protein,
+                "mei_kcal": calories,
+                "men_kcal_total": calories,
+                "mei_comida": meal_type,
+                "pnn_clasificacion": child_profile.nutritional_status,
+                "nin_sexo": preferences.get("sexo", "M") if isinstance(preferences, dict) else "M",
+                "men_generado_por": "IA",
+                "num_alergias": len(child_profile.allergies),
+                "mf_porcentaje_consumido": 75,
+            }
+            rows.append(row)
+
+        return pd.DataFrame(rows)
+
+    def _build_legacy_ranker_features(
+        self, child_profile: ChildProfile, menu_candidates: List[Dict]
+    ):
+        """Compatibilidad con modelos antiguos sin metadata."""
+        import numpy as np
+
+        ranker_data = []
+        for menu in menu_candidates:
+            # Reutilizamos la lógica previa de 14 columnas para evitar ruptura.
+            calories = menu.get("calories", 400)
+            protein = menu.get("protein", 15)
+            weight = child_profile.weight_kg or 35.0
+            height = child_profile.height_cm or 140.0
+            height_m = height / 100.0
+            bmi = weight / (height_m**2) if height_m else 18.5
+            zscore = (bmi - 18.5) / 3.0
+            caloric_score = calories / (child_profile.daily_calories / 3)
+            target_protein = child_profile.daily_calories * 0.15 / 4
+            protein_balance = max(
+                0,
+                min(
+                    1,
+                    1 - abs(protein - target_protein / 3) / (target_protein / 3 + 1e-6),
+                ),
+            )
+            nutritional_balance = (caloric_score + protein_balance) / 2
+            meal_type = menu.get("meal_type", menu.get("slot", "ALMUERZO"))
+            meal_type_map = {"DESAYUNO": 0, "ALMUERZO": 1, "CENA": 2}
+            age_group = (
+                0
+                if child_profile.age_months < 24
+                else 1
+                if child_profile.age_months < 60
+                else 2
+                if child_profile.age_months < 120
+                else 3
+                if child_profile.age_months < 180
+                else 4
+            )
+            status_map = {
+                "DESNUTRICION_SEVERA": 0,
+                "DESNUTRICION": 1,
+                "RIESGO": 2,
+                "NORMAL": 3,
+                "SOBREPESO": 4,
+                "OBESIDAD": 5,
+            }
+
+            ranker_data.append(
+                [
+                    child_profile.age_months,
+                    weight,
+                    height,
+                    bmi,
+                    zscore,
+                    child_profile.daily_calories,
+                    calories,
+                    caloric_score,
+                    0.8,
+                    nutritional_balance,
+                    age_group,
+                    1,
+                    status_map.get(child_profile.nutritional_status, 3),
+                    meal_type_map.get(meal_type, 1),
+                ]
+            )
+
+        return np.array(ranker_data, dtype=np.float32)
 
     def _optimize_meal_plan(
         self,

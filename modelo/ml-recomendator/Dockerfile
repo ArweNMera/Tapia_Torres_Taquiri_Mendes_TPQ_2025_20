@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     g++ \
     default-libmysqlclient-dev \
     pkg-config \
+    libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
 # Copiar requirements
@@ -30,6 +31,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends \
     default-libmysqlclient-dev \
     curl \
+    libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
 # Copiar dependencias instaladas
@@ -57,6 +59,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends \
     default-libmysqlclient-dev \
     curl \
+    libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
 # Copiar dependencias instaladas

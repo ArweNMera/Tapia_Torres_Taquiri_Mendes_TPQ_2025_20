@@ -24,9 +24,10 @@ try:
         r2_score,
     )
     from sklearn.model_selection import train_test_split
-    from sklearn.preprocessing import LabelEncoder
 except ImportError:
     pass
+
+from src.models.rankers.feature_pipeline import RankerFeatureBuilder
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +45,7 @@ class ModelTrainingService:
         self.model_dir = Path(model_dir)
         self.data_dir = Path(data_dir)
         self.connection = None
+        self.feature_builder: Optional[RankerFeatureBuilder] = None
 
         self.model_dir.mkdir(parents=True, exist_ok=True)
         self.data_dir.mkdir(parents=True, exist_ok=True)
@@ -418,76 +420,12 @@ class ModelTrainingService:
     def _prepare_features(self, df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray, List[str]]:
         """Prepara features para LightGBM (como en Colab)"""
         df_f = df.copy()
-
-        # Encoders para variables categóricas
-        le_comida = LabelEncoder()
-        le_clasificacion = LabelEncoder()
-        le_sexo = LabelEncoder()
-        le_generado_por = LabelEncoder()
-
-        # Encoding
-        df_f["mei_comida_enc"] = le_comida.fit_transform(df_f["mei_comida"].fillna("ALMUERZO"))
-        df_f["pnn_class_enc"] = le_clasificacion.fit_transform(
-            df_f["pnn_clasificacion"].fillna("NORMAL")
-        )
-
-        if "nin_sexo" in df_f.columns:
-            df_f["nin_sexo_enc"] = le_sexo.fit_transform(df_f["nin_sexo"].fillna("M"))
-        else:
-            df_f["nin_sexo_enc"] = 0
-
-        if "men_generado_por" in df_f.columns:
-            df_f["men_generado_por_enc"] = le_generado_por.fit_transform(
-                df_f["men_generado_por"].fillna("SISTEMA")
-            )
-        else:
-            df_f["men_generado_por_enc"] = 0
-
-        # Calcular IMC si hay peso y talla
-        if "ant_peso_kg" in df_f.columns and "ant_talla_cm" in df_f.columns:
-            df_f["en_imc"] = df_f["ant_peso_kg"] / ((df_f["ant_talla_cm"] / 100) ** 2)
-            df_f["en_imc"] = df_f["en_imc"].fillna(df_f["en_imc"].median())
-        else:
-            df_f["en_imc"] = 16.0  # Default
-
-        # Compatibilidad calórica
-        df_f["caloric_compatibility"] = 1 - np.abs(
-            df_f["mei_kcal"] - df_f["pnn_calorias_diarias"] / 3
-        ) / (df_f["pnn_calorias_diarias"] / 3)
-        df_f["caloric_compatibility"] = df_f["caloric_compatibility"].clip(0, 1)
-
-        # Usar edad_meses si existe, sino pnn_edad_meses
-        if "edad_meses" in df_f.columns:
-            df_f["edad_final"] = df_f["edad_meses"].fillna(df_f.get("pnn_edad_meses", 60))
-        else:
-            df_f["edad_final"] = df_f.get("pnn_edad_meses", 60)
-
-        # Features finales (como en Colab)
-        features = [
-            "edad_final",
-            "en_imc",
-            "en_zscore_imc",
-            "pnn_calorias_diarias",
-            "pnn_proteinas_g",
-            "mei_kcal",
-            "men_kcal_total",
-            "caloric_compatibility",
-            "mei_comida_enc",
-            "pnn_class_enc",
-            "nin_sexo_enc",
-            "men_generado_por_enc",
-            "num_alergias",
-            "mf_porcentaje_consumido",
-        ]
-
-        # Filtrar features que existen
-        available_features = [f for f in features if f in df_f.columns]
-
-        X = df_f[available_features].fillna(0).astype(np.float32).values
+        self.feature_builder = RankerFeatureBuilder()
+        X = self.feature_builder.fit_transform(df_f)
         y = df_f["mf_rating"].astype(np.int32).values
 
-        logger.info(f"🔧 Features usadas: {len(available_features)}")
-        return X, y, available_features
+        logger.info(f"🔧 Features usadas: {len(self.feature_builder.feature_names)}")
+        return X, y, self.feature_builder.feature_names
 
     def _train_lightgbm(self, X_train: np.ndarray, y_train: np.ndarray):
         """Entrena LightGBM con parámetros optimizados para NDCG ~88-90%"""
@@ -606,8 +544,13 @@ class ModelTrainingService:
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
         model_file = self.model_dir / f"{model_name}_{ts}.pkl"
 
+        model_payload = {
+            "model": model,
+            "feature_builder": self.feature_builder,
+        }
+
         with open(model_file, "wb") as f:
-            pickle.dump(model, f)
+            pickle.dump(model_payload, f)
 
         metadata = {
             "model_name": model_name,

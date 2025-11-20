@@ -150,10 +150,14 @@ class MLModelLoader:
 
             # Cargar modelo
             logger.info(f"📦 Cargando modelo: {model_path}")
-            model = joblib.load(model_path)
+            loaded_payload = joblib.load(model_path)
+            if isinstance(loaded_payload, dict) and "model" in loaded_payload:
+                model = loaded_payload["model"]
+            else:
+                model = loaded_payload
 
             # Extraer métricas
-            metrics_dict, training_date = self._extract_metrics_from_model(model)
+            metrics_dict, training_date = self._extract_metrics_from_model(loaded_payload)
             model_size = self._get_model_size(model_path)
 
             # Crear objeto de métricas
