@@ -15,13 +15,6 @@ import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 
 
-def _safe_fill(series: pd.Series, default) -> pd.Series:
-    """Rellena valores faltantes con un default."""
-    if series is None:
-        return pd.Series([default])
-    return series.fillna(default)
-
-
 @dataclass
 class RankerFeatureBuilder:
     """
@@ -59,27 +52,30 @@ class RankerFeatureBuilder:
         df_processed = df.copy()
 
         # Alias útiles
-        df_processed["edad_meses"] = df_processed.get("edad_meses").fillna(
-            df_processed.get("pnn_edad_meses", 72)
+        df_processed["edad_meses"] = self._get_column(df_processed, "edad_meses", np.nan).fillna(
+            self._get_column(df_processed, "pnn_edad_meses", 72)
         )
         df_processed["edad_final"] = df_processed["edad_meses"].fillna(72)
 
         # Peso/talla -> IMC
-        df_processed["ant_peso_kg"] = df_processed.get("ant_peso_kg", 35).fillna(35)
-        df_processed["ant_talla_cm"] = df_processed.get("ant_talla_cm", 140).fillna(140)
+        df_processed["ant_peso_kg"] = self._get_column(df_processed, "ant_peso_kg", 35).fillna(35)
+        df_processed["ant_talla_cm"] = self._get_column(df_processed, "ant_talla_cm", 140).fillna(140)
         talla_m = df_processed["ant_talla_cm"] / 100.0
         df_processed["en_imc"] = df_processed["ant_peso_kg"] / (talla_m.pow(2).replace(0, np.nan))
         df_processed["en_imc"] = df_processed["en_imc"].fillna(df_processed["en_imc"].median())
 
-        df_processed["en_zscore_imc"] = df_processed.get("en_zscore_imc", 0).fillna(0)
-        df_processed["pnn_calorias_diarias"] = df_processed.get("pnn_calorias_diarias", 1500).fillna(1500)
-        df_processed["pnn_proteinas_g"] = df_processed.get("pnn_proteinas_g").fillna(
-            df_processed["pnn_calorias_diarias"] * 0.15 / 4
-        )
-        df_processed["mei_kcal"] = df_processed.get("mei_kcal", 400).fillna(400)
-        df_processed["men_kcal_total"] = df_processed.get("men_kcal_total", df_processed["mei_kcal"]).fillna(
-            df_processed["mei_kcal"]
-        )
+        df_processed["en_zscore_imc"] = self._get_column(df_processed, "en_zscore_imc", 0).fillna(0)
+        df_processed["pnn_calorias_diarias"] = self._get_column(
+            df_processed, "pnn_calorias_diarias", 1500
+        ).fillna(1500)
+        default_protein = df_processed["pnn_calorias_diarias"] * 0.15 / 4
+        df_processed["pnn_proteinas_g"] = self._get_column(
+            df_processed, "pnn_proteinas_g", default_protein
+        ).fillna(default_protein)
+        df_processed["mei_kcal"] = self._get_column(df_processed, "mei_kcal", 400).fillna(400)
+        df_processed["men_kcal_total"] = self._get_column(
+            df_processed, "men_kcal_total", df_processed["mei_kcal"]
+        ).fillna(df_processed["mei_kcal"])
 
         # Score calórico por comida
         df_processed["caloric_compatibility"] = 1 - np.abs(
@@ -148,3 +144,16 @@ class RankerFeatureBuilder:
         known = set(encoder.classes_)
         cleaned = values.apply(lambda x: x if x in known else default)
         return encoder.transform(cleaned)
+
+    def _get_column(self, df: pd.DataFrame, column: str, default) -> pd.Series:
+        """Obtiene columna o crea una serie por defecto del mismo tamaño."""
+        if column in df.columns:
+            return df[column]
+
+        if isinstance(default, pd.Series):
+            return default
+
+        if not len(df):
+            return pd.Series(dtype=np.float32)
+
+        return pd.Series([default] * len(df), index=df.index)
