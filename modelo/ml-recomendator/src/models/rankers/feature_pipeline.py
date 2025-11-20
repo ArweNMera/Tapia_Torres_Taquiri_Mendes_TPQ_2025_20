@@ -58,8 +58,12 @@ class RankerFeatureBuilder:
         df_processed["edad_final"] = df_processed["edad_meses"].fillna(72)
 
         # Peso/talla -> IMC
-        df_processed["ant_peso_kg"] = self._get_column(df_processed, "ant_peso_kg", 35).fillna(35)
-        df_processed["ant_talla_cm"] = self._get_column(df_processed, "ant_talla_cm", 140).fillna(140)
+        df_processed["ant_peso_kg"] = pd.to_numeric(
+            self._get_column(df_processed, "ant_peso_kg", 35).fillna(35), errors="coerce"
+        )
+        df_processed["ant_talla_cm"] = pd.to_numeric(
+            self._get_column(df_processed, "ant_talla_cm", 140).fillna(140), errors="coerce"
+        )
         talla_m = df_processed["ant_talla_cm"] / 100.0
         df_processed["en_imc"] = df_processed["ant_peso_kg"] / (talla_m.pow(2).replace(0, np.nan))
         df_processed["en_imc"] = df_processed["en_imc"].fillna(df_processed["en_imc"].median())
