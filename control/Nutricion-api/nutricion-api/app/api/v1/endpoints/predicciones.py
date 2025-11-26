@@ -63,9 +63,9 @@ async def generar_prediccion_ml(
             )
 
         ant_id = ant_row[0]
-        peso_kg = ant_row[1]
-        talla_cm = ant_row[2]
-        edad_meses = ant_row[3] or 120
+        peso_kg = float(ant_row[1])  # Convertir Decimal a float
+        talla_cm = float(ant_row[2])  # Convertir Decimal a float
+        edad_meses = float(ant_row[3]) if ant_row[3] else 120.0
 
         # Obtener sexo del niño
         result_nino = db.execute(

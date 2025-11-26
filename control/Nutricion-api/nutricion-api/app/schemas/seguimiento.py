@@ -65,6 +65,7 @@ class ClasificacionNutricionalEnum(str, Enum):
 class AdherenciaCreate(BaseModel):
     """Schema para registrar adherencia"""
 
+    nin_id: int = Field(..., description="ID del niño")
     men_id: int = Field(..., description="ID del menú")
     mei_id: int | None = Field(None, description="ID del ítem de menú específico")
     fecha: date = Field(..., description="Fecha del registro")
@@ -123,6 +124,7 @@ class AdherenciaHistorialResponse(BaseModel):
 class SintomaCreate(BaseModel):
     """Schema para registrar síntoma"""
 
+    nin_id: int = Field(..., description="ID del niño")
     fecha: date = Field(..., description="Fecha del síntoma")
     tipo: str = Field(..., max_length=120, description="Tipo de síntoma")
     severidad: SeveridadSintomaEnum = Field(..., description="Severidad del síntoma")
