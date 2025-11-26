@@ -233,6 +233,32 @@ class MLModelLoader:
                 "production_menu_recommender.pkl"
             )
 
+    def load_nutritional_predictor(self) -> Tuple[Optional[Any], ModelMetrics]:
+        """Cargar el predictor nutricional (automáticamente el más reciente)"""
+        # Siempre cargar el modelo más reciente
+        logger.info("📦 Cargando modelo de predicción nutricional más reciente...")
+
+        # Buscar el archivo más reciente
+        try:
+            model_files = list(self.models_dir.glob("nutritional_predictor*.pkl"))
+
+            if not model_files:
+                logger.warning("⚠️  No se encontró modelo de predicción nutricional")
+                return None, ModelMetrics()
+
+            # Obtener el más reciente
+            latest_model = max(model_files, key=lambda p: p.stat().st_mtime)
+            logger.info(f"✅ Usando modelo: {latest_model.name}")
+
+            return self.load_model(
+                "nutritional_predictor",
+                latest_model.name,
+                use_cache=False  # No usar caché para siempre obtener el más reciente
+            )
+        except Exception as e:
+            logger.error(f"❌ Error cargando predictor nutricional: {e}")
+            return None, ModelMetrics()
+
     def get_all_models_info(self) -> Dict[str, Dict[str, Any]]:
         """Obtener información de todos los modelos cargados"""
         info = {}

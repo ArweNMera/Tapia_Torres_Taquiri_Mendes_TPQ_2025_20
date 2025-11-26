@@ -4,12 +4,18 @@ from sqlalchemy.orm import Session
 from app.infrastructure.db.session import get_db
 from app.infrastructure.repositories.ninos_repo import NinosRepository
 
+# PMV3: Seguimiento y Monitoreo Nutricional
+from .endpoints import adherencia as adherencia_endpoints
 from .endpoints import admin, auth, ninos, usuarios
+from .endpoints import alertas as alertas_endpoints
 from .endpoints import entidades as entidades_endpoints
+from .endpoints import evolucion as evolucion_endpoints
 from .endpoints import ml as ml_endpoints
 from .endpoints import nutricion as nutricion_endpoints
 from .endpoints import planes_comidas as planes_comidas_endpoints
+from .endpoints import predicciones as predicciones_endpoints
 from .endpoints import preferencias as preferencias_endpoints
+from .endpoints import sintomas as sintomas_endpoints
 
 api_router = APIRouter()
 api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
@@ -49,3 +55,18 @@ api_router.include_router(ml_endpoints.router, prefix="/ml", tags=["ml"])
 api_router.include_router(nutricion_endpoints.router, prefix="/nutricion", tags=["nutricion"])
 api_router.include_router(preferencias_endpoints.router, tags=["preferencias"])
 api_router.include_router(planes_comidas_endpoints.router, tags=["planes-comidas"])
+
+# PMV3: Seguimiento y Monitoreo Nutricional
+api_router.include_router(
+    adherencia_endpoints.router, prefix="/adherencia", tags=["seguimiento-adherencia"]
+)
+api_router.include_router(
+    sintomas_endpoints.router, prefix="/sintomas", tags=["seguimiento-sintomas"]
+)
+api_router.include_router(
+    evolucion_endpoints.router, prefix="/evolucion", tags=["seguimiento-evolucion"]
+)
+api_router.include_router(
+    predicciones_endpoints.router, prefix="/predicciones", tags=["seguimiento-predicciones"]
+)
+api_router.include_router(alertas_endpoints.router, prefix="/alertas", tags=["seguimiento-alertas"])

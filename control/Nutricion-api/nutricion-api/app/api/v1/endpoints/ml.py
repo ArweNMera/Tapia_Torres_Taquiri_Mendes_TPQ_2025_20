@@ -180,3 +180,142 @@ async def ml_health():
             "ml_api_status": "unreachable",
             "detail": f"No se puede conectar al servicio ML: {str(e)}",
         }
+
+
+class TrainModelRequest(BaseModel):
+    """Request para entrenar el modelo ML."""
+
+    min_measurements: int = Field(2, description="Mínimo de mediciones por niño")
+    lookback_months: int = Field(24, description="Meses hacia atrás para considerar")
+    include_synthetic: bool = Field(True, description="Incluir datos sintéticos")
+
+
+class TrainModelResponse(BaseModel):
+    """Response del entrenamiento del modelo."""
+
+    status: str
+    message: str
+    accuracy: float | None = None
+    f1_score: float | None = None
+    model_path: str | None = None
+    training_time_seconds: float | None = None
+    dataset_size: int | None = None
+
+
+@router.post("/train_model", response_model=TrainModelResponse)
+async def train_model(req: TrainModelRequest) -> TrainModelResponse:
+    """
+    Entrena el modelo de predicción nutricional usando datos de la BD.
+    Puede ser llamado desde Colab o scripts externos.
+    """
+    import os
+    import subprocess
+    import time
+    from pathlib import Path
+
+    try:
+        # Rutas
+        ml_dir = Path(os.getenv("ML_RECOMENDATOR_PATH", "/app/ml-recomendator"))
+        extract_script = ml_dir / "src/training/extract_nutritional_status_data.py"
+        train_script = ml_dir / "src/training/train_nutritional_predictor.py"
+        data_file = ml_dir / "data/nutritional_status_training_data.csv"
+        model_file = ml_dir / "models/nutritional_predictor.pkl"
+
+        if not extract_script.exists() or not train_script.exists():
+            return TrainModelResponse(
+                status="error",
+                message="Scripts de entrenamiento no encontrados",
+                model_path=None,
+            )
+
+        start_time = time.time()
+
+        # 1. Extraer datos
+        extract_result = subprocess.run(
+            [
+                "python3",
+                str(extract_script),
+            ],
+            cwd=str(ml_dir),
+            capture_output=True,
+            text=True,
+            timeout=300,
+        )
+
+        if extract_result.returncode != 0:
+            return TrainModelResponse(
+                status="error",
+                message=f"Error extrayendo datos: {extract_result.stderr}",
+                model_path=None,
+            )
+
+        # Contar registros
+        dataset_size = 0
+        if data_file.exists():
+            with open(data_file) as f:
+                dataset_size = sum(1 for _ in f) - 1  # Excluir header
+
+        # 2. Entrenar modelo
+        train_result = subprocess.run(
+            [
+                "python3",
+                str(train_script),
+                "--input",
+                str(data_file),
+                "--output",
+                str(model_file),
+            ],
+            cwd=str(ml_dir),
+            capture_output=True,
+            text=True,
+            timeout=600,
+        )
+
+        training_time = time.time() - start_time
+
+        if train_result.returncode != 0:
+            return TrainModelResponse(
+                status="error",
+                message=f"Error entrenando modelo: {train_result.stderr}",
+                model_path=None,
+                training_time_seconds=training_time,
+                dataset_size=dataset_size,
+            )
+
+        # Extraer métricas del output
+        accuracy = None
+        f1_score = None
+        for line in train_result.stderr.split("\n"):
+            if "Accuracy:" in line:
+                try:
+                    accuracy = float(line.split("Accuracy:")[-1].strip())
+                except:
+                    pass
+            if "F1-Score (macro):" in line:
+                try:
+                    f1_score = float(line.split("F1-Score (macro):")[-1].strip())
+                except:
+                    pass
+
+        return TrainModelResponse(
+            status="success",
+            message="Modelo entrenado exitosamente",
+            accuracy=accuracy,
+            f1_score=f1_score,
+            model_path=str(model_file),
+            training_time_seconds=training_time,
+            dataset_size=dataset_size,
+        )
+
+    except subprocess.TimeoutExpired:
+        return TrainModelResponse(
+            status="error",
+            message="Entrenamiento excedió el tiempo límite (10 minutos)",
+            model_path=None,
+        )
+    except Exception as e:
+        return TrainModelResponse(
+            status="error",
+            message=f"Error inesperado: {str(e)}",
+            model_path=None,
+        )
