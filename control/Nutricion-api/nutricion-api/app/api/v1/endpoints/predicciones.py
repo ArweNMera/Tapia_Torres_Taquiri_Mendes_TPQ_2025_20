@@ -17,9 +17,7 @@ from app.schemas.seguimiento import (
 router = APIRouter()
 
 
-@router.post(
-    "/generar/{nin_id}", response_model=PrediccionMLResponse, status_code=status.HTTP_201_CREATED
-)
+@router.post("/generar/{nin_id}", status_code=status.HTTP_201_CREATED)
 async def generar_prediccion_ml(
     nin_id: int,
     meses_proyeccion: int = Query(1, ge=1, le=6, description="Meses a proyectar (1-6)"),
@@ -117,8 +115,12 @@ async def generar_prediccion_ml(
 
             prediction = response.json()
 
-        # 4. Retornar predicción directamente (sin guardar por ahora)
-        # TODO: Implementar sp_guardar_prediccion_ml cuando esté disponible
+        # 4. Retornar predicción directamente del servicio ML
+        # Agregar información adicional del niño
+        prediction["nin_id"] = nin_id
+        prediction["ant_id"] = ant_id
+        prediction["meses_proyeccion"] = meses_proyeccion
+        prediction["features_usados"] = prediction_features
 
         return prediction
 

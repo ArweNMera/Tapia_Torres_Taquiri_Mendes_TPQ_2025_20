@@ -240,13 +240,13 @@ class PrediccionMLResponse(BaseModel):
     pml_prob_severo: float
     pml_modelo_tipo: str
     pml_modelo_version: str
-    pml_features_json: dict | None
-    pml_explicacion_json: dict | None
-    pml_validado: bool | None
-    pml_usr_id_validador: int | None
-    pml_feedback: str | None
-    pml_fecha_validacion: datetime | None
-    creado_en: datetime
+    pml_features_json: dict | None = None
+    pml_explicacion_json: dict | None = None
+    pml_validado: bool | None = None
+    pml_usr_id_validador: int | None = None
+    pml_feedback: str | None = None
+    pml_fecha_validacion: datetime | None = None
+    creado_en: datetime | None = None
     # Datos de antropometría asociada
     ant_fecha: date | None = None
     ant_peso_kg: float | None = None
