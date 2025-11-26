@@ -15,7 +15,12 @@ from fastapi.responses import JSONResponse
 load_dotenv()
 
 # Importar endpoints
-from src.api.endpoints import models_info_router, recommendations_router, training_router
+from src.api.endpoints import (
+    models_info_router,
+    nutritional_training_router,
+    recommendations_router,
+    training_router,
+)
 
 # Configurar logging basado en variable de entorno
 log_level = os.getenv("LOG_LEVEL", "INFO").upper()
@@ -131,6 +136,7 @@ def create_app() -> FastAPI:
     app.include_router(recommendations_router)
     app.include_router(models_info_router)
     app.include_router(training_router)
+    app.include_router(nutritional_training_router)
 
     logger.info("✅ FastAPI app creada exitosamente con endpoints")
     return app
