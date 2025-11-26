@@ -82,18 +82,19 @@ class AdherenciaResponse(BaseModel):
 
     adh_id: int
     nin_id: int
-    men_id: int
-    mei_id: int | None
-    adh_fecha: date
+    men_id: int | None = None
+    mei_id: int | None = None
+    adh_registrado_en: datetime | None = None
     adh_estado: str
-    adh_porcentaje: float
-    adh_dificultad: str
-    adh_comentario: str | None
-    creado_en: datetime
-    actualizado_en: datetime | None
+    adh_porcentaje: float | None = None
+    adh_dificultad: str | None = None
+    adh_comentario_tutor: str | None = None
+    adh_notas: str | None = None
     # Información del menú asociado
-    men_nombre: str | None = None
+    men_inicio: date | None = None
+    men_fin: date | None = None
     mei_comida: str | None = None
+    mei_kcal: float | None = None
 
     class Config:
         from_attributes = True
