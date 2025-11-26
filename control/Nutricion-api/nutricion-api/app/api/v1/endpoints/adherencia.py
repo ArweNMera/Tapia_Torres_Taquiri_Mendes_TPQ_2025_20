@@ -5,6 +5,7 @@ Endpoints para gestión de adherencia al plan nutricional (PMV3)
 from datetime import date, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.application.services.auth_service import get_current_user
@@ -39,7 +40,7 @@ def registrar_adherencia(
     try:
         # Ejecutar procedimiento almacenado
         result = db.execute(
-            """
+            text("""
             CALL sp_registrar_adherencia(
                 :p_nin_id,
                 :p_men_id,
@@ -50,7 +51,7 @@ def registrar_adherencia(
                 :p_dificultad,
                 :p_comentario
             )
-            """,
+            """),
             {
                 "p_nin_id": adherencia.nin_id,
                 "p_men_id": adherencia.men_id,
@@ -122,13 +123,13 @@ def obtener_adherencia_por_nino(
     try:
         # Ejecutar procedimiento almacenado
         result = db.execute(
-            """
+            text("""
             CALL sp_obtener_adherencia_por_nino(
                 :p_nin_id,
                 :p_fecha_inicio,
                 :p_fecha_fin
             )
-            """,
+            """),
             {"p_nin_id": nin_id, "p_fecha_inicio": fecha_inicio, "p_fecha_fin": fecha_fin},
         )
 
@@ -187,12 +188,12 @@ def calcular_adherencia_promedio(
     try:
         # Ejecutar procedimiento almacenado
         result = db.execute(
-            """
+            text("""
             CALL sp_calcular_adherencia_promedio(
                 :p_nin_id,
                 :p_dias
             )
-            """,
+            """),
             {"p_nin_id": nin_id, "p_dias": dias},
         )
 

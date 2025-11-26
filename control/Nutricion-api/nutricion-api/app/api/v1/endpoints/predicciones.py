@@ -105,7 +105,8 @@ async def generar_prediccion_ml(
 
         async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.post(
-                f"{ml_service_url}/api/v1/predict", json={"features": prediction_features}
+                f"{ml_service_url}/api/v1/nutritional/predict",
+                json={"features": prediction_features},
             )
 
             if response.status_code != 200:

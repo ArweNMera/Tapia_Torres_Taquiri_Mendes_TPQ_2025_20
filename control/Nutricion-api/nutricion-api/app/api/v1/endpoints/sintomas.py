@@ -5,6 +5,7 @@ Endpoints para gestión de síntomas (PMV3)
 from datetime import date, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.application.services.auth_service import get_current_user
@@ -37,7 +38,7 @@ def registrar_sintoma(
     try:
         # Ejecutar procedimiento almacenado
         result = db.execute(
-            """
+            text("""
             CALL sp_registrar_sintoma(
                 :p_nin_id,
                 :p_fecha,
@@ -47,7 +48,7 @@ def registrar_sintoma(
                 :p_relacionado_menu,
                 :p_notas
             )
-            """,
+            """),
             {
                 "p_nin_id": sintoma.nin_id,
                 "p_fecha": sintoma.fecha,
@@ -111,14 +112,14 @@ def obtener_sintomas_por_nino(
     try:
         # Ejecutar procedimiento almacenado
         result = db.execute(
-            """
+            text("""
             CALL sp_obtener_sintomas_por_nino(
                 :p_nin_id,
                 :p_fecha_inicio,
                 :p_fecha_fin,
                 :p_tipo
             )
-            """,
+            """),
             {
                 "p_nin_id": nin_id,
                 "p_fecha_inicio": fecha_inicio,
@@ -166,12 +167,12 @@ def calcular_frecuencia_sintomas(
     try:
         # Ejecutar procedimiento almacenado
         result = db.execute(
-            """
+            text("""
             CALL sp_calcular_frecuencia_sintomas(
                 :p_nin_id,
                 :p_dias
             )
-            """,
+            """),
             {"p_nin_id": nin_id, "p_dias": dias},
         )
 
