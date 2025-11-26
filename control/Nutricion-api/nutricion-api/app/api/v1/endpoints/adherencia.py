@@ -213,7 +213,7 @@ def actualizar_adherencia(
             params["dificultad"] = adherencia.dificultad.value
 
         if adherencia.comentario is not None:
-            update_fields.append("adh_comentario = :comentario")
+            update_fields.append("adh_notas = :comentario")
             params["comentario"] = adherencia.comentario
 
         if not update_fields:
@@ -231,11 +231,11 @@ def actualizar_adherencia(
             text("""
                 SELECT
                     adh_id, nin_id, men_id, mei_id,
-                    adh_fecha,
+                    adh_registrado_en as adh_fecha,
                     adh_estado,
                     adh_porcentaje,
                     adh_dificultad,
-                    adh_comentario
+                    adh_notas as adh_comentario
                 FROM adherencias
                 WHERE adh_id = :adh_id
             """),
