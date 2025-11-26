@@ -7,7 +7,7 @@ import { RegisterScreen } from './components/screens/RegisterScreen';
 import { DashboardScreen } from './components/screens/DashboardScreen';
 import { MealPlanScreen } from './components/screens/MealPlanScreen';
 import { ScanScreen } from './components/screens/ScanScreen';
-import { RiskPredictionScreen } from './components/screens/RiskPredictionScreen';
+import { RiskAnalysisScreen } from './components/screens/RiskAnalysisScreen';
 import { ProgressScreen } from './components/screens/ProgressScreen';
 import { CommunityScreen } from './components/screens/CommunityScreen';
 import { GamificationScreen } from './components/screens/GamificationScreen';
@@ -152,7 +152,7 @@ function AppContent() {
           <ScanScreen />
         )}
         {activeTab === 'risk-prediction' && (
-          <RiskPredictionScreen />
+          <RiskAnalysisScreen />
         )}
         {activeTab === 'progress' && (
           <ProgressScreen />

@@ -22,7 +22,6 @@ router = APIRouter()
 
 @router.post("/registrar", response_model=AdherenciaResponse, status_code=status.HTTP_201_CREATED)
 def registrar_adherencia(
-    nin_id: int,
     adherencia: AdherenciaCreate,
     db: Session = Depends(get_db),
     current_user: UserResponse = Depends(get_current_user),
@@ -53,7 +52,7 @@ def registrar_adherencia(
             )
             """,
             {
-                "p_nin_id": nin_id,
+                "p_nin_id": adherencia.nin_id,
                 "p_men_id": adherencia.men_id,
                 "p_mei_id": adherencia.mei_id,
                 "p_fecha": adherencia.fecha,

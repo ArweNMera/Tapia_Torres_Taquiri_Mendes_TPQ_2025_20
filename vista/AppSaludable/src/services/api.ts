@@ -605,6 +605,40 @@ class ApiService {
       }
     );
   }
+
+  // ========== Seguimiento Nutricional (PMV3) ==========
+
+  // Adherencia
+  async registrarAdherencia(data: any): Promise<ApiResponse<any>> {
+    return this.makeRequest<any>(
+      this.getApiUrl('/adherencia/registrar'),
+      {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }
+    );
+  }
+
+  // Síntomas
+  async registrarSintoma(data: any): Promise<ApiResponse<any>> {
+    return this.makeRequest<any>(
+      this.getApiUrl('/sintomas/registrar'),
+      {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }
+    );
+  }
+
+  // Predicciones
+  async generarPrediccion(ninId: number, mesesProyeccion: number): Promise<ApiResponse<any>> {
+    return this.makeRequest<any>(
+      this.getApiUrl(`/predicciones/generar/${ninId}?meses_proyeccion=${mesesProyeccion}`),
+      {
+        method: 'POST',
+      }
+    );
+  }
 }
 
 export const apiService = new ApiService();

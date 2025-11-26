@@ -607,3 +607,64 @@ async def get_status():
             "plots_dir": str(PLOTS_DIR),
         },
     }
+
+
+# ============================================================================
+# ENDPOINT DE PREDICCIÓN
+# ============================================================================
+
+
+class PredictRequest(BaseModel):
+    """Request para predicción."""
+
+    features: Dict[str, float] = Field(..., description="Features del niño")
+
+
+class PredictResponse(BaseModel):
+    """Response de predicción."""
+
+    clasificacion: str
+    probabilidad: float
+    score_riesgo: float
+    prob_normal: float
+    prob_riesgo: float
+    prob_moderado: float
+    prob_severo: float
+    probabilidades_por_clase: Dict[str, float]
+    features_importantes: List[tuple]
+    features_usados: Dict[str, float]
+
+
+@router.post("/predict", response_model=PredictResponse)
+async def predict(request: PredictRequest) -> PredictResponse:
+    """
+    Hacer predicción con el modelo nutricional.
+
+    Este endpoint es llamado por el backend principal (Nutricion-api)
+    para obtener predicciones del estado nutricional.
+    """
+    try:
+        model_path = MODELS_DIR / "nutritional_predictor.pkl"
+
+        if not model_path.exists():
+            raise HTTPException(
+                status_code=404, detail="Modelo no encontrado. Entrena el modelo primero."
+            )
+
+        from src.domain.models.nutritional_predictor import NutritionalPredictor
+
+        predictor = NutritionalPredictor.get_instance(str(model_path))
+
+        if not predictor.is_loaded:
+            raise HTTPException(status_code=500, detail="No se pudo cargar el modelo")
+
+        # Hacer predicción
+        prediction = predictor.predict_from_features(request.features)
+
+        return PredictResponse(**prediction)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Error en predicción: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))

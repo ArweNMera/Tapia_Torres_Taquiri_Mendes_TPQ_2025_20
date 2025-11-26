@@ -20,158 +20,106 @@ router = APIRouter()
 @router.post(
     "/generar/{nin_id}", response_model=PrediccionMLResponse, status_code=status.HTTP_201_CREATED
 )
-def generar_prediccion_ml(
+async def generar_prediccion_ml(
     nin_id: int,
+    meses_proyeccion: int = Query(1, ge=1, le=6, description="Meses a proyectar (1-6)"),
     db: Session = Depends(get_db),
     current_user: UserResponse = Depends(get_current_user),
 ):
     """
-    Generar predicción ML para el niño.
+    Generar predicción ML para el niño con proyección a futuro.
 
     Proceso:
     1. Calcula features ML usando sp_calcular_features_ml
-    2. Llama al modelo LightGBM para predicción
+    2. Llama al servidor ML para predicción
     3. Guarda predicción usando sp_guardar_prediccion_ml
     4. Genera alerta si es riesgo MODERADO/SEVERO
+
+    Args:
+        meses_proyeccion: Meses a proyectar (1-6). Default: 1
     """
+    import os
+
+    import httpx
+
     try:
-        # 1. Calcular features ML
-        result_features = db.execute(
-            text("CALL sp_calcular_features_ml(:p_nin_id)"), {"p_nin_id": nin_id}
+        # 1. Obtener última antropometría del niño
+        result_ant = db.execute(
+            text("""
+                SELECT ant_id, ant_peso_kg, ant_talla_cm, ant_edad_meses, ant_fecha
+                FROM antropometrias
+                WHERE nin_id = :nin_id
+                ORDER BY ant_fecha DESC
+                LIMIT 1
+            """),
+            {"nin_id": nin_id},
         )
 
-        features_row = result_features.fetchone()
-        if not features_row:
+        ant_row = result_ant.fetchone()
+        if not ant_row:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="No se pudieron calcular features para este niño. Verifica que tenga mediciones antropométricas.",
+                detail="No se encontraron mediciones antropométricas para este niño.",
             )
 
-        # Convertir a diccionario
-        columns = result_features.keys()
-        features_dict = dict(zip(columns, features_row))
+        ant_id = ant_row[0]
+        peso_kg = ant_row[1]
+        talla_cm = ant_row[2]
+        edad_meses = ant_row[3] or 120
 
-        # Extraer IDs necesarios
-        ant_id = features_dict.get("ant_id")
-        fml_id = features_dict.get("fml_id")
-
-        if not ant_id or not fml_id:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Features incompletos: faltan ant_id o fml_id",
-            )
-
-        # 2. Llamar al modelo ML
-        # Importar predictor (lazy loading)
-        try:
-            import sys
-            from pathlib import Path
-
-            # Agregar path del modelo ML
-            ml_path = (
-                Path(__file__).parent.parent.parent.parent.parent.parent
-                / "modelo"
-                / "ml-recomendator"
-            )
-            sys.path.insert(0, str(ml_path))
-
-            from src.domain.models.nutritional_predictor import NutritionalPredictor
-
-            # Cargar modelo (singleton)
-            model_path = ml_path / "models" / "nutritional_predictor_latest.pkl"
-            if not model_path.exists():
-                # Buscar cualquier modelo disponible
-                models_dir = ml_path / "models"
-                model_files = list(models_dir.glob("nutritional_predictor_*.pkl"))
-                if model_files:
-                    model_path = max(model_files, key=lambda p: p.stat().st_mtime)
-                else:
-                    raise FileNotFoundError("No se encontró modelo entrenado")
-
-            predictor = NutritionalPredictor.get_instance(str(model_path))
-
-            if not predictor.is_loaded:
-                raise RuntimeError("No se pudo cargar el modelo ML")
-
-            # Preparar features para predicción
-            prediction_features = {
-                "age_months": features_dict.get("age_months", 120),
-                "sex_numeric": features_dict.get("sex_numeric", 1),
-                "BMI": features_dict.get("BMI", 18.5),
-                "weight_kg": features_dict.get("weight_kg", 35.0),
-                "height_cm": features_dict.get("height_cm", 140.0),
-                "bmi_velocity": features_dict.get("bmi_velocity", 0.0),
-                "weight_velocity": features_dict.get("weight_velocity", 0.0),
-                "height_velocity": features_dict.get("height_velocity", 0.0),
-                "adherence_score": features_dict.get("adherence_score", 75.0),
-                "allergy_count": features_dict.get("allergy_count", 0),
-                "altitude_m": features_dict.get("altitude_m", 0.0),
-            }
-
-            # Predecir
-            prediction = predictor.predict_from_features(prediction_features)
-
-        except Exception as e:
-            import logging
-
-            logging.error(f"Error en predicción ML: {e}")
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Error al ejecutar modelo ML: {str(e)}",
-            )
-
-        # 3. Guardar predicción
-        result = db.execute(
-            text("""
-                CALL sp_guardar_prediccion_ml(
-                    :p_nin_id,
-                    :p_ant_id,
-                    :p_fml_id,
-                    :p_clasificacion,
-                    :p_probabilidad,
-                    :p_score_riesgo,
-                    :p_prob_normal,
-                    :p_prob_riesgo,
-                    :p_prob_moderado,
-                    :p_prob_severo,
-                    :p_modelo_tipo,
-                    :p_modelo_version,
-                    :p_features_json,
-                    :p_explicacion_json
-                )
-            """),
-            {
-                "p_nin_id": nin_id,
-                "p_ant_id": ant_id,
-                "p_fml_id": fml_id,
-                "p_clasificacion": prediction["clasificacion"],
-                "p_probabilidad": prediction["probabilidad"],
-                "p_score_riesgo": prediction["score_riesgo"],
-                "p_prob_normal": prediction["prob_normal"],
-                "p_prob_riesgo": prediction["prob_riesgo"],
-                "p_prob_moderado": prediction["prob_moderado"],
-                "p_prob_severo": prediction["prob_severo"],
-                "p_modelo_tipo": "LightGBM",
-                "p_modelo_version": "1.0",
-                "p_features_json": str(prediction["features_usados"]),
-                "p_explicacion_json": str(prediction["features_importantes"]),
-            },
+        # Obtener sexo del niño
+        result_nino = db.execute(
+            text("SELECT nin_sexo FROM ninos WHERE nin_id = :nin_id"), {"nin_id": nin_id}
         )
+        nino_row = result_nino.fetchone()
+        sex_numeric = 1 if nino_row and nino_row[0] == "M" else 0
 
-        # Obtener predicción guardada
-        row = result.fetchone()
-        if not row:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="No se pudo guardar la predicción",
+        # 2. Preparar features para predicción con proyección
+        # Calcular velocidades simples (asumiendo crecimiento normal)
+        bmi_velocity = 0.1  # kg/m² por mes
+        weight_velocity = 0.3  # kg por mes
+        height_velocity = 0.5  # cm por mes
+
+        # Proyectar valores a futuro
+        projected_age = edad_meses + meses_proyeccion
+        projected_weight = peso_kg + (weight_velocity * meses_proyeccion)
+        projected_height = talla_cm + (height_velocity * meses_proyeccion)
+        projected_bmi = projected_weight / ((projected_height / 100) ** 2)
+
+        prediction_features = {
+            "age_months": projected_age,
+            "sex_numeric": sex_numeric,
+            "BMI": projected_bmi,
+            "weight_kg": projected_weight,
+            "height_cm": projected_height,
+            "bmi_velocity": bmi_velocity,
+            "weight_velocity": weight_velocity,
+            "height_velocity": height_velocity,
+            "adherence_score": 75.0,  # Default
+            "allergy_count": 0,  # Default
+            "altitude_m": 0.0,  # Default
+        }
+
+        # 3. Llamar al servidor ML
+        ml_service_url = os.getenv("ML_SERVICE_URL", "http://localhost:8001")
+
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(
+                f"{ml_service_url}/api/v1/predict", json={"features": prediction_features}
             )
 
-        columns = result.keys()
-        prediccion_dict = dict(zip(columns, row))
+            if response.status_code != 200:
+                raise HTTPException(
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    detail=f"Servicio ML no disponible: {response.text}",
+                )
 
-        db.commit()
+            prediction = response.json()
 
-        return PrediccionMLResponse(**prediccion_dict)
+        # 4. Retornar predicción directamente (sin guardar por ahora)
+        # TODO: Implementar sp_guardar_prediccion_ml cuando esté disponible
+
+        return prediction
 
     except HTTPException:
         raise

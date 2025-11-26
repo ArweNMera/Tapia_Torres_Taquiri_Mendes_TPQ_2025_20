@@ -21,7 +21,6 @@ router = APIRouter()
 
 @router.post("/registrar", response_model=SintomaResponse, status_code=status.HTTP_201_CREATED)
 def registrar_sintoma(
-    nin_id: int,
     sintoma: SintomaCreate,
     db: Session = Depends(get_db),
     current_user: UserResponse = Depends(get_current_user),
@@ -50,7 +49,7 @@ def registrar_sintoma(
             )
             """,
             {
-                "p_nin_id": nin_id,
+                "p_nin_id": sintoma.nin_id,
                 "p_fecha": sintoma.fecha,
                 "p_tipo": sintoma.tipo,
                 "p_severidad": sintoma.severidad.value,
