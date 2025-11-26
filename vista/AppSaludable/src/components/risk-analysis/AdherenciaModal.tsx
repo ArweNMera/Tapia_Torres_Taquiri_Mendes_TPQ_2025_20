@@ -27,10 +27,13 @@ type Dificultad = 'NINGUNA' | 'BAJA' | 'MEDIA' | 'ALTA';
 
 interface AdherenciaHistorial {
   adh_id: number;
-  adh_registrado_en: string;
-  adh_estado: string;
-  adh_porcentaje: number;
-  adh_dificultad: string;
+  fecha: string;
+  estado: string;
+  porcentaje: number;
+  dificultad: string;
+  comentario?: string;
+  men_inicio?: string;
+  men_fin?: string;
 }
 
 export function AdherenciaModal({ open, onClose, child }: AdherenciaModalProps) {
@@ -43,6 +46,7 @@ export function AdherenciaModal({ open, onClose, child }: AdherenciaModalProps) 
   const [historial, setHistorial] = useState<AdherenciaHistorial[]>([]);
   const [loadingHistorial, setLoadingHistorial] = useState(false);
   const [mostrarHistorial, setMostrarHistorial] = useState(false);
+  const [editandoId, setEditandoId] = useState<number | null>(null);
 
   useEffect(() => {
     if (open && mostrarHistorial) {
@@ -61,6 +65,37 @@ export function AdherenciaModal({ open, onClose, child }: AdherenciaModalProps) 
       console.error('Error cargando historial:', error);
     } finally {
       setLoadingHistorial(false);
+    }
+  };
+
+  const limpiarFormulario = () => {
+    setFecha(new Date().toISOString().split('T')[0]);
+    setEstado('OK');
+    setPorcentaje([75]);
+    setDificultad('NINGUNA');
+    setComentario('');
+    setEditandoId(null);
+  };
+
+  const handleEliminar = async (adhId: number) => {
+    if (!confirm('¿Estás seguro de eliminar este registro?')) return;
+
+    try {
+      setLoading(true);
+      const response = await apiService.eliminarAdherencia(adhId);
+
+      if (!response.success) {
+        throw new Error(response.error || 'Error al eliminar adherencia');
+      }
+
+      toast.success('Adherencia eliminada exitosamente');
+      cargarHistorial();
+      limpiarFormulario();
+    } catch (error: any) {
+      console.error('Error eliminando adherencia:', error);
+      toast.error(error.response?.data?.detail || 'Error al eliminar adherencia');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -83,14 +118,9 @@ export function AdherenciaModal({ open, onClose, child }: AdherenciaModalProps) 
         throw new Error(response.error || 'Error al registrar adherencia');
       }
 
-      toast.success('Adherencia registrada exitosamente');
+      toast.success(editandoId ? 'Adherencia actualizada exitosamente' : 'Adherencia registrada exitosamente');
 
-      // Reset form
-      setFecha(new Date().toISOString().split('T')[0]);
-      setEstado('OK');
-      setPorcentaje([75]);
-      setDificultad('NINGUNA');
-      setComentario('');
+      limpiarFormulario();
 
       // Recargar historial si está visible
       if (mostrarHistorial) {
@@ -148,15 +178,39 @@ export function AdherenciaModal({ open, onClose, child }: AdherenciaModalProps) 
               ) : (
                 <div className="space-y-2 max-h-48 overflow-y-auto">
                   {historial.slice(0, 10).map((reg) => (
-                    <div key={reg.adh_id} className="flex items-center justify-between p-2 bg-background rounded border text-sm">
-                      <div className="flex items-center space-x-2">
-                        {getEstadoIcon(reg.adh_estado)}
-                        <span>{new Date(reg.adh_registrado_en).toLocaleDateString()}</span>
+                    <div
+                      key={reg.adh_id}
+                      className="flex items-center justify-between p-3 bg-background rounded border text-sm hover:bg-muted/50 transition-colors group"
+                    >
+                      <div
+                        className="flex items-center space-x-2 flex-1 cursor-pointer"
+                        onClick={() => {
+                          // Cargar datos en el formulario para editar
+                          setFecha(reg.fecha.split('T')[0]);
+                          setEstado(reg.estado as Estado);
+                          setPorcentaje([reg.porcentaje]);
+                          setDificultad(reg.dificultad as Dificultad);
+                          setComentario(reg.comentario || '');
+                          setEditandoId(reg.adh_id);
+                          setMostrarHistorial(false);
+                        }}
+                      >
+                        {getEstadoIcon(reg.estado)}
+                        <span>{new Date(reg.fecha).toLocaleDateString()}</span>
+                        <span className="font-medium">{reg.porcentaje}%</span>
+                        <Badge variant="outline" className="text-xs">{reg.dificultad}</Badge>
                       </div>
-                      <div className="flex items-center space-x-3">
-                        <span className="font-medium">{reg.adh_porcentaje}%</span>
-                        <Badge variant="outline" className="text-xs">{reg.adh_dificultad}</Badge>
-                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEliminar(reg.adh_id);
+                        }}
+                      >
+                        <X size={14} className="text-red-500" />
+                      </Button>
                     </div>
                   ))}
                 </div>
@@ -275,13 +329,22 @@ export function AdherenciaModal({ open, onClose, child }: AdherenciaModalProps) 
         </div>
 
         {/* Acciones */}
-        <div className="flex justify-end space-x-3 pt-4 border-t">
-          <Button variant="outline" onClick={onClose} disabled={loading}>
-            Cancelar
-          </Button>
-          <Button onClick={handleSubmit} disabled={loading}>
-            {loading ? 'Guardando...' : 'Guardar Adherencia'}
-          </Button>
+        <div className="flex justify-between items-center pt-4 border-t">
+          <div>
+            {editandoId && (
+              <Button variant="outline" size="sm" onClick={limpiarFormulario}>
+                Cancelar Edición
+              </Button>
+            )}
+          </div>
+          <div className="flex space-x-3">
+            <Button variant="outline" onClick={onClose} disabled={loading}>
+              Cerrar
+            </Button>
+            <Button onClick={handleSubmit} disabled={loading}>
+              {loading ? 'Guardando...' : editandoId ? 'Actualizar' : 'Guardar'}
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

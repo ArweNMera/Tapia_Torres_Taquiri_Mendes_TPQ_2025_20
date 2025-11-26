@@ -115,12 +115,49 @@ async def generar_prediccion_ml(
 
             prediction = response.json()
 
-        # 4. Retornar predicción directamente del servicio ML
-        # Agregar información adicional del niño
+        # 4. Guardar predicción en BD
+
+        result_insert = db.execute(
+            text("""
+                INSERT INTO predicciones_ml (
+                    nin_id, ant_id, fml_id,
+                    pml_clasificacion, pml_probabilidad, pml_score_riesgo,
+                    pml_prob_normal, pml_prob_riesgo, pml_prob_moderado, pml_prob_severo,
+                    pml_modelo_tipo, pml_modelo_version,
+                    pml_features_json, pml_explicacion_json
+                ) VALUES (
+                    :nin_id, :ant_id, 1,
+                    :clasificacion, :probabilidad, :score_riesgo,
+                    :prob_normal, :prob_riesgo, :prob_moderado, :prob_severo,
+                    :modelo_tipo, :modelo_version,
+                    :features_json, :explicacion_json
+                )
+            """),
+            {
+                "nin_id": nin_id,
+                "ant_id": ant_id,
+                "clasificacion": prediction.get("clasificacion"),
+                "probabilidad": prediction.get("probabilidad"),
+                "score_riesgo": prediction.get("score_riesgo"),
+                "prob_normal": prediction.get("prob_normal"),
+                "prob_riesgo": prediction.get("prob_riesgo"),
+                "prob_moderado": prediction.get("prob_moderado"),
+                "prob_severo": prediction.get("prob_severo"),
+                "modelo_tipo": "nutritional_predictor",
+                "modelo_version": "1.0",
+                "features_json": str(prediction_features),
+                "explicacion_json": str(prediction.get("probabilidades_por_clase", {})),
+            },
+        )
+
+        db.commit()
+
+        # 5. Retornar predicción con información adicional
         prediction["nin_id"] = nin_id
         prediction["ant_id"] = ant_id
         prediction["meses_proyeccion"] = meses_proyeccion
-        prediction["features_usados"] = prediction_features
+        prediction["pml_id"] = result_insert.lastrowid
+        prediction["guardado"] = True
 
         return prediction
 
@@ -134,6 +171,57 @@ async def generar_prediccion_ml(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error al generar predicción: {str(e)}",
+        )
+
+
+@router.get("/nino/{nin_id}/ultima")
+async def obtener_ultima_prediccion(
+    nin_id: int,
+    db: Session = Depends(get_db),
+    current_user: UserResponse = Depends(get_current_user),
+):
+    """
+    Obtener la última predicción ML de un niño.
+    """
+    try:
+        result = db.execute(
+            text("""
+                SELECT
+                    pml_id, nin_id, ant_id,
+                    pml_clasificacion as clasificacion,
+                    pml_probabilidad as probabilidad,
+                    pml_score_riesgo as score_riesgo,
+                    pml_prob_normal as prob_normal,
+                    pml_prob_riesgo as prob_riesgo,
+                    pml_prob_moderado as prob_moderado,
+                    pml_prob_severo as prob_severo,
+                    pml_features_json as features_json,
+                    pml_explicacion_json as explicacion_json,
+                    creado_en
+                FROM predicciones_ml
+                WHERE nin_id = :nin_id
+                ORDER BY creado_en DESC
+                LIMIT 1
+            """),
+            {"nin_id": nin_id},
+        )
+
+        row = result.fetchone()
+        if not row:
+            return {"success": False, "message": "No hay predicciones previas"}
+
+        columns = result.keys()
+        prediccion = dict(zip(columns, row))
+
+        return prediccion
+
+    except Exception as e:
+        import logging
+
+        logging.error(f"Error obteniendo última predicción: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error al obtener predicción: {str(e)}",
         )
 
 

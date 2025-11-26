@@ -147,6 +147,40 @@ def obtener_sintomas_por_nino(
         )
 
 
+@router.delete("/{sin_id}", status_code=status.HTTP_204_NO_CONTENT)
+def eliminar_sintoma(
+    sin_id: int,
+    db: Session = Depends(get_db),
+    current_user: UserResponse = Depends(get_current_user),
+):
+    """
+    Eliminar un registro de síntoma.
+    """
+    try:
+        result = db.execute(
+            text("DELETE FROM sintomas WHERE sin_id = :sin_id"),
+            {"sin_id": sin_id},
+        )
+
+        if result.rowcount == 0:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Registro de síntoma no encontrado",
+            )
+
+        db.commit()
+        return None
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error al eliminar síntoma: {str(e)}",
+        )
+
+
 @router.get("/nino/{nin_id}/frecuencia", response_model=SintomaFrecuenciaResponse)
 def calcular_frecuencia_sintomas(
     nin_id: int,

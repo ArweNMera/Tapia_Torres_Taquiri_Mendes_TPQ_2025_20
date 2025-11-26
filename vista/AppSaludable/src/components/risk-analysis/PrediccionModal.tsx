@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, TrendingUp, AlertTriangle, Brain, Calendar } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
@@ -31,12 +31,37 @@ interface Prediccion {
   prob_severo: number;
   probabilidades_por_clase?: Record<string, number>;
   features_importantes?: Array<[string, number]>;
+  creado_en?: string;
+  pml_id?: number;
+  guardado?: boolean;
 }
 
 export function PrediccionModal({ open, onClose, child }: PrediccionModalProps) {
   const [mesesProyeccion, setMesesProyeccion] = useState(1);
   const [prediccion, setPrediccion] = useState<Prediccion | null>(null);
   const [loading, setLoading] = useState(false);
+  const [loadingUltima, setLoadingUltima] = useState(false);
+
+  // Cargar última predicción al abrir el modal
+  useEffect(() => {
+    if (open) {
+      cargarUltimaPrediccion();
+    }
+  }, [open]);
+
+  const cargarUltimaPrediccion = async () => {
+    try {
+      setLoadingUltima(true);
+      const response = await apiService.obtenerUltimaPrediccion(child.nin_id);
+      if (response.success && response.data) {
+        setPrediccion(response.data);
+      }
+    } catch (error) {
+      console.log('No hay predicciones previas');
+    } finally {
+      setLoadingUltima(false);
+    }
+  };
 
   const handleGenerarPrediccion = async () => {
     try {
@@ -270,15 +295,25 @@ export function PrediccionModal({ open, onClose, child }: PrediccionModalProps) 
         </div>
 
         {/* Acciones */}
-        <div className="flex justify-end space-x-3 pt-4 border-t">
-          <Button variant="outline" onClick={onClose}>
-            Cerrar
-          </Button>
-          {prediccion && (
-            <Button onClick={() => window.print()}>
-              Imprimir Reporte
+        <div className="flex justify-between items-center pt-4 border-t">
+          <div className="text-sm text-muted-foreground">
+            {loadingUltima && "Cargando última predicción..."}
+            {prediccion && !loading && (
+              <span>
+                Última predicción: {new Date(prediccion.creado_en || Date.now()).toLocaleDateString()}
+              </span>
+            )}
+          </div>
+          <div className="flex space-x-3">
+            <Button variant="outline" onClick={onClose}>
+              Cerrar
             </Button>
-          )}
+            {prediccion && (
+              <Button onClick={() => window.print()}>
+                Imprimir Reporte
+              </Button>
+            )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>

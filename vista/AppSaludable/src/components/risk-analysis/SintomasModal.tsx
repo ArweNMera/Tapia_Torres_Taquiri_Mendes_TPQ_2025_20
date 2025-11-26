@@ -27,11 +27,12 @@ type Severidad = 'LEVE' | 'MODERADO' | 'SEVERO';
 
 interface SintomaHistorial {
   sin_id: number;
-  sin_fecha: string;
-  sin_tipo: string;
-  sin_severidad: string;
-  sin_duracion_dias: number;
-  sin_relacionado_menu: boolean;
+  fecha: string;
+  tipo: string;
+  severidad: string;
+  duracion_dias: number;
+  relacionado_menu: boolean;
+  notas?: string;
 }
 
 export function SintomasModal({ open, onClose, child }: SintomasModalProps) {
@@ -45,6 +46,7 @@ export function SintomasModal({ open, onClose, child }: SintomasModalProps) {
   const [historial, setHistorial] = useState<SintomaHistorial[]>([]);
   const [loadingHistorial, setLoadingHistorial] = useState(false);
   const [mostrarHistorial, setMostrarHistorial] = useState(false);
+  const [editandoId, setEditandoId] = useState<number | null>(null);
 
   useEffect(() => {
     if (open && mostrarHistorial) {
@@ -63,6 +65,38 @@ export function SintomasModal({ open, onClose, child }: SintomasModalProps) {
       console.error('Error cargando historial:', error);
     } finally {
       setLoadingHistorial(false);
+    }
+  };
+
+  const limpiarFormulario = () => {
+    setFecha(new Date().toISOString().split('T')[0]);
+    setTipo('');
+    setSeveridad('LEVE');
+    setDuracionDias(1);
+    setRelacionadoMenu(false);
+    setNotas('');
+    setEditandoId(null);
+  };
+
+  const handleEliminar = async (sinId: number) => {
+    if (!confirm('¿Estás seguro de eliminar este síntoma?')) return;
+
+    try {
+      setLoading(true);
+      const response = await apiService.eliminarSintoma(sinId);
+
+      if (!response.success) {
+        throw new Error(response.error || 'Error al eliminar síntoma');
+      }
+
+      toast.success('Síntoma eliminado exitosamente');
+      cargarHistorial();
+      limpiarFormulario();
+    } catch (error: any) {
+      console.error('Error eliminando síntoma:', error);
+      toast.error(error.response?.data?.detail || 'Error al eliminar síntoma');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -102,15 +136,9 @@ export function SintomasModal({ open, onClose, child }: SintomasModalProps) {
         throw new Error(response.error || 'Error al registrar síntoma');
       }
 
-      toast.success('Síntoma registrado exitosamente');
+      toast.success(editandoId ? 'Síntoma actualizado exitosamente' : 'Síntoma registrado exitosamente');
 
-      // Reset form
-      setFecha(new Date().toISOString().split('T')[0]);
-      setTipo('');
-      setSeveridad('LEVE');
-      setDuracionDias(1);
-      setRelacionadoMenu(false);
-      setNotas('');
+      limpiarFormulario();
 
       // Recargar historial si está visible
       if (mostrarHistorial) {
@@ -168,18 +196,43 @@ export function SintomasModal({ open, onClose, child }: SintomasModalProps) {
               ) : (
                 <div className="space-y-2 max-h-48 overflow-y-auto">
                   {historial.slice(0, 10).map((sin) => (
-                    <div key={sin.sin_id} className="flex items-center justify-between p-2 bg-background rounded border text-sm">
-                      <div className="flex items-center space-x-2">
+                    <div
+                      key={sin.sin_id}
+                      className="flex items-center justify-between p-3 bg-background rounded border text-sm hover:bg-muted/50 transition-colors group"
+                    >
+                      <div
+                        className="flex items-center space-x-2 flex-1 cursor-pointer"
+                        onClick={() => {
+                          // Cargar datos en el formulario para editar
+                          setFecha(sin.fecha);
+                          setTipo(sin.tipo);
+                          setSeveridad(sin.severidad as Severidad);
+                          setDuracionDias(sin.duracion_dias);
+                          setRelacionadoMenu(sin.relacionado_menu);
+                          setNotas(sin.notas || '');
+                          setEditandoId(sin.sin_id);
+                          setMostrarHistorial(false);
+                        }}
+                      >
                         <AlertTriangle size={14} className="text-orange-500" />
-                        <span>{new Date(sin.sin_fecha).toLocaleDateString()}</span>
-                        <span className="font-medium">{sin.sin_tipo}</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Badge className={getSeveridadColor(sin.sin_severidad)}>
-                          {sin.sin_severidad}
+                        <span>{new Date(sin.fecha).toLocaleDateString()}</span>
+                        <span className="font-medium">{sin.tipo}</span>
+                        <Badge className={getSeveridadColor(sin.severidad)}>
+                          {sin.severidad}
                         </Badge>
-                        <span className="text-xs text-muted-foreground">{sin.sin_duracion_dias}d</span>
+                        <span className="text-xs text-muted-foreground">{sin.duracion_dias}d</span>
                       </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEliminar(sin.sin_id);
+                        }}
+                      >
+                        <X size={14} className="text-red-500" />
+                      </Button>
                     </div>
                   ))}
                 </div>
@@ -301,13 +354,22 @@ export function SintomasModal({ open, onClose, child }: SintomasModalProps) {
         </div>
 
         {/* Acciones */}
-        <div className="flex justify-end space-x-3 pt-4 border-t">
-          <Button variant="outline" onClick={onClose} disabled={loading}>
-            Cancelar
-          </Button>
-          <Button onClick={handleSubmit} disabled={loading}>
-            {loading ? 'Guardando...' : 'Guardar Síntoma'}
-          </Button>
+        <div className="flex justify-between items-center pt-4 border-t">
+          <div>
+            {editandoId && (
+              <Button variant="outline" size="sm" onClick={limpiarFormulario}>
+                Cancelar Edición
+              </Button>
+            )}
+          </div>
+          <div className="flex space-x-3">
+            <Button variant="outline" onClick={onClose} disabled={loading}>
+              Cerrar
+            </Button>
+            <Button onClick={handleSubmit} disabled={loading}>
+              {loading ? 'Guardando...' : editandoId ? 'Actualizar' : 'Guardar'}
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

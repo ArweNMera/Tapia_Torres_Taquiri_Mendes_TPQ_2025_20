@@ -640,6 +640,16 @@ class ApiService {
     );
   }
 
+  // Eliminar adherencia
+  async eliminarAdherencia(adhId: number): Promise<ApiResponse<any>> {
+    return this.makeRequest<any>(
+      this.getApiUrl(`/adherencia/${adhId}`),
+      {
+        method: 'DELETE',
+      }
+    );
+  }
+
   // Obtener historial de síntomas
   async obtenerSintomasPorNino(ninId: number): Promise<ApiResponse<any>> {
     return this.makeRequest<any>(
@@ -650,12 +660,32 @@ class ApiService {
     );
   }
 
+  // Eliminar síntoma
+  async eliminarSintoma(sinId: number): Promise<ApiResponse<any>> {
+    return this.makeRequest<any>(
+      this.getApiUrl(`/sintomas/${sinId}`),
+      {
+        method: 'DELETE',
+      }
+    );
+  }
+
   // Predicciones
   async generarPrediccion(ninId: number, mesesProyeccion: number): Promise<ApiResponse<any>> {
     return this.makeRequest<any>(
       this.getApiUrl(`/predicciones/generar/${ninId}?meses_proyeccion=${mesesProyeccion}`),
       {
         method: 'POST',
+      }
+    );
+  }
+
+  // Obtener última predicción
+  async obtenerUltimaPrediccion(ninId: number): Promise<ApiResponse<any>> {
+    return this.makeRequest<any>(
+      this.getApiUrl(`/predicciones/nino/${ninId}/ultima`),
+      {
+        method: 'GET',
       }
     );
   }
