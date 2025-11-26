@@ -1,11 +1,12 @@
-import { useState } from 'react';
-import { X, Calendar, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { X, Calendar, CheckCircle, AlertCircle, XCircle, History } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Slider } from '../ui/slider';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
+import { Badge } from '../ui/badge';
 import { toast } from 'sonner';
 import { apiService } from '../../services/api';
 
@@ -24,6 +25,14 @@ interface AdherenciaModalProps {
 type Estado = 'OK' | 'PARCIAL' | 'NO';
 type Dificultad = 'NINGUNA' | 'BAJA' | 'MEDIA' | 'ALTA';
 
+interface AdherenciaHistorial {
+  adh_id: number;
+  adh_registrado_en: string;
+  adh_estado: string;
+  adh_porcentaje: number;
+  adh_dificultad: string;
+}
+
 export function AdherenciaModal({ open, onClose, child }: AdherenciaModalProps) {
   const [fecha, setFecha] = useState(new Date().toISOString().split('T')[0]);
   const [estado, setEstado] = useState<Estado>('OK');
@@ -31,6 +40,29 @@ export function AdherenciaModal({ open, onClose, child }: AdherenciaModalProps) 
   const [dificultad, setDificultad] = useState<Dificultad>('NINGUNA');
   const [comentario, setComentario] = useState('');
   const [loading, setLoading] = useState(false);
+  const [historial, setHistorial] = useState<AdherenciaHistorial[]>([]);
+  const [loadingHistorial, setLoadingHistorial] = useState(false);
+  const [mostrarHistorial, setMostrarHistorial] = useState(false);
+
+  useEffect(() => {
+    if (open && mostrarHistorial) {
+      cargarHistorial();
+    }
+  }, [open, mostrarHistorial]);
+
+  const cargarHistorial = async () => {
+    try {
+      setLoadingHistorial(true);
+      const response = await apiService.obtenerAdherenciaPorNino(child.nin_id);
+      if (response.success && response.data) {
+        setHistorial(response.data.registros || []);
+      }
+    } catch (error) {
+      console.error('Error cargando historial:', error);
+    } finally {
+      setLoadingHistorial(false);
+    }
+  };
 
   const handleSubmit = async () => {
     try {
@@ -52,7 +84,6 @@ export function AdherenciaModal({ open, onClose, child }: AdherenciaModalProps) 
       }
 
       toast.success('Adherencia registrada exitosamente');
-      onClose();
 
       // Reset form
       setFecha(new Date().toISOString().split('T')[0]);
@@ -60,6 +91,11 @@ export function AdherenciaModal({ open, onClose, child }: AdherenciaModalProps) 
       setPorcentaje([75]);
       setDificultad('NINGUNA');
       setComentario('');
+
+      // Recargar historial si está visible
+      if (mostrarHistorial) {
+        cargarHistorial();
+      }
 
     } catch (error: any) {
       console.error('Error registrando adherencia:', error);
@@ -69,19 +105,64 @@ export function AdherenciaModal({ open, onClose, child }: AdherenciaModalProps) 
     }
   };
 
+  const getEstadoIcon = (estado: string) => {
+    if (estado === 'OK') return <CheckCircle className="text-green-500" size={16} />;
+    if (estado === 'PARCIAL') return <AlertCircle className="text-yellow-500" size={16} />;
+    return <XCircle className="text-red-500" size={16} />;
+  };
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
             <span>Registrar Adherencia - {child.nin_nombres}</span>
-            <Button variant="ghost" size="icon" onClick={onClose}>
-              <X size={20} />
-            </Button>
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setMostrarHistorial(!mostrarHistorial)}
+              >
+                <History size={16} className="mr-2" />
+                {mostrarHistorial ? 'Ocultar' : 'Ver'} Historial
+              </Button>
+              <Button variant="ghost" size="icon" onClick={onClose}>
+                <X size={20} />
+              </Button>
+            </div>
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
+          {/* Historial */}
+          {mostrarHistorial && (
+            <div className="border rounded-lg p-4 bg-muted/30">
+              <h3 className="font-medium mb-3 flex items-center space-x-2">
+                <History size={16} />
+                <span>Historial de Adherencia</span>
+              </h3>
+              {loadingHistorial ? (
+                <p className="text-sm text-muted-foreground">Cargando...</p>
+              ) : historial.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No hay registros previos</p>
+              ) : (
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {historial.slice(0, 10).map((reg) => (
+                    <div key={reg.adh_id} className="flex items-center justify-between p-2 bg-background rounded border text-sm">
+                      <div className="flex items-center space-x-2">
+                        {getEstadoIcon(reg.adh_estado)}
+                        <span>{new Date(reg.adh_registrado_en).toLocaleDateString()}</span>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <span className="font-medium">{reg.adh_porcentaje}%</span>
+                        <Badge variant="outline" className="text-xs">{reg.adh_dificultad}</Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
           {/* Fecha */}
           <div className="space-y-2">
             <Label htmlFor="fecha" className="flex items-center space-x-2">

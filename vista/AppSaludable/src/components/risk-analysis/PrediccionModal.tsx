@@ -100,7 +100,7 @@ export function PrediccionModal({ open, onClose, child }: PrediccionModalProps) 
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" style={{ maxWidth: '70vw', width: '850px' }}>
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
             <span className="flex items-center space-x-2">
@@ -159,7 +159,7 @@ export function PrediccionModal({ open, onClose, child }: PrediccionModalProps) 
           {prediccion && (
             <div className="space-y-6 pt-4 border-t">
               {/* Clasificación principal */}
-              <div className="bg-muted/50 rounded-lg p-6 space-y-4">
+              <div style={{ backgroundColor: 'rgba(0,0,0,0.05)', borderRadius: '8px', padding: '24px' }} className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-muted-foreground mb-2">Clasificación Predicha</p>
@@ -194,7 +194,7 @@ export function PrediccionModal({ open, onClose, child }: PrediccionModalProps) 
               {/* Gráfico de probabilidades */}
               <div className="space-y-3">
                 <Label>Distribución de Probabilidades</Label>
-                <div className="h-64 bg-muted/30 rounded-lg p-4">
+                <div style={{ height: '300px', backgroundColor: 'rgba(0,0,0,0.03)', borderRadius: '8px', padding: '16px' }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={chartData}>
                       <CartesianGrid strokeDasharray="3 3" />
@@ -236,7 +236,7 @@ export function PrediccionModal({ open, onClose, child }: PrediccionModalProps) 
               )}
 
               {/* Recomendaciones */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div style={{ backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '16px' }}>
                 <h4 className="font-medium mb-2 flex items-center space-x-2">
                   <AlertTriangle className="text-blue-600" size={16} />
                   <span>Recomendaciones</span>

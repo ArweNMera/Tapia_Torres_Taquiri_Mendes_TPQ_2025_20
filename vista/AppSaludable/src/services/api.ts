@@ -630,6 +630,26 @@ class ApiService {
     );
   }
 
+  // Obtener historial de adherencia
+  async obtenerAdherenciaPorNino(ninId: number): Promise<ApiResponse<any>> {
+    return this.makeRequest<any>(
+      this.getApiUrl(`/adherencia/nino/${ninId}`),
+      {
+        method: 'GET',
+      }
+    );
+  }
+
+  // Obtener historial de síntomas
+  async obtenerSintomasPorNino(ninId: number): Promise<ApiResponse<any>> {
+    return this.makeRequest<any>(
+      this.getApiUrl(`/sintomas/nino/${ninId}`),
+      {
+        method: 'GET',
+      }
+    );
+  }
+
   // Predicciones
   async generarPrediccion(ninId: number, mesesProyeccion: number): Promise<ApiResponse<any>> {
     return this.makeRequest<any>(

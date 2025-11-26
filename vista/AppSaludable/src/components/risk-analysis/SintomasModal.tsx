@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { X, Calendar, AlertTriangle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { X, Calendar, AlertTriangle, History } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Label } from '../ui/label';
@@ -7,6 +7,7 @@ import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import { Checkbox } from '../ui/checkbox';
+import { Badge } from '../ui/badge';
 import { toast } from 'sonner';
 import { apiService } from '../../services/api';
 
@@ -24,6 +25,15 @@ interface SintomasModalProps {
 
 type Severidad = 'LEVE' | 'MODERADO' | 'SEVERO';
 
+interface SintomaHistorial {
+  sin_id: number;
+  sin_fecha: string;
+  sin_tipo: string;
+  sin_severidad: string;
+  sin_duracion_dias: number;
+  sin_relacionado_menu: boolean;
+}
+
 export function SintomasModal({ open, onClose, child }: SintomasModalProps) {
   const [fecha, setFecha] = useState(new Date().toISOString().split('T')[0]);
   const [tipo, setTipo] = useState('');
@@ -32,6 +42,29 @@ export function SintomasModal({ open, onClose, child }: SintomasModalProps) {
   const [relacionadoMenu, setRelacionadoMenu] = useState(false);
   const [notas, setNotas] = useState('');
   const [loading, setLoading] = useState(false);
+  const [historial, setHistorial] = useState<SintomaHistorial[]>([]);
+  const [loadingHistorial, setLoadingHistorial] = useState(false);
+  const [mostrarHistorial, setMostrarHistorial] = useState(false);
+
+  useEffect(() => {
+    if (open && mostrarHistorial) {
+      cargarHistorial();
+    }
+  }, [open, mostrarHistorial]);
+
+  const cargarHistorial = async () => {
+    try {
+      setLoadingHistorial(true);
+      const response = await apiService.obtenerSintomasPorNino(child.nin_id);
+      if (response.success && response.data) {
+        setHistorial(response.data);
+      }
+    } catch (error) {
+      console.error('Error cargando historial:', error);
+    } finally {
+      setLoadingHistorial(false);
+    }
+  };
 
   const sintomasComunes = [
     'Dolor abdominal',
@@ -70,7 +103,6 @@ export function SintomasModal({ open, onClose, child }: SintomasModalProps) {
       }
 
       toast.success('Síntoma registrado exitosamente');
-      onClose();
 
       // Reset form
       setFecha(new Date().toISOString().split('T')[0]);
@@ -80,6 +112,11 @@ export function SintomasModal({ open, onClose, child }: SintomasModalProps) {
       setRelacionadoMenu(false);
       setNotas('');
 
+      // Recargar historial si está visible
+      if (mostrarHistorial) {
+        cargarHistorial();
+      }
+
     } catch (error: any) {
       console.error('Error registrando síntoma:', error);
       toast.error(error.response?.data?.detail || 'Error al registrar síntoma');
@@ -88,19 +125,67 @@ export function SintomasModal({ open, onClose, child }: SintomasModalProps) {
     }
   };
 
+  const getSeveridadColor = (severidad: string) => {
+    if (severidad === 'LEVE') return 'bg-yellow-100 text-yellow-800';
+    if (severidad === 'MODERADO') return 'bg-orange-100 text-orange-800';
+    return 'bg-red-100 text-red-800';
+  };
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
             <span>Registrar Síntoma - {child.nin_nombres}</span>
-            <Button variant="ghost" size="icon" onClick={onClose}>
-              <X size={20} />
-            </Button>
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setMostrarHistorial(!mostrarHistorial)}
+              >
+                <History size={16} className="mr-2" />
+                {mostrarHistorial ? 'Ocultar' : 'Ver'} Historial
+              </Button>
+              <Button variant="ghost" size="icon" onClick={onClose}>
+                <X size={20} />
+              </Button>
+            </div>
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
+          {/* Historial */}
+          {mostrarHistorial && (
+            <div className="border rounded-lg p-4 bg-muted/30">
+              <h3 className="font-medium mb-3 flex items-center space-x-2">
+                <History size={16} />
+                <span>Historial de Síntomas</span>
+              </h3>
+              {loadingHistorial ? (
+                <p className="text-sm text-muted-foreground">Cargando...</p>
+              ) : historial.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No hay registros previos</p>
+              ) : (
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {historial.slice(0, 10).map((sin) => (
+                    <div key={sin.sin_id} className="flex items-center justify-between p-2 bg-background rounded border text-sm">
+                      <div className="flex items-center space-x-2">
+                        <AlertTriangle size={14} className="text-orange-500" />
+                        <span>{new Date(sin.sin_fecha).toLocaleDateString()}</span>
+                        <span className="font-medium">{sin.sin_tipo}</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Badge className={getSeveridadColor(sin.sin_severidad)}>
+                          {sin.sin_severidad}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">{sin.sin_duracion_dias}d</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
           {/* Fecha */}
           <div className="space-y-2">
             <Label htmlFor="fecha" className="flex items-center space-x-2">

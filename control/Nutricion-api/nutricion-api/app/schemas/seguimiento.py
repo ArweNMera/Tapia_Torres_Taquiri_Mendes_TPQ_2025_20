@@ -84,17 +84,19 @@ class AdherenciaResponse(BaseModel):
     nin_id: int
     men_id: int | None = None
     mei_id: int | None = None
-    adh_registrado_en: datetime | None = None
-    adh_estado: str
-    adh_porcentaje: float | None = None
-    adh_dificultad: str | None = None
-    adh_comentario_tutor: str | None = None
-    adh_notas: str | None = None
+    fecha: datetime | None = None  # Alias del procedimiento
+    estado: str | None = None  # Alias del procedimiento
+    porcentaje: float | None = None  # Alias del procedimiento
+    dificultad: str | None = None  # Alias del procedimiento
+    comentario: str | None = None  # Alias del procedimiento
     # Información del menú asociado
     men_inicio: date | None = None
     men_fin: date | None = None
     mei_comida: str | None = None
     mei_kcal: float | None = None
+    # Estadísticas (vienen en cada fila del procedimiento)
+    adherencia_promedio: float | None = None
+    dias_dificultad_alta: int | None = None
 
     class Config:
         from_attributes = True
@@ -139,12 +141,13 @@ class SintomaResponse(BaseModel):
 
     sin_id: int
     nin_id: int
-    sin_fecha: date
-    sin_tipo: str
-    sin_severidad: str
-    sin_duracion_dias: int
-    sin_relacionado_menu: bool
-    sin_notas: str | None
+    fecha: date  # Alias del procedimiento
+    tipo: str  # Alias del procedimiento
+    severidad: str  # Alias del procedimiento
+    grado: int | None = None  # Campo adicional del procedimiento
+    duracion_dias: int  # Alias del procedimiento
+    relacionado_menu: bool  # Alias del procedimiento
+    notas: str | None = None  # Alias del procedimiento
     creado_en: datetime
 
     class Config:

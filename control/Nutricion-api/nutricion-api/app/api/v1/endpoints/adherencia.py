@@ -133,7 +133,6 @@ def obtener_adherencia_por_nino(
             {"p_nin_id": nin_id, "p_fecha_inicio": fecha_inicio, "p_fecha_fin": fecha_fin},
         )
 
-        # Obtener todos los registros
         rows = result.fetchall()
         columns = result.keys()
 
@@ -145,12 +144,11 @@ def obtener_adherencia_por_nino(
             row_dict = dict(zip(columns, row))
 
             # Extraer estadísticas (vienen en cada fila)
-            if "adherencia_promedio" in row_dict:
-                adherencia_promedio = float(row_dict.get("adherencia_promedio") or 0)
-            if "dias_con_dificultad_alta" in row_dict:
-                dias_con_dificultad_alta = int(row_dict.get("dias_con_dificultad_alta") or 0)
+            if "adherencia_promedio" in row_dict and row_dict["adherencia_promedio"]:
+                adherencia_promedio = float(row_dict["adherencia_promedio"])
+            if "dias_dificultad_alta" in row_dict and row_dict["dias_dificultad_alta"]:
+                dias_con_dificultad_alta = int(row_dict["dias_dificultad_alta"])
 
-            # Crear objeto de adherencia
             registros.append(AdherenciaResponse(**row_dict))
 
         db.commit()

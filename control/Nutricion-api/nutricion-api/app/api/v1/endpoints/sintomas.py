@@ -128,7 +128,6 @@ def obtener_sintomas_por_nino(
             },
         )
 
-        # Obtener todos los registros
         rows = result.fetchall()
         columns = result.keys()
 
