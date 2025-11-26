@@ -35,8 +35,7 @@ services:
     networks:
       - app-network
     depends_on:
-      modelo-ml:
-        condition: service_healthy
+      - modelo-ml
     restart: always
     # Límites de recursos (producción)
     deploy:
@@ -54,44 +53,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-    # Logging
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "5"
-
-  # Frontend - React + Vite (Nginx)
-  frontend:
-    build:
-      context: ./vista/AppSaludable
-      dockerfile: Dockerfile
-      target: production  # Usa stage de producción (nginx)
-    container_name: nutricion-frontend-prod
-    ports:
-      - "5175:5175"
-    networks:
-      - app-network
-    depends_on:
-      backend:
-        condition: service_healthy
-    restart: always
-    # Límites de recursos (producción - Vite necesita más memoria)
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 1G
-        reservations:
-          cpus: '0.25'
-          memory: 512M
-    # Health check
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5175"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
     # Logging
     logging:
       driver: "json-file"
