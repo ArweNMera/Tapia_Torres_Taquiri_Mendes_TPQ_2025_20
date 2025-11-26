@@ -642,12 +642,29 @@ class ApiService {
 
   // Eliminar adherencia
   async eliminarAdherencia(adhId: number): Promise<ApiResponse<any>> {
-    return this.makeRequest<any>(
-      this.getApiUrl(`/adherencia/${adhId}`),
-      {
+    try {
+      const token = localStorage.getItem(this.tokenKey);
+      const response = await fetch(this.getApiUrl(`/adherencia/${adhId}`), {
         method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+      });
+
+      if (response.status === 204) {
+        return { success: true, data: null };
       }
-    );
+
+      if (!response.ok) {
+        const error = await response.json();
+        return { success: false, error: error.detail || 'Error al eliminar' };
+      }
+
+      return { success: true, data: null };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
   }
 
   // Obtener historial de síntomas
@@ -662,12 +679,29 @@ class ApiService {
 
   // Eliminar síntoma
   async eliminarSintoma(sinId: number): Promise<ApiResponse<any>> {
-    return this.makeRequest<any>(
-      this.getApiUrl(`/sintomas/${sinId}`),
-      {
+    try {
+      const token = localStorage.getItem(this.tokenKey);
+      const response = await fetch(this.getApiUrl(`/sintomas/${sinId}`), {
         method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+      });
+
+      if (response.status === 204) {
+        return { success: true, data: null };
       }
-    );
+
+      if (!response.ok) {
+        const error = await response.json();
+        return { success: false, error: error.detail || 'Error al eliminar' };
+      }
+
+      return { success: true, data: null };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
   }
 
   // Predicciones

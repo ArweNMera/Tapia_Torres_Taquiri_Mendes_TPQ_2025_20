@@ -27,10 +27,10 @@ type Dificultad = 'NINGUNA' | 'BAJA' | 'MEDIA' | 'ALTA';
 
 interface AdherenciaHistorial {
   adh_id: number;
-  fecha: string;
-  estado: string;
-  porcentaje: number;
-  dificultad: string;
+  fecha?: string;
+  estado?: string;
+  porcentaje?: number;
+  dificultad?: string;
   comentario?: string;
   men_inicio?: string;
   men_fin?: string;
@@ -135,7 +135,8 @@ export function AdherenciaModal({ open, onClose, child }: AdherenciaModalProps) 
     }
   };
 
-  const getEstadoIcon = (estado: string) => {
+  const getEstadoIcon = (estado: string | undefined) => {
+    if (!estado) return <AlertCircle className="text-gray-500" size={16} />;
     if (estado === 'OK') return <CheckCircle className="text-green-500" size={16} />;
     if (estado === 'PARCIAL') return <AlertCircle className="text-yellow-500" size={16} />;
     return <XCircle className="text-red-500" size={16} />;
@@ -186,19 +187,19 @@ export function AdherenciaModal({ open, onClose, child }: AdherenciaModalProps) 
                         className="flex items-center space-x-2 flex-1 cursor-pointer"
                         onClick={() => {
                           // Cargar datos en el formulario para editar
-                          setFecha(reg.fecha.split('T')[0]);
-                          setEstado(reg.estado as Estado);
-                          setPorcentaje([reg.porcentaje]);
-                          setDificultad(reg.dificultad as Dificultad);
+                          if (reg.fecha) setFecha(reg.fecha.split('T')[0]);
+                          if (reg.estado) setEstado(reg.estado as Estado);
+                          if (reg.porcentaje) setPorcentaje([reg.porcentaje]);
+                          if (reg.dificultad) setDificultad(reg.dificultad as Dificultad);
                           setComentario(reg.comentario || '');
                           setEditandoId(reg.adh_id);
                           setMostrarHistorial(false);
                         }}
                       >
                         {getEstadoIcon(reg.estado)}
-                        <span>{new Date(reg.fecha).toLocaleDateString()}</span>
-                        <span className="font-medium">{reg.porcentaje}%</span>
-                        <Badge variant="outline" className="text-xs">{reg.dificultad}</Badge>
+                        <span>{reg.fecha ? new Date(reg.fecha).toLocaleDateString() : 'Sin fecha'}</span>
+                        <span className="font-medium">{reg.porcentaje ?? 0}%</span>
+                        <Badge variant="outline" className="text-xs">{reg.dificultad || 'N/A'}</Badge>
                       </div>
                       <Button
                         variant="ghost"

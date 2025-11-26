@@ -22,13 +22,13 @@ interface PrediccionModalProps {
 }
 
 interface Prediccion {
-  clasificacion: string;
-  probabilidad: number;
-  score_riesgo: number;
-  prob_normal: number;
-  prob_riesgo: number;
-  prob_moderado: number;
-  prob_severo: number;
+  clasificacion?: string;
+  probabilidad?: number;
+  score_riesgo?: number;
+  prob_normal?: number;
+  prob_riesgo?: number;
+  prob_moderado?: number;
+  prob_severo?: number;
   probabilidades_por_clase?: Record<string, number>;
   features_importantes?: Array<[string, number]>;
   creado_en?: string;
@@ -84,7 +84,8 @@ export function PrediccionModal({ open, onClose, child }: PrediccionModalProps) 
     }
   };
 
-  const getClasificacionColor = (clasificacion: string) => {
+  const getClasificacionColor = (clasificacion: string | undefined) => {
+    if (!clasificacion || typeof clasificacion !== 'string') return 'bg-gray-500';
     const lower = clasificacion.toLowerCase();
     if (lower.includes('severa') || lower.includes('obesidad')) return 'bg-red-500';
     if (lower.includes('moderada') || lower.includes('sobrepeso')) return 'bg-orange-500';
@@ -99,6 +100,7 @@ export function PrediccionModal({ open, onClose, child }: PrediccionModalProps) 
   };
 
   const formatFeatureName = (name: string) => {
+    if (!name || typeof name !== 'string') return 'N/A';
     const mapping: Record<string, string> = {
       'age_months': 'Edad (meses)',
       'sex_numeric': 'Sexo',
@@ -117,10 +119,10 @@ export function PrediccionModal({ open, onClose, child }: PrediccionModalProps) 
 
   // Preparar datos para gráfico
   const chartData = prediccion ? [
-    { name: 'Normal', value: prediccion.prob_normal * 100, color: '#22c55e' },
-    { name: 'Riesgo', value: prediccion.prob_riesgo * 100, color: '#eab308' },
-    { name: 'Moderado', value: prediccion.prob_moderado * 100, color: '#f97316' },
-    { name: 'Severo', value: prediccion.prob_severo * 100, color: '#ef4444' }
+    { name: 'Normal', value: (prediccion.prob_normal ?? 0) * 100, color: '#22c55e' },
+    { name: 'Riesgo', value: (prediccion.prob_riesgo ?? 0) * 100, color: '#eab308' },
+    { name: 'Moderado', value: (prediccion.prob_moderado ?? 0) * 100, color: '#f97316' },
+    { name: 'Severo', value: (prediccion.prob_severo ?? 0) * 100, color: '#ef4444' }
   ] : [];
 
   return (
@@ -189,12 +191,14 @@ export function PrediccionModal({ open, onClose, child }: PrediccionModalProps) 
                   <div>
                     <p className="text-sm text-muted-foreground mb-2">Clasificación Predicha</p>
                     <Badge className={`${getClasificacionColor(prediccion.clasificacion)} text-white text-lg px-4 py-2`}>
-                      {prediccion.clasificacion.replace(/_/g, ' ')}
+                      {prediccion.clasificacion && typeof prediccion.clasificacion === 'string'
+                        ? prediccion.clasificacion.replace(/_/g, ' ').toUpperCase()
+                        : 'N/A'}
                     </Badge>
                   </div>
                   <div className="text-right">
                     <p className="text-sm text-muted-foreground mb-2">Confianza</p>
-                    <p className="text-3xl font-bold">{(prediccion.probabilidad * 100).toFixed(1)}%</p>
+                    <p className="text-3xl font-bold">{((prediccion.probabilidad ?? 0) * 100).toFixed(1)}%</p>
                   </div>
                 </div>
 
@@ -205,13 +209,13 @@ export function PrediccionModal({ open, onClose, child }: PrediccionModalProps) 
                       <AlertTriangle size={16} />
                       <span>Score de Riesgo</span>
                     </Label>
-                    <Badge className={`${getRiesgoNivel(prediccion.score_riesgo).bgColor} ${getRiesgoNivel(prediccion.score_riesgo).color}`}>
-                      {getRiesgoNivel(prediccion.score_riesgo).nivel}
+                    <Badge className={`${getRiesgoNivel(prediccion.score_riesgo ?? 0).bgColor} ${getRiesgoNivel(prediccion.score_riesgo ?? 0).color}`}>
+                      {getRiesgoNivel(prediccion.score_riesgo ?? 0).nivel}
                     </Badge>
                   </div>
-                  <Progress value={prediccion.score_riesgo * 100} className="h-3" />
+                  <Progress value={(prediccion.score_riesgo ?? 0) * 100} className="h-3" />
                   <p className="text-sm text-muted-foreground mt-1">
-                    {(prediccion.score_riesgo * 100).toFixed(1)}% de probabilidad de riesgo
+                    {((prediccion.score_riesgo ?? 0) * 100).toFixed(1)}% de probabilidad de riesgo
                   </p>
                 </div>
               </div>
@@ -267,21 +271,21 @@ export function PrediccionModal({ open, onClose, child }: PrediccionModalProps) 
                   <span>Recomendaciones</span>
                 </h4>
                 <ul className="text-sm space-y-1 text-blue-900">
-                  {prediccion.score_riesgo > 0.6 && (
+                  {(prediccion.score_riesgo ?? 0) > 0.6 && (
                     <>
                       <li>• Programar consulta con nutricionista</li>
                       <li>• Monitorear adherencia al plan nutricional</li>
                       <li>• Realizar seguimiento antropométrico mensual</li>
                     </>
                   )}
-                  {prediccion.score_riesgo > 0.3 && prediccion.score_riesgo <= 0.6 && (
+                  {(prediccion.score_riesgo ?? 0) > 0.3 && (prediccion.score_riesgo ?? 0) <= 0.6 && (
                     <>
                       <li>• Reforzar adherencia al plan nutricional</li>
                       <li>• Seguimiento antropométrico cada 2 meses</li>
                       <li>• Evaluar posibles ajustes al plan</li>
                     </>
                   )}
-                  {prediccion.score_riesgo <= 0.3 && (
+                  {(prediccion.score_riesgo ?? 0) <= 0.3 && (
                     <>
                       <li>• Mantener plan nutricional actual</li>
                       <li>• Seguimiento antropométrico trimestral</li>

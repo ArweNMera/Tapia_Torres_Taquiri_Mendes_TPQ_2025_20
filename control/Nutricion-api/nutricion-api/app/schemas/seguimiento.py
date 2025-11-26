@@ -141,13 +141,21 @@ class SintomaResponse(BaseModel):
 
     sin_id: int
     nin_id: int
-    fecha: date  # Alias del procedimiento
-    tipo: str  # Alias del procedimiento
-    severidad: str  # Alias del procedimiento
-    grado: int | None = None  # Campo adicional del procedimiento
-    duracion_dias: int  # Alias del procedimiento
-    relacionado_menu: bool  # Alias del procedimiento
-    notas: str | None = None  # Alias del procedimiento
+    # Aceptar ambos nombres (tabla y alias)
+    sin_fecha: date | None = None
+    fecha: date | None = None
+    sin_tipo: str | None = None
+    tipo: str | None = None
+    sin_severidad: str | None = None
+    severidad: str | None = None
+    sin_grado: int | None = None
+    grado: int | None = None
+    sin_duracion_dias: int | None = None
+    duracion_dias: int | None = None
+    sin_relacionado_menu: bool | None = None
+    relacionado_menu: bool | None = None
+    sin_notas: str | None = None
+    notas: str | None = None
     creado_en: datetime
 
     class Config:

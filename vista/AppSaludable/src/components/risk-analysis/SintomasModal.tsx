@@ -27,11 +27,11 @@ type Severidad = 'LEVE' | 'MODERADO' | 'SEVERO';
 
 interface SintomaHistorial {
   sin_id: number;
-  fecha: string;
-  tipo: string;
-  severidad: string;
-  duracion_dias: number;
-  relacionado_menu: boolean;
+  fecha?: string;
+  tipo?: string;
+  severidad?: string;
+  duracion_dias?: number;
+  relacionado_menu?: boolean;
   notas?: string;
 }
 
@@ -153,7 +153,8 @@ export function SintomasModal({ open, onClose, child }: SintomasModalProps) {
     }
   };
 
-  const getSeveridadColor = (severidad: string) => {
+  const getSeveridadColor = (severidad: string | undefined) => {
+    if (!severidad) return 'bg-gray-100 text-gray-800';
     if (severidad === 'LEVE') return 'bg-yellow-100 text-yellow-800';
     if (severidad === 'MODERADO') return 'bg-orange-100 text-orange-800';
     return 'bg-red-100 text-red-800';
@@ -204,23 +205,23 @@ export function SintomasModal({ open, onClose, child }: SintomasModalProps) {
                         className="flex items-center space-x-2 flex-1 cursor-pointer"
                         onClick={() => {
                           // Cargar datos en el formulario para editar
-                          setFecha(sin.fecha);
-                          setTipo(sin.tipo);
-                          setSeveridad(sin.severidad as Severidad);
-                          setDuracionDias(sin.duracion_dias);
-                          setRelacionadoMenu(sin.relacionado_menu);
+                          if (sin.fecha) setFecha(sin.fecha);
+                          if (sin.tipo) setTipo(sin.tipo);
+                          if (sin.severidad) setSeveridad(sin.severidad as Severidad);
+                          if (sin.duracion_dias) setDuracionDias(sin.duracion_dias);
+                          if (sin.relacionado_menu !== undefined) setRelacionadoMenu(sin.relacionado_menu);
                           setNotas(sin.notas || '');
                           setEditandoId(sin.sin_id);
                           setMostrarHistorial(false);
                         }}
                       >
                         <AlertTriangle size={14} className="text-orange-500" />
-                        <span>{new Date(sin.fecha).toLocaleDateString()}</span>
-                        <span className="font-medium">{sin.tipo}</span>
+                        <span>{sin.fecha ? new Date(sin.fecha).toLocaleDateString() : 'Sin fecha'}</span>
+                        <span className="font-medium">{sin.tipo || 'Sin tipo'}</span>
                         <Badge className={getSeveridadColor(sin.severidad)}>
-                          {sin.severidad}
+                          {sin.severidad || 'N/A'}
                         </Badge>
-                        <span className="text-xs text-muted-foreground">{sin.duracion_dias}d</span>
+                        <span className="text-xs text-muted-foreground">{sin.duracion_dias ?? 0}d</span>
                       </div>
                       <Button
                         variant="ghost"
