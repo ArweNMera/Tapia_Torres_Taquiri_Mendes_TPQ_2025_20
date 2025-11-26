@@ -95,10 +95,15 @@ class AdherenciaResponse(BaseModel):
     nin_id: int
     men_id: int | None = None
     mei_id: int | None = None
+    adh_fecha: datetime | None = None
     fecha: datetime | None = None  # Alias del procedimiento
+    adh_estado: str | None = None
     estado: str | None = None  # Alias del procedimiento
+    adh_porcentaje: float | None = None
     porcentaje: float | None = None  # Alias del procedimiento
+    adh_dificultad: str | None = None
     dificultad: str | None = None  # Alias del procedimiento
+    adh_comentario: str | None = None
     comentario: str | None = None  # Alias del procedimiento
     # Información del menú asociado
     men_inicio: date | None = None
@@ -162,21 +167,13 @@ class SintomaResponse(BaseModel):
 
     sin_id: int
     nin_id: int
-    # Aceptar ambos nombres (tabla y alias)
-    sin_fecha: date | None = None
-    fecha: date | None = None
-    sin_tipo: str | None = None
-    tipo: str | None = None
-    sin_severidad: str | None = None
-    severidad: str | None = None
+    sin_fecha: date
+    sin_tipo: str
+    sin_severidad: str
     sin_grado: int | None = None
-    grado: int | None = None
-    sin_duracion_dias: int | None = None
-    duracion_dias: int | None = None
-    sin_relacionado_menu: bool | None = None
-    relacionado_menu: bool | None = None
+    sin_duracion_dias: int
+    sin_relacionado_menu: bool
     sin_notas: str | None = None
-    notas: str | None = None
     creado_en: datetime
 
     class Config:

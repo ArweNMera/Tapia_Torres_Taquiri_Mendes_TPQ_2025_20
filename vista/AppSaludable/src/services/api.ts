@@ -619,12 +619,32 @@ class ApiService {
     );
   }
 
+  async actualizarAdherencia(adhId: number, data: any): Promise<ApiResponse<any>> {
+    return this.makeRequest<any>(
+      this.getApiUrl(`/adherencia/${adhId}`),
+      {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }
+    );
+  }
+
   // Síntomas
   async registrarSintoma(data: any): Promise<ApiResponse<any>> {
     return this.makeRequest<any>(
       this.getApiUrl('/sintomas/registrar'),
       {
         method: 'POST',
+        body: JSON.stringify(data),
+      }
+    );
+  }
+
+  async actualizarSintoma(sinId: number, data: any): Promise<ApiResponse<any>> {
+    return this.makeRequest<any>(
+      this.getApiUrl(`/sintomas/${sinId}`),
+      {
+        method: 'PUT',
         body: JSON.stringify(data),
       }
     );

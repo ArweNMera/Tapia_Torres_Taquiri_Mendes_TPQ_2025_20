@@ -220,13 +220,13 @@ def actualizar_sintoma(
             text("""
                 SELECT
                     sin_id, nin_id,
-                    sin_fecha as fecha,
-                    sin_tipo as tipo,
-                    sin_severidad as severidad,
-                    sin_grado as grado,
-                    sin_duracion_dias as duracion_dias,
-                    sin_relacionado_menu as relacionado_menu,
-                    sin_notas as notas,
+                    sin_fecha,
+                    sin_tipo,
+                    sin_severidad,
+                    sin_grado,
+                    sin_duracion_dias,
+                    sin_relacionado_menu,
+                    sin_notas,
                     creado_en
                 FROM sintomas
                 WHERE sin_id = :sin_id

@@ -231,11 +231,11 @@ def actualizar_adherencia(
             text("""
                 SELECT
                     adh_id, nin_id, men_id, mei_id,
-                    adh_fecha as fecha,
-                    adh_estado as estado,
-                    adh_porcentaje as porcentaje,
-                    adh_dificultad as dificultad,
-                    adh_comentario as comentario
+                    adh_fecha,
+                    adh_estado,
+                    adh_porcentaje,
+                    adh_dificultad,
+                    adh_comentario
                 FROM adherencias
                 WHERE adh_id = :adh_id
             """),
