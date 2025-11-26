@@ -16,6 +16,7 @@ from app.schemas.seguimiento import (
     AdherenciaHistorialResponse,
     AdherenciaPromedioResponse,
     AdherenciaResponse,
+    AdherenciaUpdate,
 )
 
 router = APIRouter()
@@ -164,6 +165,97 @@ def obtener_adherencia_por_nino(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error al obtener adherencia: {str(e)}",
+        )
+
+
+@router.put("/{adh_id}", response_model=AdherenciaResponse)
+def actualizar_adherencia(
+    adh_id: int,
+    adherencia: AdherenciaUpdate,
+    db: Session = Depends(get_db),
+    current_user: UserResponse = Depends(get_current_user),
+):
+    """
+    Actualizar un registro de adherencia existente.
+
+    Permite actualizar:
+    - Estado de cumplimiento
+    - Porcentaje
+    - Dificultad
+    - Comentarios
+    """
+    try:
+        # Verificar que el registro existe
+        check_result = db.execute(
+            text("SELECT adh_id FROM adherencias WHERE adh_id = :adh_id"),
+            {"adh_id": adh_id},
+        )
+        if not check_result.fetchone():
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Registro de adherencia no encontrado",
+            )
+
+        # Construir query dinámico solo con campos proporcionados
+        update_fields = []
+        params = {"adh_id": adh_id}
+
+        if adherencia.estado is not None:
+            update_fields.append("adh_estado = :estado")
+            params["estado"] = adherencia.estado.value
+
+        if adherencia.porcentaje is not None:
+            update_fields.append("adh_porcentaje = :porcentaje")
+            params["porcentaje"] = adherencia.porcentaje
+
+        if adherencia.dificultad is not None:
+            update_fields.append("adh_dificultad = :dificultad")
+            params["dificultad"] = adherencia.dificultad.value
+
+        if adherencia.comentario is not None:
+            update_fields.append("adh_comentario = :comentario")
+            params["comentario"] = adherencia.comentario
+
+        if not update_fields:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No se proporcionaron campos para actualizar",
+            )
+
+        # Ejecutar actualización
+        query = f"UPDATE adherencias SET {', '.join(update_fields)} WHERE adh_id = :adh_id"
+        db.execute(text(query), params)
+
+        # Obtener registro actualizado
+        result = db.execute(
+            text("""
+                SELECT
+                    adh_id, nin_id, men_id, mei_id,
+                    adh_fecha as fecha,
+                    adh_estado as estado,
+                    adh_porcentaje as porcentaje,
+                    adh_dificultad as dificultad,
+                    adh_comentario as comentario
+                FROM adherencias
+                WHERE adh_id = :adh_id
+            """),
+            {"adh_id": adh_id},
+        )
+
+        row = result.fetchone()
+        columns = result.keys()
+        adherencia_dict = dict(zip(columns, row))
+
+        db.commit()
+        return AdherenciaResponse(**adherencia_dict)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error al actualizar adherencia: {str(e)}",
         )
 
 

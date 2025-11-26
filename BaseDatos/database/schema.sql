@@ -496,7 +496,7 @@ CREATE TABLE "predicciones_ml" (
   "nin_id" bigint unsigned NOT NULL,
   "ant_id" bigint unsigned DEFAULT NULL,
   "fml_id" bigint unsigned DEFAULT NULL,
-  "pml_clasificacion" enum('NORMAL','RIESGO','MODERADO','SEVERO') NOT NULL,
+  "pml_clasificacion" enum('DESNUTRICION_SEVERA','DESNUTRICION_MODERADA','RIESGO_DESNUTRICION','NORMAL','RIESGO_SOBREPESO','SOBREPESO','OBESIDAD') NOT NULL COMMENT 'Clasificación nutricional predicha (7 categorías)',
   "pml_probabilidad" decimal(5,4) NOT NULL COMMENT 'Probabilidad de la clase predicha',
   "pml_score_riesgo" decimal(6,4) NOT NULL COMMENT 'Score de riesgo 0-1',
   "pml_prob_normal" decimal(5,4) DEFAULT NULL,

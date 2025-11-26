@@ -15,6 +15,7 @@ from app.schemas.seguimiento import (
     SintomaCreate,
     SintomaFrecuenciaResponse,
     SintomaResponse,
+    SintomaUpdate,
 )
 
 router = APIRouter()
@@ -144,6 +145,109 @@ def obtener_sintomas_por_nino(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error al obtener síntomas: {str(e)}",
+        )
+
+
+@router.put("/{sin_id}", response_model=SintomaResponse)
+def actualizar_sintoma(
+    sin_id: int,
+    sintoma: SintomaUpdate,
+    db: Session = Depends(get_db),
+    current_user: UserResponse = Depends(get_current_user),
+):
+    """
+    Actualizar un registro de síntoma existente.
+
+    Permite actualizar:
+    - Tipo de síntoma
+    - Severidad
+    - Duración en días
+    - Relación con menú
+    - Notas
+    """
+    try:
+        # Verificar que el registro existe
+        check_result = db.execute(
+            text("SELECT sin_id FROM sintomas WHERE sin_id = :sin_id"),
+            {"sin_id": sin_id},
+        )
+        if not check_result.fetchone():
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Registro de síntoma no encontrado",
+            )
+
+        # Construir query dinámico solo con campos proporcionados
+        update_fields = []
+        params = {"sin_id": sin_id}
+
+        if sintoma.tipo is not None:
+            update_fields.append("sin_tipo = :tipo")
+            params["tipo"] = sintoma.tipo
+
+        if sintoma.severidad is not None:
+            update_fields.append("sin_severidad = :severidad")
+            params["severidad"] = sintoma.severidad.value
+            # Actualizar grado según severidad
+            grado_map = {"LEVE": 1, "MODERADO": 2, "SEVERO": 3}
+            update_fields.append("sin_grado = :grado")
+            params["grado"] = grado_map[sintoma.severidad.value]
+
+        if sintoma.duracion_dias is not None:
+            update_fields.append("sin_duracion_dias = :duracion_dias")
+            params["duracion_dias"] = sintoma.duracion_dias
+
+        if sintoma.relacionado_menu is not None:
+            update_fields.append("sin_relacionado_menu = :relacionado_menu")
+            params["relacionado_menu"] = sintoma.relacionado_menu
+
+        if sintoma.notas is not None:
+            update_fields.append("sin_notas = :notas")
+            params["notas"] = sintoma.notas
+
+        if not update_fields:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No se proporcionaron campos para actualizar",
+            )
+
+        # Ejecutar actualización
+        query = f"UPDATE sintomas SET {', '.join(update_fields)} WHERE sin_id = :sin_id"
+        db.execute(text(query), params)
+
+        # Obtener registro actualizado
+        result = db.execute(
+            text("""
+                SELECT
+                    sin_id, nin_id,
+                    sin_fecha as fecha,
+                    sin_tipo as tipo,
+                    sin_severidad as severidad,
+                    sin_grado as grado,
+                    sin_duracion_dias as duracion_dias,
+                    sin_relacionado_menu as relacionado_menu,
+                    sin_notas as notas,
+                    creado_en
+                FROM sintomas
+                WHERE sin_id = :sin_id
+            """),
+            {"sin_id": sin_id},
+        )
+
+        row = result.fetchone()
+        columns = result.keys()
+        sintoma_dict = dict(zip(columns, row))
+
+        db.commit()
+        return SintomaResponse(**sintoma_dict)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error al actualizar síntoma: {str(e)}",
         )
 
 

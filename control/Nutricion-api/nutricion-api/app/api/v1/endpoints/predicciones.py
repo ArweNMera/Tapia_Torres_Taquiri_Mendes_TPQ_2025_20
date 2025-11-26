@@ -2,6 +2,8 @@
 Endpoints para predicciones ML (PMV3)
 """
 
+import json
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import text
 from sqlalchemy.orm import Session
@@ -145,8 +147,8 @@ async def generar_prediccion_ml(
                 "prob_severo": prediction.get("prob_severo"),
                 "modelo_tipo": "nutritional_predictor",
                 "modelo_version": "1.0",
-                "features_json": str(prediction_features),
-                "explicacion_json": str(prediction.get("probabilidades_por_clase", {})),
+                "features_json": json.dumps(prediction_features),
+                "explicacion_json": json.dumps(prediction.get("probabilidades_por_clase", {})),
             },
         )
 

@@ -77,6 +77,17 @@ class AdherenciaCreate(BaseModel):
     comentario: str | None = Field(None, max_length=500, description="Comentarios opcionales")
 
 
+class AdherenciaUpdate(BaseModel):
+    """Schema para actualizar adherencia"""
+
+    estado: EstadoAdherenciaEnum | None = Field(None, description="Estado de cumplimiento")
+    porcentaje: float | None = Field(
+        None, ge=0, le=100, description="Porcentaje de cumplimiento (0-100)"
+    )
+    dificultad: DificultadEnum | None = Field(None, description="Nivel de dificultad experimentado")
+    comentario: str | None = Field(None, max_length=500, description="Comentarios opcionales")
+
+
 class AdherenciaResponse(BaseModel):
     """Schema de respuesta para adherencia"""
 
@@ -133,6 +144,16 @@ class SintomaCreate(BaseModel):
     severidad: SeveridadSintomaEnum = Field(..., description="Severidad del síntoma")
     duracion_dias: int = Field(..., ge=1, le=365, description="Duración en días")
     relacionado_menu: bool = Field(False, description="¿Está relacionado con el menú?")
+    notas: str | None = Field(None, max_length=500, description="Notas descriptivas")
+
+
+class SintomaUpdate(BaseModel):
+    """Schema para actualizar síntoma"""
+
+    tipo: str | None = Field(None, max_length=120, description="Tipo de síntoma")
+    severidad: SeveridadSintomaEnum | None = Field(None, description="Severidad del síntoma")
+    duracion_dias: int | None = Field(None, ge=1, le=365, description="Duración en días")
+    relacionado_menu: bool | None = Field(None, description="¿Está relacionado con el menú?")
     notas: str | None = Field(None, max_length=500, description="Notas descriptivas")
 
 
