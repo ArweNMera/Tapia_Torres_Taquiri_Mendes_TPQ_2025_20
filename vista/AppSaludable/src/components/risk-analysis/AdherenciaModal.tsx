@@ -103,19 +103,32 @@ export function AdherenciaModal({ open, onClose, child }: AdherenciaModalProps) 
     try {
       setLoading(true);
 
-      const response = await apiService.registrarAdherencia({
-        nin_id: child.nin_id,
-        men_id: 1, // TODO: Obtener del plan activo
-        mei_id: null,
-        fecha,
-        estado,
-        porcentaje: porcentaje[0],
-        dificultad,
-        comentario: comentario || null
-      });
+      let response;
+
+      if (editandoId) {
+        // Actualizar adherencia existente
+        response = await apiService.actualizarAdherencia(editandoId, {
+          estado,
+          porcentaje: porcentaje[0],
+          dificultad,
+          comentario: comentario || null
+        });
+      } else {
+        // Crear nueva adherencia
+        response = await apiService.registrarAdherencia({
+          nin_id: child.nin_id,
+          men_id: 1, // TODO: Obtener del plan activo
+          mei_id: null,
+          fecha,
+          estado,
+          porcentaje: porcentaje[0],
+          dificultad,
+          comentario: comentario || null
+        });
+      }
 
       if (!response.success) {
-        throw new Error(response.error || 'Error al registrar adherencia');
+        throw new Error(response.error || 'Error al guardar adherencia');
       }
 
       toast.success(editandoId ? 'Adherencia actualizada exitosamente' : 'Adherencia registrada exitosamente');
@@ -128,8 +141,8 @@ export function AdherenciaModal({ open, onClose, child }: AdherenciaModalProps) 
       }
 
     } catch (error: any) {
-      console.error('Error registrando adherencia:', error);
-      toast.error(error.response?.data?.detail || 'Error al registrar adherencia');
+      console.error('Error guardando adherencia:', error);
+      toast.error(error.response?.data?.detail || 'Error al guardar adherencia');
     } finally {
       setLoading(false);
     }

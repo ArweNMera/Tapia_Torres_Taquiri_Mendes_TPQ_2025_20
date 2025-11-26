@@ -128,7 +128,7 @@ async def generar_prediccion_ml(
                     pml_modelo_tipo, pml_modelo_version,
                     pml_features_json, pml_explicacion_json
                 ) VALUES (
-                    :nin_id, :ant_id, 1,
+                    :nin_id, :ant_id, NULL,
                     :clasificacion, :probabilidad, :score_riesgo,
                     :prob_normal, :prob_riesgo, :prob_moderado, :prob_severo,
                     :modelo_tipo, :modelo_version,

@@ -122,18 +122,32 @@ export function SintomasModal({ open, onClose, child }: SintomasModalProps) {
     try {
       setLoading(true);
 
-      const response = await apiService.registrarSintoma({
-        nin_id: child.nin_id,
-        fecha,
-        tipo: tipo.trim(),
-        severidad,
-        duracion_dias: duracionDias,
-        relacionado_menu: relacionadoMenu,
-        notas: notas || null
-      });
+      let response;
+
+      if (editandoId) {
+        // Actualizar síntoma existente
+        response = await apiService.actualizarSintoma(editandoId, {
+          tipo: tipo.trim(),
+          severidad,
+          duracion_dias: duracionDias,
+          relacionado_menu: relacionadoMenu,
+          notas: notas || null
+        });
+      } else {
+        // Crear nuevo síntoma
+        response = await apiService.registrarSintoma({
+          nin_id: child.nin_id,
+          fecha,
+          tipo: tipo.trim(),
+          severidad,
+          duracion_dias: duracionDias,
+          relacionado_menu: relacionadoMenu,
+          notas: notas || null
+        });
+      }
 
       if (!response.success) {
-        throw new Error(response.error || 'Error al registrar síntoma');
+        throw new Error(response.error || 'Error al guardar síntoma');
       }
 
       toast.success(editandoId ? 'Síntoma actualizado exitosamente' : 'Síntoma registrado exitosamente');
@@ -146,8 +160,8 @@ export function SintomasModal({ open, onClose, child }: SintomasModalProps) {
       }
 
     } catch (error: any) {
-      console.error('Error registrando síntoma:', error);
-      toast.error(error.response?.data?.detail || 'Error al registrar síntoma');
+      console.error('Error guardando síntoma:', error);
+      toast.error(error.response?.data?.detail || 'Error al guardar síntoma');
     } finally {
       setLoading(false);
     }
